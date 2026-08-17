@@ -40,18 +40,20 @@ export default function CancelBookingButton({ bookingId }: { bookingId: string }
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
-        <button 
-          disabled={isCanceling}
-          className="flex items-center justify-center gap-1 bg-white border border-gray-200 text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 hover:border-red-200 disabled:opacity-50 transition-colors"
-        >
-          {isCanceling ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <X size={16} />
-          )}
-          ยกเลิกการจอง
-        </button>
+      <AlertDialogTrigger 
+        render={
+          <button 
+            disabled={isCanceling}
+            className="flex items-center justify-center gap-1 bg-white border border-gray-200 text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 hover:border-red-200 disabled:opacity-50 transition-colors"
+          />
+        }
+      >
+        {isCanceling ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <X size={16} />
+        )}
+        ยกเลิกการจอง
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
