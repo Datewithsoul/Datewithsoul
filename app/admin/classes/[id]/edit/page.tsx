@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import { updateClass } from "../../actions";
+import MediaUploader, { MediaItem } from "@/components/media-uploader";
 
 export default async function EditClassPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const classEvent = await prisma.classEvent.findUnique({
-    where: { id }
+    where: { id },
+    include: { media: true }
   });
 
   if (!classEvent) {
@@ -19,6 +21,14 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
 
   // format date to YYYY-MM-DD for input type="date"
   const formattedDate = classEvent.date.toISOString().split('T')[0];
+  
+  // cast media to MediaItem[]
+  const initialMedia: MediaItem[] = classEvent.media.map(m => ({
+    id: m.id,
+    url: m.url,
+    type: m.type as "IMAGE" | "VIDEO",
+    order: m.order,
+  }));
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
@@ -44,18 +54,28 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
         <CardContent>
           <form action={updateClass} className="flex flex-col gap-6">
             <input type="hidden" name="id" value={classEvent.id} />
-            <input type="hidden" name="existingImageUrl" value={classEvent.imageUrl || ""} />
-            <input type="hidden" name="existingVideoUrl" value={classEvent.videoUrl || ""} />
 
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium leading-none">ชื่อคอร์ส</label>
-              <Input 
-                type="text" 
-                id="name" 
-                name="name" 
-                required
-                defaultValue={classEvent.name}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium leading-none">ชื่อคอร์ส</label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  required
+                  defaultValue={classEvent.name}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="category" className="text-sm font-medium leading-none">หมวดหมู่</label>
+                <Input 
+                  type="text" 
+                  id="category" 
+                  name="category" 
+                  defaultValue={classEvent.category || "เวิร์กชอป"}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -80,36 +100,31 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
               ></textarea>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="imageFile" className="text-sm font-medium leading-none">รูปภาพหน้าปกใหม่ (ถ้าต้องการเปลี่ยน)</label>
-                <Input 
-                  type="file" 
-                  id="imageFile" 
-                  name="imageFile" 
-                  accept="image/*"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="videoFile" className="text-sm font-medium leading-none">วิดีโอแนะนำใหม่ (ถ้าต้องการเปลี่ยน)</label>
-                <Input 
-                  type="file" 
-                  id="videoFile" 
-                  name="videoFile" 
-                  accept="video/*"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">รูปภาพและวิดีโอแนะนำ</label>
+              <MediaUploader initialMedia={initialMedia} />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="date" className="text-sm font-medium leading-none">วันที่จัดกิจกรรม</label>
-              <Input 
-                type="date" 
-                id="date" 
-                name="date" 
-                required
-                defaultValue={formattedDate}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="date" className="text-sm font-medium leading-none">วันที่เริ่มจัดกิจกรรม</label>
+                <Input 
+                  type="date" 
+                  id="date" 
+                  name="date" 
+                  required
+                  defaultValue={formattedDate}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="endDate" className="text-sm font-medium leading-none">วันที่สุดท้าย (ถ้ามีหลายวัน)</label>
+                <Input 
+                  type="date" 
+                  id="endDate" 
+                  name="endDate" 
+                  defaultValue={classEvent.endDate ? classEvent.endDate.toISOString().split('T')[0] : ""}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -159,6 +174,28 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
                   defaultValue={classEvent.totalSeats}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="learningOutcomes" className="text-sm font-medium leading-none">สิ่งที่คุณจะได้เรียนรู้ (แยกแต่ละข้อด้วยการขึ้นบรรทัดใหม่)</label>
+              <textarea 
+                id="learningOutcomes" 
+                name="learningOutcomes" 
+                rows={4}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                defaultValue={(classEvent.learningOutcomes || []).join("\n")}
+              ></textarea>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="requirements" className="text-sm font-medium leading-none">ข้อกำหนด (แยกแต่ละข้อด้วยการขึ้นบรรทัดใหม่)</label>
+              <textarea 
+                id="requirements" 
+                name="requirements" 
+                rows={4}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                defaultValue={(classEvent.requirements || []).join("\n")}
+              ></textarea>
             </div>
 
             <Button type="submit" className="w-full mt-2">

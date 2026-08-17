@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { uploadMedia } from "@/utils/supabase/storage";
 
 export async function createClass(formData: FormData) {
   const name = formData.get("name") as string;
@@ -14,36 +13,47 @@ export async function createClass(formData: FormData) {
   const price = parseFloat(formData.get("price") as string);
   const totalSeats = parseInt(formData.get("totalSeats") as string, 10);
 
-  const imageFile = formData.get("imageFile") as File | null;
-  const videoFile = formData.get("videoFile") as File | null;
+  const category = (formData.get("category") as string) || "เวิร์กชอป";
+  const endDateStr = formData.get("endDate") as string;
+  const endDate = endDateStr ? new Date(endDateStr) : null;
+  const learningOutcomesStr = formData.get("learningOutcomes") as string;
+  const requirementsStr = formData.get("requirements") as string;
+  
+  const learningOutcomes = learningOutcomesStr ? learningOutcomesStr.split("\n").map(s => s.trim()).filter(Boolean) : [];
+  const requirements = requirementsStr ? requirementsStr.split("\n").map(s => s.trim()).filter(Boolean) : [];
 
-  let imageUrl: string | null = null;
-  let videoUrl: string | null = null;
-
-  const timestamp = Date.now();
-
-  if (imageFile && imageFile.size > 0) {
-    const path = `classes/images/${timestamp}-${imageFile.name}`;
-    imageUrl = await uploadMedia(imageFile, path);
-  }
-
-  if (videoFile && videoFile.size > 0) {
-    const path = `classes/videos/${timestamp}-${videoFile.name}`;
-    videoUrl = await uploadMedia(videoFile, path);
+  const mediaJson = formData.get("mediaJson") as string;
+  let mediaItems: { url: string, type: string, order: number }[] = [];
+  
+  try {
+    if (mediaJson) {
+      mediaItems = JSON.parse(mediaJson);
+    }
+  } catch (e) {
+    console.error("Failed to parse media JSON", e);
   }
 
   await prisma.classEvent.create({
     data: {
       name,
       description,
+      category,
       instructor,
-      imageUrl,
-      videoUrl,
       date,
+      endDate,
       startTime,
       endTime,
       price,
       totalSeats,
+      learningOutcomes,
+      requirements,
+      media: {
+        create: mediaItems.map(m => ({
+          url: m.url,
+          type: m.type,
+          order: m.order
+        }))
+      }
     },
   });
 

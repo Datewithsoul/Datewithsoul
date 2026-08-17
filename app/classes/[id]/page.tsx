@@ -1,94 +1,210 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, Users, User, ArrowLeft } from "lucide-react";
+import { ArrowLeft, PlayCircle, Check, Heart, Globe, Calendar, Clock, User, Share, Share2 } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import ShareButton from "@/components/share-button";
 
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: classId } = await params;
   const classEvent = await prisma.classEvent.findUnique({
-    where: { id: classId }
+    where: { id: classId },
+    include: {
+      media: {
+        orderBy: { order: 'asc' }
+      }
+    }
   });
 
   if (!classEvent) {
     notFound();
   }
 
-  // Use a fallback image if no image was uploaded
-  const imageUrl = classEvent.imageUrl || "/placeholder-class.jpg";
-
   return (
-    <main className="min-h-screen bg-[#FFFDF7]">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        
-        <Link href="/" className="inline-flex items-center gap-2 mb-6 text-[#5D4037] font-bold hover:underline">
-          <ArrowLeft size={20} />
-          กลับไปหน้าหลัก
-        </Link>
-
-        <div className="bg-white rounded-3xl border-4 border-[#5D4037] shadow-[8px_8px_0_0_#5D4037] overflow-hidden">
-          {/* Media Section */}
-          <div className="w-full relative h-[400px] bg-yellow-100 border-b-4 border-[#5D4037]">
-            {classEvent.videoUrl ? (
-              <video 
-                src={classEvent.videoUrl} 
-                className="w-full h-full object-cover"
-                controls 
-                poster={classEvent.imageUrl || undefined}
-              />
-            ) : (
-              <img 
-                src={imageUrl} 
-                alt={classEvent.name}
-                className="w-full h-full object-cover"
-              />
-            )}
+    <main className="min-h-screen bg-white text-[#222222] font-sans pb-24">
+      {/* Simple Header */}
+      <header className="border-b border-gray-200 bg-white py-4 px-6 sticky top-0 z-50">
+        <div className="max-w-[1180px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Heart className="text-[#F44336]" size={28} fill="currentColor" />
+            <Link href="/" className="text-xl font-bold tracking-tight text-[#F44336]">Date With Soul</Link>
           </div>
+          <Link href="/classes" className="text-sm font-semibold text-gray-700 hover:text-black">
+            กลับไปหน้ารวมคลาส
+          </Link>
+        </div>
+      </header>
 
-          <div className="p-8 md:p-12">
-            <h1 className="text-4xl md:text-5xl font-black text-[#5D4037] tracking-tight drop-shadow-[2px_2px_0_rgba(255,235,59,1)] mb-4">
-              {classEvent.name}
-            </h1>
+      <div className="max-w-[1180px] mx-auto px-6 mt-6 mb-8 relative">
+        
+        {/* Title Section */}
+        <div className="mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3 text-[#222222]">
+            {classEvent.name}
+          </h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm text-[#222222] font-semibold gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="flex items-center gap-1">
+                <Calendar size={16} />
+                <span>
+                  {classEvent.date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  {classEvent.endDate && classEvent.endDate.getTime() !== classEvent.date.getTime() && (
+                    <> - {classEvent.endDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</>
+                  )}
+                </span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock size={16} />
+                <span>{classEvent.startTime} - {classEvent.endTime}</span>
+              </span>
+              <span className="underline cursor-pointer">{classEvent.category || "เวิร์กชอป"}</span>
+            </div>
+            
+            <div className="flex gap-4">
+              <ShareButton title={classEvent.name} />
+            </div>
+          </div>
+        </div>
 
-            <div className="flex flex-wrap gap-4 mb-8">
-              <div className="flex items-center gap-2 bg-[#FFEB3B] text-[#5D4037] px-4 py-2 rounded-full border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037] font-bold">
-                <Calendar size={18} />
-                {classEvent.date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </div>
-              <div className="flex items-center gap-2 bg-[#FFEB3B] text-[#5D4037] px-4 py-2 rounded-full border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037] font-bold">
-                <Clock size={18} />
-                {classEvent.startTime} - {classEvent.endTime}
-              </div>
-              <div className="flex items-center gap-2 bg-[#FFEB3B] text-[#5D4037] px-4 py-2 rounded-full border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037] font-bold">
-                <Users size={18} />
-                รับ {classEvent.totalSeats} ท่าน
-              </div>
-              <div className="flex items-center gap-2 bg-[#FFEB3B] text-[#5D4037] px-4 py-2 rounded-full border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037] font-bold">
-                <User size={18} />
-                ผู้สอน: {classEvent.instructor}
+        {/* Large Media Gallery / Carousel */}
+        <div className="w-full aspect-video md:aspect-[2/1] rounded-2xl overflow-hidden mb-12 bg-gray-100 relative group">
+          {classEvent.media && classEvent.media.length > 0 ? (
+            <Carousel opts={{ align: "start", loop: true }} className="w-full h-full">
+              <CarouselContent className="h-full">
+                {classEvent.media.map((m) => (
+                  <CarouselItem key={m.id} className="h-full pl-0 basis-full">
+                    <div className="h-full w-full bg-gray-900 flex items-center justify-center">
+                      {m.type === "VIDEO" ? (
+                        <video 
+                          src={m.url} 
+                          className="w-full h-full object-contain"
+                          controls 
+                        />
+                      ) : (
+                        <img 
+                          src={m.url} 
+                          alt={classEvent.name}
+                          className="w-full h-full object-contain"
+                        />
+                      )}
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {classEvent.media.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-4 bg-white/80 hover:bg-white shadow-md border-none h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity text-black" />
+                  <CarouselNext className="right-4 bg-white/80 hover:bg-white shadow-md border-none h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity text-black" />
+                </>
+              )}
+            </Carousel>
+          ) : (
+            <div className="h-full w-full flex flex-col items-center justify-center text-gray-400">
+              <PlayCircle size={48} className="mb-2" />
+              <span className="font-bold">ไม่มีรูปภาพประกอบ</span>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Split */}
+        <div className="flex flex-col lg:flex-row gap-16">
+          
+          {/* Left Column (Details) */}
+          <div className="lg:w-2/3">
+            
+            <div className="pb-8 border-b border-gray-200 mb-8">
+              <h2 className="text-2xl font-semibold mb-2">สอนโดย {classEvent.instructor || "ไม่ระบุ"}</h2>
+              <p className="text-gray-600">รับสมัครสูงสุด {classEvent.totalSeats} ที่นั่ง · รวมอุปกรณ์พื้นฐานแล้ว</p>
+            </div>
+            
+            {/* Description */}
+            <div className="pb-8 border-b border-gray-200 mb-8">
+              <div className="prose prose-sm md:prose-base max-w-none text-[#222222]">
+                <p className="whitespace-pre-wrap leading-relaxed">{classEvent.description || "ไม่มีรายละเอียด"}</p>
               </div>
             </div>
-
-            <div className="prose prose-lg text-[#5D4037] mb-12 max-w-none">
-              <h2 className="font-bold text-2xl mb-4 border-b-4 border-[#FFEB3B] inline-block">รายละเอียดกิจกรรม</h2>
-              <p className="whitespace-pre-wrap">{classEvent.description || "ไม่มีรายละเอียด"}</p>
-            </div>
-
-            <div className="bg-[#FFFDF7] p-6 rounded-2xl border-4 border-[#5D4037] shadow-[4px_4px_0_0_#5D4037] flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">ราคา</p>
-                <p className="text-4xl font-black text-[#F44336]">
-                  ฿{classEvent.price.toLocaleString()}
-                </p>
+            
+            {/* What you'll learn */}
+            {classEvent.learningOutcomes && classEvent.learningOutcomes.length > 0 && (
+              <div className="pb-8 border-b border-gray-200 mb-8">
+                <h2 className="text-2xl font-semibold mb-6">สิ่งที่คุณจะได้เรียนรู้</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-[#222222]">
+                  {classEvent.learningOutcomes.map((outcome, idx) => (
+                    <div key={idx} className="flex gap-4 items-start">
+                      <Check size={24} className="text-[#222222] shrink-0" />
+                      <span className="leading-relaxed">{outcome}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Link href={`/book/${classEvent.id}`} className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto bg-[#F44336] text-white text-xl font-black px-12 py-4 rounded-full border-4 border-[#5D4037] shadow-[6px_6px_0_0_#5D4037] hover:translate-y-1 hover:shadow-[2px_2px_0_0_#5D4037] transition-all uppercase tracking-widest">
-                  จองที่นั่ง (Book Now)
+            )}
+            
+            {/* Requirements */}
+            {classEvent.requirements && classEvent.requirements.length > 0 && (
+              <div className="pb-8 mb-8">
+                <h2 className="text-2xl font-semibold mb-6">ข้อกำหนดในการเข้าเรียน</h2>
+                <ul className="list-disc pl-5 space-y-3 text-[#222222]">
+                  {classEvent.requirements.map((req, idx) => (
+                    <li key={idx} className="leading-relaxed pl-2">{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+          </div>
+          
+          {/* Right Column (Floating Booking Card) */}
+          <div className="lg:w-1/3 relative">
+            <div className="bg-white border border-gray-300 rounded-2xl shadow-xl sticky top-28 p-6 flex flex-col">
+              <div className="mb-6 flex items-end gap-1">
+                <span className="text-2xl font-bold">฿{classEvent.price.toLocaleString()}</span>
+                <span className="text-gray-500 text-sm mb-1">/ ท่าน</span>
+              </div>
+              
+              <div className="border border-gray-400 rounded-xl mb-4 divide-y divide-gray-400 overflow-hidden">
+                <div className="flex divide-x divide-gray-400">
+                  <div className="p-3 w-1/2">
+                    <div className="text-[10px] font-bold uppercase mb-1">วันที่เริ่มเรียน</div>
+                    <div className="text-sm font-semibold">{classEvent.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                  </div>
+                  <div className="p-3 w-1/2">
+                    <div className="text-[10px] font-bold uppercase mb-1">เวลา</div>
+                    <div className="text-sm font-semibold">{classEvent.startTime} - {classEvent.endTime}</div>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="text-[10px] font-bold uppercase mb-1">ที่นั่งเหลือ</div>
+                  <div className="text-sm font-semibold">{classEvent.totalSeats} ที่</div>
+                </div>
+              </div>
+              
+              <Link href={`/book/${classEvent.id}`} className="block w-full mb-4">
+                <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
+                  จองที่นั่ง
                 </button>
               </Link>
+              
+              <div className="text-center text-sm text-gray-500 mb-6">
+                ยังไม่ตัดบัตรจนกว่าจะยืนยัน
+              </div>
+              
+              <div className="flex justify-between text-gray-700 underline mb-2 text-sm">
+                <span>ราคาคอร์ส</span>
+                <span>฿{classEvent.price.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-700 underline mb-4 text-sm pb-4 border-b border-gray-200">
+                <span>ค่าธรรมเนียมบริการ</span>
+                <span>฿0</span>
+              </div>
+              
+              <div className="flex justify-between font-bold text-lg pt-2">
+                <span>ยอดรวม</span>
+                <span>฿{classEvent.price.toLocaleString()}</span>
+              </div>
+              
             </div>
           </div>
+          
         </div>
       </div>
     </main>

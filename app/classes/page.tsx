@@ -1,83 +1,122 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, MapPin, Calendar, Users } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export default async function ClassesPage() {
   const upcomingClasses = await prisma.classEvent.findMany({
     where: { date: { gte: new Date() } },
     orderBy: { date: "asc" },
+    include: {
+      media: {
+        orderBy: { order: 'asc' }
+      }
+    }
   });
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] text-[#5D4037] font-sans">
-      <header className="border-b-4 border-[#5D4037] bg-[#FFEB3B] py-4 px-8 sticky top-0 z-50 shadow-[0_4px_0_0_#5D4037]">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-white text-[#1c1d1f] font-sans pb-24">
+      {/* Simple Header */}
+      <header className="border-b border-gray-100 bg-white py-4 px-6 sticky top-0 z-50">
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-[#F44336] p-2 rounded-full border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037]">
-              <Heart className="text-white" size={24} fill="currentColor" />
-            </div>
-            <span className="text-2xl font-black tracking-widest uppercase">Date With Soul</span>
+            <Heart className="text-[#F44336]" size={28} fill="currentColor" />
+            <span className="text-xl font-bold tracking-tight text-[#F44336]">Date With Soul</span>
           </Link>
+          <nav className="flex gap-4 font-semibold text-sm text-gray-700">
+            <Link href="/" className="hover:text-black">หน้าหลัก</Link>
+          </nav>
         </div>
       </header>
 
-      <section className="py-24 px-8 max-w-6xl mx-auto">
-        <h1 className="text-6xl font-black tracking-tight drop-shadow-[4px_4px_0_rgba(244,67,54,1)] text-[#FFEB3B] stroke-text mb-12">
-          คลาสเรียนทั้งหมด
+      <section className="pt-12 pb-6 px-6 max-w-[1280px] mx-auto">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+          คลาสเรียนและเวิร์กชอปที่เปิดรับ
         </h1>
+        <p className="text-gray-600 mb-10">ค้นหาแรงบันดาลใจและสร้างสรรค์ผลงานศิลปะในแบบของคุณ</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-10">
           {upcomingClasses.length === 0 ? (
-            <div className="col-span-full text-center p-12 border-4 border-[#5D4037] border-dashed rounded-3xl">
-              <p className="text-xl font-bold">ยังไม่มีคลาสเรียนที่จัดตารางไว้ในขณะนี้</p>
+            <div className="col-span-full text-center p-12 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-xl font-semibold text-gray-600">ยังไม่มีคลาสเรียนที่จัดตารางไว้ในขณะนี้</p>
             </div>
           ) : (
             upcomingClasses.map((c) => (
-              <div key={c.id} className="bg-white border-4 border-[#5D4037] rounded-3xl p-6 shadow-[8px_8px_0_0_#5D4037] flex flex-col gap-4 group hover:-translate-y-2 transition-transform">
-                <div>
-                  <h3 className="text-2xl font-black line-clamp-1">{c.name}</h3>
-                  <p className="text-[#F44336] font-bold text-xl">฿{c.price.toLocaleString()}</p>
+              <div key={c.id} className="group flex flex-col gap-3">
+                {/* Image Carousel (Airbnb style) */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-200">
+                  {c.media && c.media.length > 0 ? (
+                    <Carousel opts={{ align: "start", loop: true }} className="w-full h-full">
+                      <CarouselContent className="h-full">
+                        {c.media.map((m) => (
+                          <CarouselItem key={m.id} className="h-full relative cursor-pointer">
+                            <Link href={`/classes/${c.id}`} className="w-full h-full block">
+                              {m.type === "VIDEO" ? (
+                                <video 
+                                  src={m.url} 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <img 
+                                  src={m.url} 
+                                  alt={c.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                            </Link>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      {c.media.length > 1 && (
+                        <>
+                          <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white border-none shadow-sm opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-black" />
+                          <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white border-none shadow-sm opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-black" />
+                        </>
+                      )}
+                    </Carousel>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-semibold bg-gray-100">
+                      ไม่มีรูปภาพ
+                    </div>
+                  )}
+                  
                 </div>
-                
-                {c.description && (
-                  <p className="font-medium text-sm line-clamp-2">{c.description}</p>
-                )}
 
-                <div className="flex flex-col gap-2 font-bold text-sm bg-[#FFEB3B]/20 p-4 border-2 border-[#5D4037] rounded-xl mt-auto">
-                  <div className="flex justify-between">
-                    <span>วันที่:</span>
-                    <span>{c.date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                {/* Details */}
+                <Link href={`/classes/${c.id}`} className="block">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-bold text-[17px] text-[#222222] line-clamp-1 group-hover:underline">
+                      {c.name}
+                    </h3>
                   </div>
-                  <div className="flex justify-between">
-                    <span>เวลา:</span>
-                    <span>{c.startTime} - {c.endTime}</span>
+                  <p className="text-[#717171] text-sm mb-1">{c.instructor || "ไม่ระบุผู้สอน"}</p>
+                  <p className="text-[#717171] text-sm mb-2">
+                    {c.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })} 
+                    {c.endDate && c.endDate.getTime() !== c.date.getTime() && (
+                      <> - {c.endDate.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</>
+                    )}
+                  </p>
+                  
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="font-semibold text-[15px] text-[#222222]">
+                      ฿{c.price.toLocaleString()}
+                    </p>
+                    {c.totalSeats > 0 ? (
+                      <span className="text-xs font-semibold text-[#F44336] bg-[#F44336]/10 px-2 py-1 rounded-md">
+                        เหลือ {c.totalSeats} ที่
+                      </span>
+                    ) : (
+                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                        เต็มแล้ว
+                      </span>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t-2 border-[#5D4037]/20">
-                    <span>ที่นั่งว่าง:</span>
-                    <span className="bg-[#F44336] text-white px-2 py-1 rounded-md border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037]">
-                      {c.totalSeats} ที่
-                    </span>
-                  </div>
-                </div>
-                
-                <Link 
-                  href={`/book/${c.id}`}
-                  className="mt-2 w-full text-center bg-[#FFEB3B] text-[#5D4037] font-black tracking-widest py-3 border-4 border-[#5D4037] rounded-xl shadow-[4px_4px_0_0_#5D4037] hover:bg-[#F44336] hover:text-white transition-colors"
-                >
-                  จองเลย
                 </Link>
               </div>
             ))
           )}
         </div>
       </section>
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        .stroke-text {
-          -webkit-text-stroke: 3px #5D4037;
-          text-shadow: 4px 4px 0 #F44336;
-        }
-      `}} />
     </div>
   );
 }

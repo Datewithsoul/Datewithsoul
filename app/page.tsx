@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Heart, LogOut, User as UserIcon } from "lucide-react";
+import { Search, Heart, LogOut, User as UserIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -10,12 +10,13 @@ export default async function Home() {
     where: { date: { gte: new Date() } },
     orderBy: { date: "asc" },
     take: 8,
-  });
-
-  const recentBookings = await prisma.booking.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 4,
-    include: { classEvent: true, user: true },
+    include: {
+      media: {
+        where: { type: 'IMAGE' },
+        orderBy: { order: 'asc' },
+        take: 1
+      }
+    }
   });
 
   const supabase = await createClient();
@@ -29,167 +30,201 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] text-[#5D4037] font-sans overflow-x-hidden">
-      {/* Header */}
-      <header className="border-b-4 border-[#5D4037] bg-[#FFEB3B] py-4 px-8 sticky top-0 z-50 shadow-[0_4px_0_0_#5D4037]">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-[#F44336] p-2 rounded-full border-2 border-[#5D4037] shadow-[2px_2px_0_0_#5D4037]">
-              <Heart className="text-white" size={24} fill="currentColor" />
-            </div>
-            <span className="text-2xl font-black tracking-widest uppercase hidden md:inline">Date With Soul</span>
+    <div className="min-h-screen bg-white text-[#1c1d1f] font-sans overflow-x-hidden">
+      {/* Header (Udemy Style) */}
+      <header className="border-b border-gray-200 bg-white py-4 px-6 sticky top-0 z-50">
+        <div className="max-w-[1340px] mx-auto flex items-center justify-between gap-6">
+          <div className="flex items-center gap-2 shrink-0">
+            <Heart className="text-[#F44336]" size={28} fill="currentColor" />
+            <Link href="/" className="text-2xl font-bold tracking-tight">Date With Soul</Link>
           </div>
-          <nav className="flex items-center gap-6 font-bold uppercase tracking-wider text-sm">
-            <Link href="/" className="hover:text-[#F44336] transition-colors hidden sm:block">หน้าแรก</Link>
-            <Link href="/classes" className="hover:text-[#F44336] transition-colors hidden sm:block">คลาสเรียน</Link>
-            
+          
+          <nav className="hidden md:flex items-center gap-6 text-[15px] hover:text-[#F44336] transition-colors shrink-0">
+            <Link href="/classes">คลาสเรียน</Link>
+          </nav>
+
+          <div className="hidden lg:flex flex-1 max-w-2xl items-center bg-gray-50 border border-black rounded-full px-4 py-3">
+            <Search size={20} className="text-gray-400 mr-3" />
+            <input 
+              type="text" 
+              placeholder="ค้นหาเวิร์กชอปปั้นดินเผา..." 
+              className="bg-transparent border-none outline-none w-full text-[15px]"
+            />
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
             {dbUser?.role === 'ADMIN' && (
-              <Link href="/admin" className="text-[#F44336] hover:text-[#5D4037] transition-colors hidden sm:block">
+              <Link href="/admin" className="text-sm font-bold text-[#F44336] hover:underline">
                 ระบบจัดการ (Admin)
               </Link>
             )}
 
             {user ? (
-              <div className="flex items-center gap-4 ml-4 pl-4 border-l-4 border-[#5D4037]/20">
-                <div className="flex items-center gap-2">
-                  <UserIcon size={18} />
-                  <span className="truncate max-w-[100px] sm:max-w-[150px]">{user.email}</span>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-[#5D4037] text-white rounded-full flex items-center justify-center font-bold">
+                  {user.email?.charAt(0).toUpperCase()}
                 </div>
                 <form action={logout}>
-                  <button type="submit" className="flex items-center gap-1 text-[#F44336] hover:text-[#5D4037]">
-                    <LogOut size={18} /> ออกจากระบบ
+                  <button type="submit" className="text-sm font-bold border border-black px-4 py-2 hover:bg-gray-50 transition-colors">
+                    ออกจากระบบ
                   </button>
                 </form>
               </div>
             ) : (
-              <Link href="/login" className="bg-white px-4 py-2 border-2 border-[#5D4037] rounded-lg shadow-[2px_2px_0_0_#5D4037] hover:translate-y-1 hover:shadow-none transition-all">
-                เข้าสู่ระบบ / สมัครสมาชิก
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href="/login" className="text-sm font-bold border border-black px-4 py-2 hover:bg-gray-50 transition-colors">
+                  เข้าสู่ระบบ
+                </Link>
+                <Link href="/register" className="text-sm font-bold bg-[#1c1d1f] text-white border border-[#1c1d1f] px-4 py-2 hover:bg-gray-800 transition-colors hidden sm:block">
+                  สมัครสมาชิก
+                </Link>
+              </div>
             )}
-          </nav>
+          </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative py-24 px-8 overflow-hidden bg-[url('/dot-pattern.png')] bg-repeat">
-        <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-8 relative z-10">
-          <div className="inline-block bg-[#F44336] text-white font-bold tracking-widest py-2 px-6 rounded-full border-4 border-[#5D4037] shadow-[4px_4px_0_0_#5D4037] rotate-[-2deg]">
-            เวิร์กชอปใหม่พร้อมให้บริการแล้ว!
+      {/* Hero Section (Carousel) */}
+      <section className="max-w-[1340px] mx-auto px-6 py-6 md:py-12">
+        {upcomingClasses.length > 0 ? (
+          <Carousel opts={{ loop: true, align: "start" }} className="w-full relative group">
+            <CarouselContent>
+              {upcomingClasses.slice(0, 3).map((heroClass) => (
+                <CarouselItem key={`hero-${heroClass.id}`}>
+                  <div className="relative w-full h-[300px] md:h-[400px] bg-gray-100 flex items-center overflow-hidden">
+                    {/* Background image */}
+                    {heroClass.media && heroClass.media.length > 0 ? (
+                      <img 
+                        src={heroClass.media[0].url} 
+                        alt={heroClass.name} 
+                        className="absolute inset-0 w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-[#FFEB3B]/20"></div>
+                    )}
+                    
+                    <div className="absolute inset-0 bg-black/20"></div>
+                    
+                    {/* Floating Text Box - Hidden on very small screens or styled differently */}
+                    <div className="relative z-10 bg-white p-6 md:p-8 w-[90%] mx-auto md:mx-0 md:max-w-[440px] md:ml-12 shadow-lg border border-gray-100 flex flex-col justify-center">
+                      <h1 className="text-xl md:text-3xl font-bold mb-2 md:mb-4 text-[#1c1d1f] leading-tight line-clamp-2">
+                        {heroClass.name}
+                      </h1>
+                      <p className="hidden md:block text-sm md:text-base text-gray-700 mb-6 leading-relaxed line-clamp-3">
+                        {heroClass.description || "เข้าร่วมเวิร์กชอปปั้นดินเผาและศิลปะของเรา พักผ่อน สร้างสรรค์ผลงาน ในพื้นที่ที่อบอุ่นและเป็นกันเอง"}
+                      </p>
+                      <Link 
+                        href={`/classes/${heroClass.id}`}
+                        className="inline-block bg-[#F44336] text-white font-bold text-center px-6 py-3 hover:bg-[#d32f2f] transition-colors"
+                      >
+                        ดูรายละเอียดคลาส
+                      </Link>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {upcomingClasses.length > 1 && (
+              <>
+                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-md border-black opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" />
+                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-md border-black opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" />
+              </>
+            )}
+          </Carousel>
+        ) : (
+          <div className="relative w-full h-[300px] md:h-[400px] bg-gray-100 flex items-center overflow-hidden">
+            <div className="absolute inset-0 bg-[#FFEB3B]/20"></div>
+            <div className="relative z-10 bg-white p-6 md:p-8 w-[90%] mx-auto md:mx-0 md:max-w-[440px] md:ml-12 shadow-lg border border-gray-100">
+              <h1 className="text-2xl md:text-4xl font-bold mb-4 text-[#1c1d1f] leading-tight">
+                ค้นหาจิตวิญญาณ<br/>นักสร้างสรรค์
+              </h1>
+              <p className="hidden md:block text-lg text-gray-700 mb-6 leading-relaxed">
+                เข้าร่วมเวิร์กชอปปั้นดินเผาและศิลปะของเรา พักผ่อน สร้างสรรค์ผลงาน ในพื้นที่ที่อบอุ่นและเป็นกันเอง
+              </p>
+              <Link 
+                href="/classes"
+                className="block md:inline-block bg-[#F44336] text-white text-center font-bold px-6 py-3 hover:bg-[#d32f2f] transition-colors"
+              >
+                ดูคลาสเรียนทั้งหมด
+              </Link>
+            </div>
           </div>
-          <h1 className="text-5xl md:text-8xl font-black leading-tight tracking-tight drop-shadow-[4px_4px_0_rgba(244,67,54,1)] text-[#FFEB3B] stroke-text">
-            ค้นหาจิตวิญญาณ <br/> นักสร้างสรรค์ในตัวคุณ
-          </h1>
-          <p className="text-lg md:text-2xl font-bold max-w-2xl bg-white p-6 border-4 border-[#5D4037] shadow-[6px_6px_0_0_#5D4037] rounded-2xl rotate-[1deg] leading-relaxed">
-            เข้าร่วมเวิร์กชอปปั้นดินเผาและศิลปะของเรา พักผ่อน สร้างสรรค์ผลงาน และเชื่อมต่อกับผู้คนที่มีความสนใจเหมือนกัน ในพื้นที่ที่อบอุ่นและเป็นกันเอง
-          </p>
-          <Link 
-            href="/classes"
-            className="mt-4 flex items-center gap-3 bg-[#FFEB3B] text-[#5D4037] text-2xl font-black tracking-widest px-10 py-5 rounded-2xl border-4 border-[#5D4037] shadow-[8px_8px_0_0_#5D4037] hover:translate-y-2 hover:shadow-[2px_2px_0_0_#5D4037] transition-all"
-          >
-            <CalendarDays size={28} />
-            จองคลาสเรียน
-            <ArrowRight size={28} />
-          </Link>
-        </div>
+        )}
       </section>
 
-      {/* Recommended Classes (Carousel) */}
-      <section className="py-24 px-8 bg-[#FFEB3B] border-y-4 border-[#5D4037]">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-12">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight drop-shadow-[2px_2px_0_rgba(255,255,255,1)]">
-              คอร์สเรียนแนะนำ
-            </h2>
-            <Link href="/classes" className="font-bold tracking-widest border-b-4 border-[#5D4037] pb-1 hover:text-[#F44336] transition-colors">
-              ดูทั้งหมด
-            </Link>
+      {/* Course Carousel Section */}
+      <section className="max-w-[1340px] mx-auto px-6 py-8">
+        <h2 className="text-2xl font-bold mb-6">คอร์สเรียนแนะนำสำหรับคุณ</h2>
+        
+        {upcomingClasses.length === 0 ? (
+          <div className="text-center p-12 border border-gray-200 bg-gray-50">
+            <p className="text-lg text-gray-600">ยังไม่มีคลาสเรียนแนะนำในขณะนี้</p>
           </div>
-
-          {upcomingClasses.length === 0 ? (
-            <div className="text-center p-12 border-4 border-[#5D4037] border-dashed rounded-3xl bg-white">
-              <p className="text-xl font-bold">ยังไม่มีคลาสเรียนแนะนำในขณะนี้</p>
-            </div>
-          ) : (
-            <div className="relative px-12">
-              <Carousel opts={{ align: "start", loop: true }} className="w-full">
-                <CarouselContent className="-ml-4">
-                  {upcomingClasses.map((c) => (
-                    <CarouselItem key={c.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                      <div className="bg-white border-4 border-[#5D4037] rounded-3xl p-6 shadow-[8px_8px_0_0_#5D4037] flex flex-col gap-4 h-full">
-                        <div className="bg-[#FFEB3B] border-4 border-[#5D4037] rounded-2xl h-48 flex items-center justify-center font-black text-3xl text-[#5D4037]/20 overflow-hidden relative">
-                          {c.imageUrl ? (
-                            <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="relative px-12">
+            <Carousel opts={{ align: "start" }} className="w-full">
+              <CarouselContent className="-ml-4">
+                {upcomingClasses.map((c) => (
+                  <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                    <Link href={`/classes/${c.id}`} className="group block">
+                      <div className="flex flex-col h-full">
+                        <div className="bg-gray-200 aspect-video mb-3 overflow-hidden border border-gray-200 group-hover:opacity-90 transition-opacity">
+                          {c.media && c.media.length > 0 ? (
+                            <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover" />
                           ) : (
-                            "รูปภาพคอร์ส"
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm">
+                              No Image
+                            </div>
                           )}
                         </div>
-                        <div>
-                          <h3 className="text-2xl font-black line-clamp-1">{c.name}</h3>
-                          <p className="text-[#F44336] font-bold text-xl">฿{c.price.toLocaleString()}</p>
-                        </div>
-                        <div className="flex flex-col gap-2 font-bold text-sm bg-gray-50 p-4 border-2 border-[#5D4037] rounded-xl flex-1">
-                          <div className="flex justify-between">
-                            <span>วันที่:</span>
-                            <span>{c.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</span>
+                        <h3 className="text-base font-bold text-[#1c1d1f] line-clamp-2 leading-tight mb-1 group-hover:text-[#F44336]">
+                          {c.name}
+                        </h3>
+                        <p className="text-xs text-gray-600 mb-1">{c.instructor || "ไม่ระบุผู้สอน"}</p>
+                        <p className="text-sm font-bold text-[#1c1d1f] mb-1">
+                          ฿{c.price.toLocaleString()}
+                        </p>
+                        {c.totalSeats <= 3 && c.totalSeats > 0 && (
+                          <div className="inline-block bg-[#F44336]/10 text-[#F44336] text-xs font-bold px-2 py-1 mt-1">
+                            เหลือเพียง {c.totalSeats} ที่นั่ง
                           </div>
-                          <div className="flex justify-between">
-                            <span>ที่นั่ง:</span>
-                            <span className="text-[#F44336]">ว่าง {c.totalSeats}</span>
+                        )}
+                        {c.totalSeats === 0 && (
+                          <div className="inline-block bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 mt-1">
+                            เต็มแล้ว
                           </div>
-                        </div>
-                        <Link 
-                          href={`/classes/${c.id}`}
-                          className="mt-2 w-full text-center bg-[#F44336] text-white font-black tracking-widest py-3 border-4 border-[#5D4037] rounded-xl shadow-[4px_4px_0_0_#5D4037] hover:bg-[#FFEB3B] hover:text-[#5D4037] hover:translate-y-1 hover:shadow-[2px_2px_0_0_#5D4037] transition-all"
-                        >
-                          ดูรายละเอียด
-                        </Link>
+                        )}
                       </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="absolute -left-12 top-1/2 -translate-y-1/2 border-4 border-[#5D4037] bg-white h-12 w-12 hover:bg-[#FFEB3B]" />
-                <CarouselNext className="absolute -right-12 top-1/2 -translate-y-1/2 border-4 border-[#5D4037] bg-white h-12 w-12 hover:bg-[#FFEB3B]" />
-              </Carousel>
-            </div>
-          )}
-        </div>
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex" />
+              <CarouselNext className="hidden md:flex" />
+            </Carousel>
+          </div>
+        )}
       </section>
 
-      {/* Recent Bookings */}
-      <section className="py-24 px-8 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-black tracking-tight drop-shadow-[2px_2px_0_rgba(255,235,59,1)] mb-12 text-center">
-            รายการจองล่าสุด
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recentBookings.length === 0 ? (
-              <div className="col-span-2 text-center text-gray-500 font-bold p-8">ยังไม่มีรายการจอง</div>
-            ) : (
-              recentBookings.map(b => (
-                <div key={b.id} className="flex items-center gap-4 p-4 border-4 border-[#5D4037] rounded-2xl shadow-[4px_4px_0_0_#5D4037] bg-[#FFFDF5]">
-                  <div className="bg-[#F44336] text-white p-3 rounded-full border-2 border-[#5D4037]">
-                    <UserIcon size={24} />
-                  </div>
-                  <div>
-                    <p className="font-black text-lg">{b.user.name}</p>
-                    <p className="text-sm font-bold text-gray-600">
-                      เพิ่งจองคอร์ส <span className="text-[#F44336]">{b.classEvent.name}</span> ไปเมื่อ {new Date(b.createdAt).toLocaleDateString('th-TH')}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+      {/* Categories/Features */}
+      <section className="max-w-[1340px] mx-auto px-6 py-12 mb-12">
+        <h2 className="text-2xl font-bold mb-6">เรียนรู้ทักษะใหม่ๆ กับเรา</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
+            <span className="font-bold text-[#1c1d1f]">ปั้นดินเผาพื้นฐาน</span>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
+            <span className="font-bold text-[#1c1d1f]">ศิลปะบำบัด</span>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
+            <span className="font-bold text-[#1c1d1f]">เซรามิกประยุกต์</span>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
+            <span className="font-bold text-[#1c1d1f]">Workshop พิเศษ</span>
           </div>
         </div>
       </section>
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        .stroke-text {
-          -webkit-text-stroke: 3px #5D4037;
-          text-shadow: 4px 4px 0 #F44336;
-        }
-      `}} />
+
     </div>
   );
 }

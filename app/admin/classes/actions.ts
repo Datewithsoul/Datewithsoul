@@ -15,44 +15,69 @@ export async function updateClass(formData: FormData) {
   const price = parseFloat(formData.get("price") as string);
   const totalSeats = parseInt(formData.get("totalSeats") as string, 10);
 
-  const existingImageUrl = formData.get("existingImageUrl") as string;
-  const existingVideoUrl = formData.get("existingVideoUrl") as string;
+  const category = (formData.get("category") as string) || "เวิร์กชอป";
+  const endDateStr = formData.get("endDate") as string;
+  const endDate = endDateStr ? new Date(endDateStr) : null;
+  const learningOutcomesStr = formData.get("learningOutcomes") as string;
+  const requirementsStr = formData.get("requirements") as string;
+  
+  const learningOutcomes = learningOutcomesStr ? learningOutcomesStr.split("\n").map(s => s.trim()).filter(Boolean) : [];
+  const requirements = requirementsStr ? requirementsStr.split("\n").map(s => s.trim()).filter(Boolean) : [];
 
-  const imageFile = formData.get("imageFile") as File | null;
-  const videoFile = formData.get("videoFile") as File | null;
-
-  let imageUrl = existingImageUrl || null;
-  let videoUrl = existingVideoUrl || null;
-
-  const timestamp = Date.now();
-
-  if (imageFile && imageFile.size > 0) {
-    const path = `classes/images/${timestamp}-${imageFile.name}`;
-    imageUrl = await uploadMedia(imageFile, path);
+  const mediaJson = formData.get("mediaJson") as string;
+  let mediaItems: { url: string, type: string, order: number }[] = [];
+  
+  try {
+    if (mediaJson) {
+      mediaItems = JSON.parse(mediaJson);
+    }
+  } catch (e) {
+    console.error("Failed to parse media JSON", e);
   }
 
-  if (videoFile && videoFile.size > 0) {
-    const path = `classes/videos/${timestamp}-${videoFile.name}`;
-    videoUrl = await uploadMedia(videoFile, path);
-  }
+  // Delete all existing media for this class
+  await prisma.classMedia.deleteMany({
+    where: { classEventId: id }
+  });
 
   await prisma.classEvent.update({
     where: { id },
     data: {
       name,
       description,
+      category,
       instructor,
-      imageUrl,
-      videoUrl,
       date,
+      endDate,
       startTime,
       endTime,
       price,
       totalSeats,
+      learningOutcomes,
+      requirements,
+      media: {
+        create: mediaItems.map(m => ({
+          url: m.url,
+          type: m.type,
+          order: m.order
+        }))
+      }
     },
   });
 
   redirect("/admin/classes");
+}
+
+export async function uploadMediaAction(formData: FormData) {
+  const file = formData.get('file') as File;
+  const path = formData.get('path') as string;
+  
+  if (!file || !path) {
+    throw new Error("Missing file or path");
+  }
+
+  const url = await uploadMedia(file, path);
+  return url;
 }
 
 export async function deleteClass(formData: FormData) {

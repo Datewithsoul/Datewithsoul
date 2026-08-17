@@ -29,20 +29,34 @@ enum Role {
 }
 
 model ClassEvent {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  instructor  String    @default("ไม่ระบุผู้สอน")
-  imageUrl    String?
-  videoUrl    String?
-  date        DateTime
-  startTime   String
-  endTime     String
-  price       Float
-  totalSeats  Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  bookings    Booking[]
+  id               String       @id @default(uuid())
+  name             String
+  description      String?
+  category         String?      @default("เวิร์กชอป")
+  instructor       String       @default("ไม่ระบุผู้สอน")
+  date             DateTime
+  endDate          DateTime?
+  startTime        String
+  endTime          String
+  price            Float
+  totalSeats       Int
+  learningOutcomes String[]     @default([])
+  requirements     String[]     @default([])
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  bookings         Booking[]
+  media            ClassMedia[]
+}
+
+model ClassMedia {
+  id           String     @id @default(uuid())
+  classEventId String
+  classEvent   ClassEvent @relation(fields: [classEventId], references: [id], onDelete: Cascade)
+  url          String
+  type         String     // "IMAGE" or "VIDEO"
+  order        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model Booking {

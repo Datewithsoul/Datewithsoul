@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import MediaUploader from "@/components/media-uploader";
 
 export default function NewClassPage() {
   return (
@@ -29,15 +30,28 @@ export default function NewClassPage() {
         </CardHeader>
         <CardContent>
           <form action={createClass} className="flex flex-col gap-6">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium leading-none">ชื่อคอร์ส</label>
-              <Input 
-                type="text" 
-                id="name" 
-                name="name" 
-                required
-                placeholder="เช่น คอร์สปั้นดินเผาสำหรับผู้เริ่มต้น"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium leading-none">ชื่อคอร์ส</label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  required
+                  placeholder="เช่น คอร์สปั้นดินเผาสำหรับผู้เริ่มต้น"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="category" className="text-sm font-medium leading-none">หมวดหมู่</label>
+                <Input 
+                  type="text" 
+                  id="category" 
+                  name="category" 
+                  defaultValue="เวิร์กชอป"
+                  placeholder="เช่น เวิร์กชอป, สัมมนา, กิจกรรมพิเศษ"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -62,35 +76,29 @@ export default function NewClassPage() {
               ></textarea>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="imageFile" className="text-sm font-medium leading-none">รูปภาพหน้าปก</label>
-                <Input 
-                  type="file" 
-                  id="imageFile" 
-                  name="imageFile" 
-                  accept="image/*"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="videoFile" className="text-sm font-medium leading-none">วิดีโอแนะนำ (ถ้ามี)</label>
-                <Input 
-                  type="file" 
-                  id="videoFile" 
-                  name="videoFile" 
-                  accept="video/*"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">รูปภาพและวิดีโอแนะนำ</label>
+              <MediaUploader />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="date" className="text-sm font-medium leading-none">วันที่จัดกิจกรรม</label>
-              <Input 
-                type="date" 
-                id="date" 
-                name="date" 
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="date" className="text-sm font-medium leading-none">วันที่เริ่มจัดกิจกรรม</label>
+                <Input 
+                  type="date" 
+                  id="date" 
+                  name="date" 
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="endDate" className="text-sm font-medium leading-none">วันที่สุดท้าย (ถ้ามีหลายวัน)</label>
+                <Input 
+                  type="date" 
+                  id="endDate" 
+                  name="endDate" 
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -138,6 +146,28 @@ export default function NewClassPage() {
                   placeholder="10"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="learningOutcomes" className="text-sm font-medium leading-none">สิ่งที่คุณจะได้เรียนรู้ (แยกแต่ละข้อด้วยการขึ้นบรรทัดใหม่)</label>
+              <textarea 
+                id="learningOutcomes" 
+                name="learningOutcomes" 
+                rows={4}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="พื้นฐานการเตรียมดินและการนวดดิน&#10;เทคนิคการขึ้นรูปทรงพื้นฐานด้วยมือ (Hand-building)&#10;การสร้างลวดลายและพื้นผิวบนชิ้นงาน"
+              ></textarea>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="requirements" className="text-sm font-medium leading-none">ข้อกำหนด (แยกแต่ละข้อด้วยการขึ้นบรรทัดใหม่)</label>
+              <textarea 
+                id="requirements" 
+                name="requirements" 
+                rows={4}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="ไม่ต้องมีพื้นฐานมาก่อน เหมาะสำหรับมือใหม่&#10;เตรียมชุดที่ทะมัดทะแมงและพร้อมเลอะได้"
+              ></textarea>
             </div>
 
             <Button type="submit" className="w-full mt-2">
