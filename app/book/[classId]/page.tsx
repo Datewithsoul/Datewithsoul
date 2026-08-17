@@ -6,6 +6,7 @@ import { submitBooking } from "./actions";
 import { createClient } from "@/utils/supabase/server";
 
 import Navbar from "@/components/navbar";
+import BookingForm from "@/components/booking-form";
 
 export default async function BookClassPage({ params }: { params: Promise<{ classId: string }> }) {
   const { classId } = await params;
@@ -74,57 +75,13 @@ export default async function BookClassPage({ params }: { params: Promise<{ clas
           {/* Booking Form */}
           <div>
             <h2 className="text-xl font-semibold mb-6">ข้อมูลผู้จอง</h2>
-            <form action={submitBooking} className="flex flex-col gap-5">
-              <input type="hidden" name="classEventId" value={classEvent.id} />
-              <input type="hidden" name="totalPrice" value={classEvent.price} />
-              
-              <div className="flex flex-col gap-2">
-                <label htmlFor="name" className="font-semibold text-sm text-gray-700">ชื่อ-นามสกุล</label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  name="name" 
-                  required
-                  defaultValue={dbUser?.name || ""}
-                  className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-                  placeholder="ชื่อ-นามสกุล"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label htmlFor="email" className="font-semibold text-sm text-gray-700">อีเมล</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="email" 
-                  required
-                  defaultValue={user.email}
-                  readOnly
-                  className="p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label htmlFor="seats" className="font-semibold text-sm text-gray-700">จำนวนที่นั่งที่ต้องการ</label>
-                <input 
-                  type="number" 
-                  id="seats" 
-                  name="seats" 
-                  min="1"
-                  max={classEvent.totalSeats}
-                  defaultValue="1"
-                  required
-                  className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-                />
-              </div>
-
-              <button 
-                type="submit"
-                className="mt-6 bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors w-full"
-              >
-                ยืนยันการจอง
-              </button>
-            </form>
+            <BookingForm 
+              classEventId={classEvent.id}
+              pricePerSeat={classEvent.price}
+              totalAvailableSeats={classEvent.totalSeats}
+              defaultName={dbUser?.name || ""}
+              defaultEmail={user.email || ""}
+            />
           </div>
         </div>
       </section>
