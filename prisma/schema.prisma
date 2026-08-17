@@ -4,12 +4,79 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  lineId    String?   @unique
+  name      String
+  email     String?   @unique
+  role      Role      @default(CUSTOMER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model ClassEvent {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  instructor  String    @default("ไม่ระบุผู้สอน")
+  imageUrl    String?
+  videoUrl    String?
+  date        DateTime
+  startTime   String
+  endTime     String
+  price       Float
+  totalSeats  Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+}
+
+model Booking {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  classEventId String
+  classEvent   ClassEvent  @relation(fields: [classEventId], references: [id])
+  status       BookingStatus @default(PENDING)
+  seats        Int         @default(1)
+  totalPrice   Float
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  payment      Payment?
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  bookingId String        @unique
+  booking   Booking       @relation(fields: [bookingId], references: [id])
+  slipUrl   String?
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const sarabun = Sarabun({
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className={`${sarabun.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
+      </body>
     </html>
   );
 }
