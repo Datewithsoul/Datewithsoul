@@ -9,7 +9,16 @@ export async function submitBooking(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const seats = parseInt(formData.get("seats") as string, 10);
-  const totalPrice = parseFloat(formData.get("totalPrice") as string);
+  
+  const classEvent = await prisma.classEvent.findUnique({
+    where: { id: classEventId }
+  });
+
+  if (!classEvent) {
+    throw new Error("Class event not found");
+  }
+
+  const totalPrice = classEvent.price * seats;
 
   const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -54,7 +63,6 @@ export async function submitBooking(formData: FormData) {
     },
   });
 
-  // For this prototype, just redirect back to classes with a success parameter
-  // In a full app we'd redirect to a payment upload page
-  redirect("/classes?success=true");
+  // Redirect to payment page instead of classes
+  redirect(`/payment/${booking.id}`);
 }

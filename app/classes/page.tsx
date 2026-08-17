@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Heart, MapPin, Calendar, Users } from "lucide-react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import ClassCarousel from "@/components/class-carousel";
+import Navbar from "@/components/navbar";
 
 export default async function ClassesPage() {
   const upcomingClasses = await prisma.classEvent.findMany({
@@ -16,18 +17,7 @@ export default async function ClassesPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#1c1d1f] font-sans pb-24">
-      {/* Simple Header */}
-      <header className="border-b border-gray-100 bg-white py-4 px-6 sticky top-0 z-50">
-        <div className="max-w-[1280px] mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Heart className="text-[#F44336]" size={28} fill="currentColor" />
-            <span className="text-xl font-bold tracking-tight text-[#F44336]">Date With Soul</span>
-          </Link>
-          <nav className="flex gap-4 font-semibold text-sm text-gray-700">
-            <Link href="/" className="hover:text-black">หน้าหลัก</Link>
-          </nav>
-        </div>
-      </header>
+      <Navbar />
 
       <section className="pt-12 pb-6 px-6 max-w-[1280px] mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
@@ -44,43 +34,15 @@ export default async function ClassesPage() {
             upcomingClasses.map((c) => (
               <div key={c.id} className="group flex flex-col gap-3">
                 {/* Image Carousel (Airbnb style) */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-200">
-                  {c.media && c.media.length > 0 ? (
-                    <Carousel opts={{ align: "start", loop: true }} className="w-full h-full">
-                      <CarouselContent className="h-full">
-                        {c.media.map((m) => (
-                          <CarouselItem key={m.id} className="h-full relative cursor-pointer">
-                            <Link href={`/classes/${c.id}`} className="w-full h-full block">
-                              {m.type === "VIDEO" ? (
-                                <video 
-                                  src={m.url} 
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <img 
-                                  src={m.url} 
-                                  alt={c.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              )}
-                            </Link>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      {c.media.length > 1 && (
-                        <>
-                          <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white border-none shadow-sm opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-black" />
-                          <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white border-none shadow-sm opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-black" />
-                        </>
-                      )}
-                    </Carousel>
-                  ) : (
+                {c.media && c.media.length > 0 ? (
+                  <ClassCarousel classId={c.id} classNameTitle={c.name} media={c.media} />
+                ) : (
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-200">
                     <div className="w-full h-full flex items-center justify-center text-gray-400 font-semibold bg-gray-100">
                       ไม่มีรูปภาพ
                     </div>
-                  )}
-                  
-                </div>
+                  </div>
+                )}
 
                 {/* Details */}
                 <Link href={`/classes/${c.id}`} className="block">

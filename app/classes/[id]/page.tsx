@@ -5,6 +5,8 @@ import { ArrowLeft, PlayCircle, Check, Heart, Globe, Calendar, Clock, User, Shar
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ShareButton from "@/components/share-button";
 
+import Navbar from "@/components/navbar";
+
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: classId } = await params;
   const classEvent = await prisma.classEvent.findUnique({
@@ -22,18 +24,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
 
   return (
     <main className="min-h-screen bg-white text-[#222222] font-sans pb-24">
-      {/* Simple Header */}
-      <header className="border-b border-gray-200 bg-white py-4 px-6 sticky top-0 z-50">
-        <div className="max-w-[1180px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Heart className="text-[#F44336]" size={28} fill="currentColor" />
-            <Link href="/" className="text-xl font-bold tracking-tight text-[#F44336]">Date With Soul</Link>
-          </div>
-          <Link href="/classes" className="text-sm font-semibold text-gray-700 hover:text-black">
-            กลับไปหน้ารวมคลาส
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       <div className="max-w-[1180px] mx-auto px-6 mt-6 mb-8 relative">
         

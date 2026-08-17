@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { logout } from "./login/actions";
-
+import Navbar from "@/components/navbar";
 export default async function Home() {
   const upcomingClasses = await prisma.classEvent.findMany({
     where: { date: { gte: new Date() } },
@@ -31,58 +31,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-white text-[#1c1d1f] font-sans overflow-x-hidden">
-      {/* Header (Udemy Style) */}
-      <header className="border-b border-gray-200 bg-white py-4 px-6 sticky top-0 z-50">
-        <div className="max-w-[1340px] mx-auto flex items-center justify-between gap-6">
-          <div className="flex items-center gap-2 shrink-0">
-            <Heart className="text-[#F44336]" size={28} fill="currentColor" />
-            <Link href="/" className="text-2xl font-bold tracking-tight">Date With Soul</Link>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-6 text-[15px] hover:text-[#F44336] transition-colors shrink-0">
-            <Link href="/classes">คลาสเรียน</Link>
-          </nav>
-
-          <div className="hidden lg:flex flex-1 max-w-2xl items-center bg-gray-50 border border-black rounded-full px-4 py-3">
-            <Search size={20} className="text-gray-400 mr-3" />
-            <input 
-              type="text" 
-              placeholder="ค้นหาเวิร์กชอปปั้นดินเผา..." 
-              className="bg-transparent border-none outline-none w-full text-[15px]"
-            />
-          </div>
-
-          <div className="flex items-center gap-4 shrink-0">
-            {dbUser?.role === 'ADMIN' && (
-              <Link href="/admin" className="text-sm font-bold text-[#F44336] hover:underline">
-                ระบบจัดการ (Admin)
-              </Link>
-            )}
-
-            {user ? (
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-[#5D4037] text-white rounded-full flex items-center justify-center font-bold">
-                  {user.email?.charAt(0).toUpperCase()}
-                </div>
-                <form action={logout}>
-                  <button type="submit" className="text-sm font-bold border border-black px-4 py-2 hover:bg-gray-50 transition-colors">
-                    ออกจากระบบ
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="text-sm font-bold border border-black px-4 py-2 hover:bg-gray-50 transition-colors">
-                  เข้าสู่ระบบ
-                </Link>
-                <Link href="/register" className="text-sm font-bold bg-[#1c1d1f] text-white border border-[#1c1d1f] px-4 py-2 hover:bg-gray-800 transition-colors hidden sm:block">
-                  สมัครสมาชิก
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section (Carousel) */}
       <section className="max-w-[1340px] mx-auto px-6 py-6 md:py-12">
