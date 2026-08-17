@@ -143,3 +143,29 @@ Example:
 │                             │
 │ [ Book Now ]                │
 └─────────────────────────────┘
+
+---
+
+## 4. UI Component Library
+
+Recommend using **shadcn/ui** (ui.shadcn.com) as the base UI component library:
+
+- Beautiful, accessible components (built on Radix UI), fully customizable via Tailwind
+- Full control over design tokens (color, radius, spacing) — easy to align with the brand's Yellow/Red/Brown/White palette
+- Components likely to be used heavily: `Card` (class card), `Badge` (booking status / seats available), `Button`, `Dialog` (booking confirmation), `Tabs` (month selector), `Calendar`, `Form`, `Toast` (notification feedback)
+- Copy-paste directly into the project rather than a heavy dependency — fits a dev workflow with lots of customization
+
+---
+
+## 5. Visual Style — Pop Art Direction
+
+In addition to "warm, friendly, trustworthy," bring in a fun, vibrant **pop art** feel through these details:
+
+- **Bold outlines** around cards and key buttons instead of soft shadows — gives a graphic/comic-book feel
+- **High-contrast color blocking** — use Yellow and Red as solid blocks in attention-grabbing spots (e.g. "Few seats left" badges, the Book Now button) instead of gradients
+- **Halftone / dot pattern** as a light background or decorative element — a pop-art classic
+- **Bold, chunky, punchy typography** for headings/prices — should feel "bouncy" and fun, not elegant/minimal
+- **Playful micro-interactions** — button bounce, slight card tilt on hover, confetti/burst effect on successful booking
+- Use Brown as the primary outline/border color instead of plain gray/black, so the pop-art style stays warm rather than feeling cold
+
+This direction fits the Class Listing cards and Booking Status page best, since those are where you want fun + clarity at the same time. The admin dashboard should tone it down (same colors, but more minimal) for easier day-to-day readability.
