@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-// The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/server'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -10,8 +10,27 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error && data.user) {
+      // Sync user to database
+      const supabaseUser = data.user
+      const email = supabaseUser.email || undefined
+      const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'LINE User'
+      
+      await prisma.user.upsert({
+        where: { id: supabaseUser.id },
+        update: {
+          name,
+          email,
+        },
+        create: {
+          id: supabaseUser.id,
+          name,
+          email,
+        }
+      })
+
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
       const isLocalNode = process.env.NODE_ENV === 'development'
       if (isLocalNode) {

@@ -49,12 +49,6 @@ export default function ClassCarousel({ classId, classNameTitle, media }: ClassC
             </CarouselItem>
           ))}
         </CarouselContent>
-        {media.length > 1 && (
-          <>
-            <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white border-none shadow-sm opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-black" />
-            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white border-none shadow-sm opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-black" />
-          </>
-        )}
       </Carousel>
     </div>
   );

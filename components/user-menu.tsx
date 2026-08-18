@@ -41,16 +41,21 @@ export default function UserMenu({ user, isAdmin }: { user: any, isAdmin: boolea
     <div className="relative" ref={menuRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="flex items-center gap-2 bg-white p-2 rounded-full border border-gray-200 hover:shadow-md transition-all text-gray-600 hover:text-black"
+        className="flex items-center justify-center bg-white rounded-full border border-gray-200 hover:shadow-md transition-all text-gray-600 hover:text-black overflow-hidden"
+        style={{ width: "36px", height: "36px" }}
       >
-        <User size={20} />
+        {user.image ? (
+          <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+        ) : (
+          <User size={18} />
+        )}
       </button>
       
       {isOpen && (
         <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-200 rounded-xl shadow-lg py-2 z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 mb-1 bg-gray-50/50">
             <p className="text-sm font-semibold text-[#222222] truncate">{user.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            <p className="text-xs text-gray-500 truncate">บัญชีผู้ใช้ LINE</p>
           </div>
           <Link href="/bookings" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors">ประวัติการจอง</Link>
           <Link href="/settings" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors">ตั้งค่าผู้ใช้</Link>
