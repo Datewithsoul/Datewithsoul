@@ -84,15 +84,21 @@ export async function GET(request: Request) {
     const dbUser = await prisma.user.upsert({
       where: { id: authUser.id },
       update: {
+        lineId: profile.userId,
         name: profile.displayName,
         image: profile.pictureUrl,
       },
       create: {
         id: authUser.id,
+        lineId: profile.userId,
         name: profile.displayName,
         image: profile.pictureUrl,
       }
     })
+
+    // 4.1 Send LINE Notification for Login
+    const { sendLineMessage } = await import('@/lib/line')
+    await sendLineMessage(profile.userId, `สวัสดีคุณ ${profile.displayName} เข้าสู่ระบบ Date with Soul เรียบร้อยแล้วค่ะ`)
 
     // 5. Sign the user in (creates session cookies via our normal SSR client)
     const { createClient: createSSRClient } = await import('@/utils/supabase/server')

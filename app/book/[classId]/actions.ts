@@ -63,6 +63,11 @@ export async function submitBooking(formData: FormData) {
     },
   });
 
+  if (user.lineId) {
+    const { sendLineMessage } = await import('@/lib/line');
+    await sendLineMessage(user.lineId, `ระบบได้รับคำสั่งจองคลาส "${classEvent.name}" ของคุณแล้ว (สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ`);
+  }
+
   // Redirect to payment page instead of classes
   redirect(`/payment/${booking.id}`);
 }

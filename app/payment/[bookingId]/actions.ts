@@ -22,6 +22,10 @@ export async function uploadSlip(formData: FormData) {
   // Find booking
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
+    include: {
+      user: true,
+      classEvent: true,
+    }
   });
 
   if (!booking) {
@@ -44,6 +48,11 @@ export async function uploadSlip(formData: FormData) {
       where: { id: booking.classEventId },
       data: { totalSeats: { increment: booking.seats } },
     });
+
+    if (booking.user.lineId) {
+      const { sendLineMessage } = await import('@/lib/line');
+      await sendLineMessage(booking.user.lineId, `คำสั่งจองคลาส "${booking.classEvent.name}" ของคุณหมดเวลาทำการแล้ว (สถานะ: ยกเลิก) กรุณาทำรายการใหม่อีกครั้งค่ะ`);
+    }
     
     redirect(`/payment/${bookingId}?error=expired`);
   }
@@ -84,6 +93,11 @@ export async function uploadSlip(formData: FormData) {
     },
   });
 
+  if (booking.user.lineId) {
+    const { sendLineMessage } = await import('@/lib/line');
+    await sendLineMessage(booking.user.lineId, `เราได้รับยอดชำระเงินสำหรับคลาส "${booking.classEvent.name}" ของคุณแล้ว (สถานะ: ชำระเงินแล้ว) ขอบคุณที่ใช้บริการค่ะ`);
+  }
+
   // Redirect to success page or back to classes
   redirect("/classes?success=true");
 }
@@ -98,6 +112,10 @@ export async function cancelBooking(bookingId: string) {
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
+    include: {
+      user: true,
+      classEvent: true,
+    }
   });
 
   if (!booking || booking.status !== "PENDING") {
@@ -121,6 +139,11 @@ export async function cancelBooking(bookingId: string) {
     where: { bookingId: bookingId },
     data: { status: "REJECTED" },
   });
+
+  if (booking.user.lineId) {
+    const { sendLineMessage } = await import('@/lib/line');
+    await sendLineMessage(booking.user.lineId, `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้ว (สถานะ: ยกเลิก)`);
+  }
 
   return { success: true };
 }
