@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
     const redirectUri = `${siteUrl}/api/auth/line/callback`;
 
     // 1. Exchange code for LINE token

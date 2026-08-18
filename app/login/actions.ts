@@ -16,7 +16,7 @@ export async function logout() {
 
 export async function loginWithLine() {
   const lineClientId = process.env.LINE_CLIENT_ID;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
   const redirectUri = `${siteUrl}/api/auth/line/callback`;
   
   if (!lineClientId) {
