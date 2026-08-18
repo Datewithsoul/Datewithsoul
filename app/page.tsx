@@ -21,6 +21,13 @@ export default async function Home() {
     }
   });
 
+  const categoryRecords = await prisma.classEvent.findMany({
+    select: { category: true },
+    distinct: ['category'],
+    where: { category: { not: null } }
+  });
+  const categories = categoryRecords.map(c => c.category).filter(Boolean) as string[];
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -216,23 +223,34 @@ export default async function Home() {
       </section>
 
       {/* Categories/Features */}
-      <section className="max-w-[1340px] mx-auto px-6 py-12 mb-12">
-        <h2 className="text-2xl font-bold mb-6">เรียนรู้ทักษะใหม่ๆ กับเรา</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
-            <span className="font-bold text-[#1c1d1f]">ปั้นดินเผาพื้นฐาน</span>
+      {categories.length > 0 && (
+        <section className="max-w-[1340px] mx-auto px-6 py-12 mb-12">
+          <h2 className="text-2xl font-bold mb-6">เรียนรู้ทักษะใหม่ๆ กับเรา</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.map((cat, idx) => {
+              // Add some variety in borders/shadows for pop-art feel
+              const colors = ['#F44336', '#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#FF9800'];
+              const color = colors[idx % colors.length];
+              return (
+                <Link 
+                  href={`/classes?category=${encodeURIComponent(cat)}`} 
+                  key={cat}
+                  className="group relative bg-white border-2 border-gray-200 p-6 flex flex-col items-center justify-center hover:border-[#1c1d1f] transition-all duration-300 overflow-hidden rounded-xl hover:-translate-y-1 hover:shadow-[4px_4px_0px_#1c1d1f]"
+                >
+                  {/* Playful background circle that expands on hover */}
+                  <div 
+                    className="absolute w-24 h-24 rounded-full opacity-10 group-hover:scale-[3] transition-transform duration-500 ease-out z-0"
+                    style={{ backgroundColor: color }}
+                  ></div>
+                  <span className="font-bold text-[#1c1d1f] relative z-10 group-hover:scale-105 transition-transform duration-300">
+                    {cat}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
-          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
-            <span className="font-bold text-[#1c1d1f]">ศิลปะบำบัด</span>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
-            <span className="font-bold text-[#1c1d1f]">เซรามิกประยุกต์</span>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer">
-            <span className="font-bold text-[#1c1d1f]">Workshop พิเศษ</span>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
     </div>
   );
