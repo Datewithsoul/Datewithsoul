@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     "จองคลาสสำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น",
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className={`${sarabun.variable} h-full antialiased`}>
@@ -22,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <TooltipProvider>
           {children}
         </TooltipProvider>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

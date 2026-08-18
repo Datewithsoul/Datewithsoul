@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { updateProfile } from "./actions";
 import { User, Phone, Mail } from "lucide-react";
+import { toast } from "sonner";
 
 interface SettingsFormProps {
   initialName: string;
@@ -19,6 +20,15 @@ export default function SettingsForm({ initialName, initialPhone, initialEmail, 
     },
     null
   );
+
+  useEffect(() => {
+    if (state?.success) {
+      toast.success(state.success);
+    }
+    if (state?.error) {
+      toast.error(state.error);
+    }
+  }, [state]);
 
   return (
     <div className="border border-gray-200 rounded-2xl p-8">
@@ -41,18 +51,6 @@ export default function SettingsForm({ initialName, initialPhone, initialEmail, 
           <p className="text-gray-500">{role === 'ADMIN' ? 'ผู้ดูแลระบบ (Admin)' : 'ผู้ใช้งานทั่วไป'}</p>
         </div>
       </div>
-      
-      {state?.error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg mb-6 text-sm">
-          {state.error}
-        </div>
-      )}
-      
-      {state?.success && (
-        <div className="bg-green-50 border border-green-200 text-green-600 p-3 rounded-lg mb-6 text-sm">
-          {state.success}
-        </div>
-      )}
       
       <form action={action} className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
@@ -104,9 +102,18 @@ export default function SettingsForm({ initialName, initialPhone, initialEmail, 
           <button 
             type="submit" 
             disabled={isPending}
-            className="bg-[#FFC107] hover:bg-[#FFB300] text-[#222222] font-bold py-2.5 px-6 rounded-full transition-all transform active:scale-[0.98] disabled:opacity-70 flex justify-center items-center"
+            className="bg-[#FFC107] hover:bg-[#FFB300] text-[#222222] font-bold py-2.5 px-6 rounded-full transition-all transform active:scale-[0.98] disabled:opacity-80 flex justify-center items-center min-w-[140px]"
           >
-            {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+            {isPending ? (
+              <span className="flex items-center gap-1.5">
+                กำลังบันทึก
+                <span className="flex gap-1 items-center h-full pt-1">
+                  <span className="w-1 h-1 bg-[#222222] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1 h-1 bg-[#222222] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1 h-1 bg-[#222222] rounded-full animate-bounce"></span>
+                </span>
+              </span>
+            ) : "บันทึกข้อมูล"}
           </button>
         </div>
       </form>
