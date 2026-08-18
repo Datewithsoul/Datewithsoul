@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Heart, LogOut, User as UserIcon } from "lucide-react";
+import { Search, Heart, LogOut, User as UserIcon, Calendar, Inbox } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -90,9 +90,13 @@ export default async function Home() {
               </div>
               
               {upcomingUserClasses.length === 0 ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center flex flex-col items-center justify-center">
-                  <p className="text-gray-500 mb-4">คุณยังไม่มีคลาสเรียนที่กำลังจะมาถึง</p>
-                  <Link href="/classes" className="inline-block border border-gray-300 bg-white font-bold px-6 py-2 rounded-full hover:bg-gray-50 transition-colors">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-10 text-center flex flex-col items-center justify-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FFC107]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 border border-gray-100 animate-bounce relative z-10">
+                    <Calendar size={28} className="text-gray-400 group-hover:text-[#F44336] transition-colors" />
+                  </div>
+                  <p className="text-gray-500 mb-5 font-medium relative z-10">คุณยังไม่มีคลาสเรียนที่กำลังจะมาถึง</p>
+                  <Link href="/classes" className="relative z-10 inline-block border border-gray-200 bg-white font-bold px-6 py-2.5 rounded-full shadow-sm hover:shadow-md hover:border-[#F44336] hover:-translate-y-0.5 transition-all duration-300 active:scale-95 text-[#1c1d1f] hover:text-[#F44336]">
                     ค้นหาคลาสเรียน
                   </Link>
                 </div>
@@ -128,8 +132,12 @@ export default async function Home() {
               </div>
               
               {recentBookings.length === 0 ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center h-[120px] flex items-center justify-center">
-                  <p className="text-gray-500">ไม่มีประวัติการจอง</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center h-[160px] flex flex-col items-center justify-center group overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-gray-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="mb-3 relative z-10">
+                    <Inbox size={32} className="text-gray-300 group-hover:text-gray-400 group-hover:scale-110 transition-all duration-500" />
+                  </div>
+                  <p className="text-gray-400 font-medium relative z-10">ไม่มีประวัติการจอง</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
