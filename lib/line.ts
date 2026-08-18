@@ -11,7 +11,7 @@ async function getLineAccessToken() {
   }
 
   try {
-    const res = await fetch("https://api.line.me/oauth2/v3/token", {
+    const res = await fetch("https://api.line.me/v2/oauth/accessToken", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
