@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { loginWithLine } from "./actions";
 
 export default async function LoginPage({
   searchParams,
@@ -9,6 +8,19 @@ export default async function LoginPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const errorMsg = resolvedSearchParams.error;
+
+  const lineClientId = process.env.LINE_CLIENT_ID || "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
+  const redirectUri = `${siteUrl}/api/auth/line/callback`;
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: lineClientId,
+    redirect_uri: redirectUri,
+    state: "datewithsoul123",
+    scope: "profile openid"
+  });
+  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans flex flex-col">
       <header className="bg-white py-4 px-8 shadow-sm border-b border-gray-100">
@@ -38,17 +50,15 @@ export default async function LoginPage({
             </div>
           )}
 
-          <form action={loginWithLine}>
-            <button 
-              type="submit"
+          <a 
+              href={authUrl}
               className="w-full bg-[#00C300] text-white p-3.5 rounded-lg font-bold text-lg hover:bg-[#00b300] transition-colors shadow-sm flex items-center justify-center gap-2"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738S0 4.935 0 10.304c0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.122.303.079.778.038 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.573-3.843 2.573-5.992zm-14.15-2.091h1.378c.328 0 .592.264.592.592v3.743c0 .328-.264.592-.592.592h-1.378c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592zm5.727 0h1.378c.328 0 .592.264.592.592v3.743c0 .328-.264.592-.592.592h-1.378c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592zm-2.862 0h1.378c.328 0 .592.264.592.592v2.559h1.345c.328 0 .592.264.592.592v.592c0 .328-.264.592-.592.592h-2.715c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592zm-5.727 0h1.378c.328 0 .592.264.592.592v3.743c0 .328-.264.592-.592.592h-1.378c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592z"/>
               </svg>
               ดำเนินการต่อด้วย LINE
-            </button>
-          </form>
+            </a>
         </div>
       </main>
     </div>
