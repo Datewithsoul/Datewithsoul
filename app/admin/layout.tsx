@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   if (dbUser?.role !== "ADMIN") redirect("/");
 
   return (

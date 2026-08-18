@@ -12,7 +12,7 @@ export default async function Navbar() {
   let isAdmin = false;
 
   if (user) {
-    dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
+    dbUser = await prisma.user.findUnique({ where: { id: user.id } });
     if (dbUser?.role === "ADMIN") {
       isAdmin = true;
     }

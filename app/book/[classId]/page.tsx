@@ -26,7 +26,7 @@ export default async function BookClassPage({ params }: { params: Promise<{ clas
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { email: user.email! }
+    where: { id: user.id }
   });
 
   return (
