@@ -2,8 +2,6 @@
 
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Link from "next/link";
-import Autoplay from "embla-carousel-autoplay";
-import { useRef } from "react";
 
 interface ClassCarouselProps {
   classId: string;
@@ -16,18 +14,11 @@ interface ClassCarouselProps {
 }
 
 export default function ClassCarousel({ classId, classNameTitle, media }: ClassCarouselProps) {
-  const plugin = useRef(
-    Autoplay({ delay: 3000, stopOnInteraction: true })
-  );
-
   return (
     <div className="relative w-full overflow-hidden rounded-xl bg-gray-200">
       <Carousel 
         opts={{ align: "start", loop: true }} 
-        plugins={[plugin.current]}
         className="w-full"
-        onMouseEnter={plugin.current.stop}
-        onMouseLeave={plugin.current.reset}
       >
         <CarouselContent>
           {media.map((m) => (

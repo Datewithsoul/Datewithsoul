@@ -19,16 +19,22 @@ export async function GET(request: Request) {
       const email = supabaseUser.email || undefined
       const name = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || 'LINE User'
       
+      // Check if any admin exists
+      const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+      const roleToAssign = adminCount === 0 ? 'ADMIN' : undefined;
+
       await prisma.user.upsert({
         where: { id: supabaseUser.id },
         update: {
           name,
           email,
+          ...(roleToAssign ? { role: roleToAssign } : {}), // only upgrade to admin if it's the first user
         },
         create: {
           id: supabaseUser.id,
           name,
           email,
+          ...(roleToAssign ? { role: roleToAssign } : {}),
         }
       })
 

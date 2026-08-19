@@ -12,10 +12,9 @@ export default async function Home() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingClasses = await prisma.classEvent.findMany({
+  const rawUpcomingClasses = await prisma.classEvent.findMany({
     where: { date: { gte: today } },
     orderBy: { date: "asc" },
-    take: 8,
     include: {
       media: {
         where: { type: 'IMAGE' },
@@ -30,6 +29,16 @@ export default async function Home() {
       }
     }
   });
+
+  const seenNames = new Set();
+  const upcomingClasses = [];
+  for (const c of rawUpcomingClasses) {
+    if (!seenNames.has(c.name)) {
+      seenNames.add(c.name);
+      upcomingClasses.push(c);
+      if (upcomingClasses.length >= 8) break; // keep the take 8 limit
+    }
+  }
 
   const categoryRecords = await prisma.classEvent.findMany({
     select: { category: true },

@@ -19,6 +19,7 @@ import { MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -54,16 +55,22 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("CUSTOMER");
   const [phone, setPhone] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleAdd = async () => {
     if (!name) return toast.error("กรุณากรอกชื่อ");
-    const res = await addUser({ name, role, phone });
+    if (role === "ADMIN" && (!username || !password)) return toast.error("กรุณากรอกชื่อผู้ใช้และรหัสผ่านสำหรับแอดมิน");
+    
+    const res = await addUser({ name, role, phone, username, password });
     if (res.success) {
       toast.success("เพิ่มผู้ใช้สำเร็จ");
       setIsAddOpen(false);
       setName("");
       setRole("CUSTOMER");
       setPhone("");
+      setUsername("");
+      setPassword("");
     } else {
       toast.error(res.error || "เกิดข้อผิดพลาด");
     }
@@ -150,16 +157,18 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
                       <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>การกระทำ</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => openEdit(user)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        แก้ไข
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        ลบ
-                      </DropdownMenuItem>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>การกระทำ</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => openEdit(user)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          แก้ไข
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          ลบ
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -191,13 +200,27 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                เบอร์โทร
+              <Label htmlFor="username" className="text-right">
+                ชื่อผู้ใช้ (Login)
               </Label>
               <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="เช่น Datewithsoul"
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                รหัสผ่าน
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="รหัสผ่านสำหรับเข้าสู่ระบบ"
                 className="col-span-3"
               />
             </div>

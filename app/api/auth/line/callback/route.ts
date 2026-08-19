@@ -81,18 +81,24 @@ export async function GET(request: Request) {
     }
 
     // 4. Sync with Prisma DB
+    // Check if any admin exists
+    const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+    const roleToAssign = adminCount === 0 ? 'ADMIN' : undefined;
+
     const dbUser = await prisma.user.upsert({
       where: { id: authUser.id },
       update: {
         lineId: profile.userId,
         name: profile.displayName,
         image: profile.pictureUrl,
+        ...(roleToAssign ? { role: roleToAssign } : {}),
       },
       create: {
         id: authUser.id,
         lineId: profile.userId,
         name: profile.displayName,
         image: profile.pictureUrl,
+        ...(roleToAssign ? { role: roleToAssign } : {}),
       }
     })
 

@@ -9,7 +9,7 @@ export default async function ClassesPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingClasses = await prisma.classEvent.findMany({
+  const rawUpcomingClasses = await prisma.classEvent.findMany({
     where: { date: { gte: today } },
     orderBy: { date: "asc" },
     include: {
@@ -24,6 +24,16 @@ export default async function ClassesPage() {
       }
     }
   });
+
+  // Group by name so we only show one card per class name
+  const seenNames = new Set();
+  const upcomingClasses = [];
+  for (const c of rawUpcomingClasses) {
+    if (!seenNames.has(c.name)) {
+      seenNames.add(c.name);
+      upcomingClasses.push(c);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white text-brand-brown font-sans pb-24 halftone-bg">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, PlayCircle, Check, Heart, Globe, Calendar, Clock, User, Share, Share2 } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ShareButton from "@/components/share-button";
-
+import ScheduleSelector from "./schedule-selector";
 import Navbar from "@/components/navbar";
 
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +21,19 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
   if (!classEvent) {
     notFound();
   }
+
+  // Fetch all class events with the same name (upcoming) to populate the dropdown
+  const now = new Date();
+  const relatedClassEvents = await prisma.classEvent.findMany({
+    where: { 
+      name: classEvent.name,
+      date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } // from today onwards
+    },
+    orderBy: [
+      { date: 'asc' },
+      { startTime: 'asc' }
+    ]
+  });
 
   return (
     <main className="min-h-screen bg-white text-[#222222] font-sans pb-24">
@@ -152,22 +165,10 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                 <span className="text-gray-500 text-sm mb-1">/ ท่าน</span>
               </div>
               
-              <div className="border border-gray-400 rounded-xl mb-4 divide-y divide-gray-400 overflow-hidden">
-                <div className="flex divide-x divide-gray-400">
-                  <div className="p-3 w-1/2">
-                    <div className="text-[10px] font-bold uppercase mb-1">วันที่เริ่มเรียน</div>
-                    <div className="text-sm font-semibold">{classEvent.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                  </div>
-                  <div className="p-3 w-1/2">
-                    <div className="text-[10px] font-bold uppercase mb-1">เวลา</div>
-                    <div className="text-sm font-semibold">{classEvent.startTime} - {classEvent.endTime}</div>
-                  </div>
-                </div>
-                <div className="p-3">
-                  <div className="text-[10px] font-bold uppercase mb-1">ที่นั่งเหลือ</div>
-                  <div className="text-sm font-semibold">{classEvent.totalSeats} ที่</div>
-                </div>
-              </div>
+              <ScheduleSelector 
+                currentId={classEvent.id}
+                schedules={relatedClassEvents}
+              />
               
               <Link href={`/book/${classEvent.id}`} className="block w-full mb-4">
                 <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
@@ -175,9 +176,6 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                 </button>
               </Link>
               
-              <div className="text-center text-sm text-gray-500 mb-6">
-                ยังไม่ตัดบัตรจนกว่าจะยืนยัน
-              </div>
               
               <div className="flex justify-between text-gray-700 underline mb-2 text-sm">
                 <span>ราคาคอร์ส</span>
