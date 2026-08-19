@@ -27,13 +27,13 @@ export async function submitBooking(formData: FormData) {
     redirect("/login?error=กรุณาเข้าสู่ระบบก่อนทำการจอง");
   }
 
-  let user = await prisma.user.findFirst({
-    where: { email: authUser.email },
+  let user = await prisma.user.findUnique({
+    where: { id: authUser.id },
   });
 
   if (!user) {
     user = await prisma.user.create({
-      data: { name: name || authUser.email!, email: authUser.email! },
+      data: { id: authUser.id, name: name || authUser.email!, email: authUser.email! },
     });
   }
 

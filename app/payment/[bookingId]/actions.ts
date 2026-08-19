@@ -62,16 +62,27 @@ export async function uploadSlip(formData: FormData) {
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
   const filePath = `slips/${fileName}`;
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY!
+  );
+
+  const buffer = await slipImage.arrayBuffer();
+
+  const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
     .from('class-media') // Reusing class-media bucket
-    .upload(filePath, slipImage);
+    .upload(filePath, buffer, {
+      contentType: slipImage.type,
+      upsert: false
+    });
 
   if (uploadError) {
     console.error("Upload error:", uploadError);
     redirect(`/payment/${bookingId}?error=upload_failed`);
   }
 
-  const { data: publicUrlData } = supabase.storage
+  const { data: publicUrlData } = supabaseAdmin.storage
     .from('class-media')
     .getPublicUrl(filePath);
 
