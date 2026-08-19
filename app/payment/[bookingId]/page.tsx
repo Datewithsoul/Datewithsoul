@@ -6,6 +6,7 @@ import PaymentTimer from "@/components/payment-timer";
 import generatePayload from "promptpay-qr";
 import qrcode from "qrcode";
 import { uploadSlip } from "./actions";
+import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 
 import Navbar from "@/components/navbar";
 
@@ -32,20 +33,36 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
   const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  if (isExpired && booking.status === "PENDING") {
-    // We update it on load if it's expired
+  const payableStatuses = [BookingStatus.BOOKING, BookingStatus.AWAITING_PAYMENT] as const;
+  const isPayable = payableStatuses.includes(booking.status as (typeof payableStatuses)[number]);
+
+  if (!isExpired && booking.status === BookingStatus.BOOKING) {
     await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: "CANCELLED" },
+      data: { status: BookingStatus.AWAITING_PAYMENT },
     });
-    
+    booking.status = BookingStatus.AWAITING_PAYMENT;
+  }
+
+  if (isExpired && isPayable) {
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: BookingStatus.CANCELLED },
+    });
+
     await prisma.classEvent.update({
       where: { id: booking.classEventId },
       data: { totalSeats: { increment: booking.seats } },
     });
-    
-    // Refresh data
-    booking.status = "CANCELLED";
+
+    if (booking.payment) {
+      await prisma.payment.update({
+        where: { bookingId },
+        data: { status: PaymentStatus.REJECTED },
+      });
+    }
+
+    booking.status = BookingStatus.CANCELLED;
   }
 
   // Generate QR Code Data URL
@@ -69,7 +86,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
           <p className="text-gray-500">รหัสการจอง: {booking.id.split('-')[0].toUpperCase()}</p>
         </div>
 
-        {booking.status === "CANCELLED" ? (
+        {booking.status === BookingStatus.CANCELLED ? (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-red-500 mb-6 flex justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
@@ -83,16 +100,30 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
               กลับไปดูคลาสเรียนทั้งหมด
             </Link>
           </div>
-        ) : booking.status === "CONFIRMED" || booking.payment?.status === "VERIFIED" ? (
+        ) : booking.status === BookingStatus.PAID ? (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-green-600 mb-6 flex justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
             <h2 className="text-2xl font-bold mb-3 text-green-800">ชำระเงินเรียบร้อยแล้ว!</h2>
-            <p className="text-green-700 mb-8">เราได้รับหลักฐานการชำระเงินของคุณแล้ว พบกันในวันคลาสเรียนนะครับ/ค่ะ</p>
+            <p className="text-green-700 mb-8">แอดมินตรวจสอบสลิปและยืนยันการชำระเงินแล้ว พบกันในวันคลาสเรียนนะครับ/ค่ะ</p>
             <Link 
               href="/bookings"
               className="inline-block bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+              ดูประวัติการจอง
+            </Link>
+          </div>
+        ) : booking.status === BookingStatus.PAYMENT_REVIEW ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-3 text-yellow-900">การตรวจสอบชำระเงิน</h2>
+            <p className="text-yellow-800 mb-8">เราได้รับสลิปของคุณแล้ว กำลังรอแอดมินตรวจสอบว่าชำระเงินจริง เมื่อยืนยันแล้วสถานะจะเป็นชำระเงินแล้ว</p>
+            {booking.payment?.slipUrl ? (
+              <img src={booking.payment.slipUrl} alt="สลิปที่ส่งแล้ว" className="mx-auto mb-8 max-h-64 rounded-lg border border-yellow-200" />
+            ) : null}
+            <Link 
+              href="/bookings"
+              className="inline-block bg-[#222222] hover:bg-black text-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
               ดูประวัติการจอง
             </Link>

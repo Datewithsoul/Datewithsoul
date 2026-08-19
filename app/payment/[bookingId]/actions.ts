@@ -3,6 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
+import { notifyAdmins, sendLineMessage } from "@/lib/line";
+import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
+
+function isPayable(status: string) {
+  return (PAYABLE_BOOKING_STATUSES as readonly string[]).includes(status);
+}
 
 export async function uploadSlip(formData: FormData) {
   const bookingId = formData.get("bookingId") as string;
@@ -19,7 +26,6 @@ export async function uploadSlip(formData: FormData) {
     redirect("/login");
   }
 
-  // Find booking
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
@@ -32,32 +38,32 @@ export async function uploadSlip(formData: FormData) {
     throw new Error("Booking not found");
   }
 
-  // Check timeout (10 minutes)
   const now = new Date();
   const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
-  
-  if (now > expiryTime && booking.status === "PENDING") {
-    // If expired during upload, cancel it and return error
+
+  if (now > expiryTime && isPayable(booking.status)) {
     await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: "CANCELLED" },
+      data: { status: BookingStatus.CANCELLED },
     });
-    
-    // Refund seats
+
     await prisma.classEvent.update({
       where: { id: booking.classEventId },
       data: { totalSeats: { increment: booking.seats } },
     });
 
+    await prisma.payment.update({
+      where: { bookingId },
+      data: { status: PaymentStatus.REJECTED },
+    });
+
     if (booking.user.lineId) {
-      const { sendLineMessage } = await import('@/lib/line');
       await sendLineMessage(booking.user.lineId, `คำสั่งจองคลาส "${booking.classEvent.name}" ของคุณหมดเวลาทำการแล้ว (สถานะ: ยกเลิก) กรุณาทำรายการใหม่อีกครั้งค่ะ`);
     }
-    
+
     redirect(`/payment/${bookingId}?error=expired`);
   }
 
-  // Upload slip to Supabase
   const fileExt = slipImage.name.split('.').pop();
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
   const filePath = `slips/${fileName}`;
@@ -70,8 +76,8 @@ export async function uploadSlip(formData: FormData) {
 
   const buffer = await slipImage.arrayBuffer();
 
-  const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-    .from('class-media') // Reusing class-media bucket
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('class-media')
     .upload(filePath, buffer, {
       contentType: slipImage.type,
       upsert: false
@@ -88,29 +94,30 @@ export async function uploadSlip(formData: FormData) {
 
   const slipUrl = publicUrlData.publicUrl;
 
-  // Update Payment and Booking status
   await prisma.payment.update({
     where: { bookingId: bookingId },
     data: {
       slipUrl: slipUrl,
-      status: "VERIFIED", 
+      status: PaymentStatus.UNDER_REVIEW,
     },
   });
 
   await prisma.booking.update({
     where: { id: bookingId },
     data: {
-      status: "CONFIRMED",
+      status: BookingStatus.PAYMENT_REVIEW,
     },
   });
 
   if (booking.user.lineId) {
-    const { sendLineMessage } = await import('@/lib/line');
-    await sendLineMessage(booking.user.lineId, `เราได้รับยอดชำระเงินสำหรับคลาส "${booking.classEvent.name}" ของคุณแล้ว (สถานะ: ชำระเงินแล้ว) ขอบคุณที่ใช้บริการค่ะ`);
+    await sendLineMessage(booking.user.lineId, `เราได้รับสลิปการชำระเงินสำหรับคลาส "${booking.classEvent.name}" แล้ว กำลังรอแอดมินตรวจสอบ (สถานะ: การตรวจสอบชำระเงิน)`);
   }
 
-  // Redirect to success page or back to classes
-  redirect("/classes?success=true");
+  await notifyAdmins(
+    `ลูกค้าส่งสลิปแล้ว: ${booking.user.name} คลาส "${booking.classEvent.name}" ยอด ฿${booking.totalPrice.toLocaleString("th-TH")} กรุณาตรวจสอบการชำระเงิน`
+  );
+
+  redirect(`/payment/${bookingId}`);
 }
 
 export async function cancelBooking(bookingId: string) {
@@ -129,32 +136,30 @@ export async function cancelBooking(bookingId: string) {
     }
   });
 
-  if (!booking || booking.status !== "PENDING") {
+  if (!booking || !isPayable(booking.status)) {
     return { success: false, error: "Invalid booking" };
   }
 
-  // Cancel booking
   await prisma.booking.update({
     where: { id: bookingId },
-    data: { status: "CANCELLED" },
+    data: { status: BookingStatus.CANCELLED },
   });
 
-  // Refund seats
   await prisma.classEvent.update({
     where: { id: booking.classEventId },
     data: { totalSeats: { increment: booking.seats } },
   });
 
-  // Also update payment
   await prisma.payment.update({
     where: { bookingId: bookingId },
-    data: { status: "REJECTED" },
+    data: { status: PaymentStatus.REJECTED },
   });
 
   if (booking.user.lineId) {
-    const { sendLineMessage } = await import('@/lib/line');
     await sendLineMessage(booking.user.lineId, `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้ว (สถานะ: ยกเลิก)`);
   }
+
+  await notifyAdmins(`การจองถูกยกเลิก: ${booking.user.name} คลาส "${booking.classEvent.name}"`);
 
   return { success: true };
 }

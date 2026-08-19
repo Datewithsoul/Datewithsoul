@@ -43,7 +43,7 @@ export async function submitBooking(formData: FormData) {
       classEventId,
       seats,
       totalPrice,
-      status: "PENDING",
+      status: "BOOKING",
     },
   });
 
@@ -64,8 +64,12 @@ export async function submitBooking(formData: FormData) {
   });
 
   if (user.lineId) {
-    const { sendLineMessage } = await import('@/lib/line');
+    const { sendLineMessage, notifyAdmins } = await import('@/lib/line');
     await sendLineMessage(user.lineId, `ระบบได้รับคำสั่งจองคลาส "${classEvent.name}" ของคุณแล้ว (สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ`);
+    await notifyAdmins(`มีการจองใหม่: ${user.name} จองคลาส "${classEvent.name}" ${seats} ที่นั่ง ยอด ฿${totalPrice.toLocaleString("th-TH")}`);
+  } else {
+    const { notifyAdmins } = await import('@/lib/line');
+    await notifyAdmins(`มีการจองใหม่: ${user.name} จองคลาส "${classEvent.name}" ${seats} ที่นั่ง ยอด ฿${totalPrice.toLocaleString("th-TH")}`);
   }
 
   // Redirect to payment page instead of classes

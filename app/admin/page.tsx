@@ -3,16 +3,22 @@ import { ArrowUpRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
-import { PaymentStatusBadge } from "@/components/admin-status-badge";
+import { BookingStatusBadge } from "@/components/admin-status-badge";
+import { BookingStatus } from "@/app/generated/prisma";
 
 export default async function AdminDashboard() {
-  const [totalClasses, totalBookings, pendingPayments, pendingSlips, upcomingClasses] = await Promise.all([
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+
+  const [totalClasses, totalBookings, pendingPayments, pendingSlips, upcomingClasses, bookingsForChart] = await Promise.all([
     prisma.classEvent.count(),
     prisma.booking.count(),
-    prisma.payment.count({ where: { status: "PENDING" } }),
-    prisma.payment.findMany({
-      where: { status: "PENDING" },
-      include: { booking: { include: { user: true, classEvent: true } } },
+    prisma.booking.count({ where: { status: BookingStatus.PAYMENT_REVIEW } }),
+    prisma.booking.findMany({
+      where: { status: BookingStatus.PAYMENT_REVIEW },
+      include: { user: true, classEvent: true, payment: true },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
@@ -21,16 +27,39 @@ export default async function AdminDashboard() {
       orderBy: { date: "asc" },
       take: 5,
     }),
+    prisma.booking.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true, totalPrice: true, status: true },
+    }),
   ]);
 
-  const chartData = [
-    { month: "ม.ค.", revenue: 15000, bookings: 10 },
-    { month: "ก.พ.", revenue: 22000, bookings: 15 },
-    { month: "มี.ค.", revenue: 18000, bookings: 12 },
-    { month: "เม.ย.", revenue: 35000, bookings: 25 },
-    { month: "พ.ค.", revenue: 42000, bookings: 30 },
-    { month: "มิ.ย.", revenue: 50000, bookings: 35 },
-  ];
+  const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  const chartDataMap = new Map();
+  
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+    chartDataMap.set(monthKey, {
+      month: monthNames[d.getMonth()],
+      revenue: 0,
+      bookings: 0,
+    });
+  }
+
+  bookingsForChart.forEach(b => {
+    const d = new Date(b.createdAt);
+    const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+    if (chartDataMap.has(monthKey)) {
+      const data = chartDataMap.get(monthKey);
+      data.bookings += 1;
+      if (b.status === BookingStatus.PAID) {
+        data.revenue += b.totalPrice;
+      }
+    }
+  });
+
+  const chartData = Array.from(chartDataMap.values());
 
   const stats = [
     { label: "คอร์สเรียน", value: totalClasses, href: "/admin/classes" },
@@ -130,15 +159,15 @@ export default async function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {pendingSlips.map((payment) => (
-                  <tr key={payment.id} className="border-b border-[#eee8e0] last:border-0">
-                    <td className="px-5 py-3 font-medium text-[#3d3229]">{payment.booking.user.name}</td>
+                {pendingSlips.map((booking) => (
+                  <tr key={booking.id} className="border-b border-[#eee8e0] last:border-0">
+                    <td className="px-5 py-3 font-medium text-[#3d3229]">{booking.user.name}</td>
                     <td className="px-5 py-3 text-[#3d3229]">
-                      <div>{payment.booking.classEvent.name}</div>
-                      <div className="text-xs text-[#6a5d50]">{payment.booking.classEvent.date.toLocaleDateString("th-TH")}</div>
+                      <div>{booking.classEvent.name}</div>
+                      <div className="text-xs text-[#6a5d50]">{booking.classEvent.date.toLocaleDateString("th-TH")}</div>
                     </td>
-                    <td className="px-5 py-3 tabular-nums">{payment.booking.totalPrice.toLocaleString("th-TH")} บาท</td>
-                    <td className="px-5 py-3"><PaymentStatusBadge status={payment.status} /></td>
+                    <td className="px-5 py-3 tabular-nums">{booking.totalPrice.toLocaleString("th-TH")} บาท</td>
+                    <td className="px-5 py-3"><BookingStatusBadge status={booking.status} /></td>
                   </tr>
                 ))}
               </tbody>

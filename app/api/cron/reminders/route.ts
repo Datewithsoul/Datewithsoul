@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       },
       include: {
         bookings: {
-          where: { status: 'CONFIRMED' },
+          where: { status: 'PAID' },
           include: { user: true },
         },
       },
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
       },
       include: {
         bookings: {
-          where: { status: 'CONFIRMED' },
+          where: { status: 'PAID' },
           include: { user: true },
         },
       },

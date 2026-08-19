@@ -8,7 +8,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { BookingStatusBadge, PaymentStatusBadge } from "@/components/admin-status-badge";
+import { BookingStatusBadge } from "@/components/admin-status-badge";
+import { AdminBookingControls } from "@/components/admin-booking-controls";
 
 export default async function AdminBookings() {
   const bookings = await prisma.booking.findMany({
@@ -24,7 +25,7 @@ export default async function AdminBookings() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
         title="รายการจอง"
-        description="ตรวจสอบสถานะการจองและการชำระเงินของลูกค้า"
+        description="ดูสลิปจากลูกค้า ตรวจสอบว่าชำระเงินจริง แล้วยืนยันเป็นชำระเงินแล้ว หรือเปลี่ยนสถานะได้เอง"
       />
 
       <section className="border border-[#ddd4c8] bg-white">
@@ -39,8 +40,8 @@ export default async function AdminBookings() {
               <TableHead className="text-[#6a5d50]">คอร์สเรียน</TableHead>
               <TableHead className="text-center text-[#6a5d50]">ที่นั่ง</TableHead>
               <TableHead className="text-right text-[#6a5d50]">ยอดรวม (บาท)</TableHead>
-              <TableHead className="text-[#6a5d50]">สถานะจอง</TableHead>
-              <TableHead className="px-5 text-[#6a5d50]">สถานะชำระเงิน</TableHead>
+              <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
+              <TableHead className="px-5 text-[#6a5d50]">ตรวจสอบสลิป</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -52,7 +53,7 @@ export default async function AdminBookings() {
               </TableRow>
             ) : (
               bookings.map((b) => (
-                <TableRow key={b.id} className="border-[#eee8e0]">
+                <TableRow key={b.id} className="border-[#eee8e0] align-top">
                   <TableCell className="px-5 font-medium text-[#3d3229]">{b.user.name}</TableCell>
                   <TableCell>
                     <div className="font-medium text-[#3d3229]">{b.classEvent.name}</div>
@@ -63,12 +64,12 @@ export default async function AdminBookings() {
                   <TableCell>
                     <BookingStatusBadge status={b.status} />
                   </TableCell>
-                  <TableCell className="px-5">
-                    {b.payment ? (
-                      <PaymentStatusBadge status={b.payment.status} />
-                    ) : (
-                      <span className="text-xs text-[#6a5d50]">ยังไม่ชำระเงิน</span>
-                    )}
+                  <TableCell className="px-5 py-3">
+                    <AdminBookingControls
+                      bookingId={b.id}
+                      status={b.status}
+                      slipUrl={b.payment?.slipUrl ?? null}
+                    />
                   </TableCell>
                 </TableRow>
               ))

@@ -8,14 +8,17 @@ const styles = {
 } as const;
 
 const bookingMap = {
-  CONFIRMED: { label: "ยืนยันแล้ว", tone: "neutral" },
-  PENDING: { label: "รอดำเนินการ", tone: "attention" },
+  BOOKING: { label: "กำลังจอง", tone: "outline" },
+  AWAITING_PAYMENT: { label: "กำลังชำระเงิน", tone: "attention" },
+  PAYMENT_REVIEW: { label: "การตรวจสอบชำระเงิน", tone: "attention" },
+  PAID: { label: "ชำระเงินแล้ว", tone: "neutral" },
   CANCELLED: { label: "ยกเลิก", tone: "danger" },
 } as const;
 
 const paymentMap = {
-  VERIFIED: { label: "ตรวจสอบแล้ว", tone: "neutral" },
-  PENDING: { label: "รอตรวจสอบ", tone: "attention" },
+  PENDING: { label: "รอชำระเงิน", tone: "outline" },
+  UNDER_REVIEW: { label: "รอตรวจสอบสลิป", tone: "attention" },
+  VERIFIED: { label: "ชำระเงินแล้ว", tone: "neutral" },
   REJECTED: { label: "ไม่ผ่าน", tone: "danger" },
 } as const;
 

@@ -67,7 +67,7 @@ model Booking {
   user         User        @relation(fields: [userId], references: [id])
   classEventId String
   classEvent   ClassEvent  @relation(fields: [classEventId], references: [id])
-  status       BookingStatus @default(PENDING)
+  status       BookingStatus @default(BOOKING)
   seats        Int         @default(1)
   totalPrice   Float
   createdAt    DateTime    @default(now())
@@ -76,8 +76,10 @@ model Booking {
 }
 
 enum BookingStatus {
-  PENDING
-  CONFIRMED
+  BOOKING
+  AWAITING_PAYMENT
+  PAYMENT_REVIEW
+  PAID
   CANCELLED
 }
 
@@ -93,6 +95,7 @@ model Payment {
 
 enum PaymentStatus {
   PENDING
+  UNDER_REVIEW
   VERIFIED
   REJECTED
 }

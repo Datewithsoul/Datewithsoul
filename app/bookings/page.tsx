@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/navbar";
 import Link from "next/link";
 import { Calendar, Clock } from "lucide-react";
+import { BookingStatus } from "@/app/generated/prisma";
 import CancelBookingButton from "@/components/cancel-booking-button";
 
 export default async function BookingsPage() {
@@ -60,19 +61,17 @@ export default async function BookingsPage() {
           <div className="flex flex-col gap-6">
             {bookings.map(booking => {
               const c = booking.classEvent;
-              let statusText = "รอดำเนินการ";
-              let statusColor = "bg-yellow-100 text-yellow-800";
-              
-              if (booking.status === "CONFIRMED" || booking.payment?.status === "VERIFIED") {
-                statusText = "ยืนยันแล้ว";
-                statusColor = "bg-green-100 text-green-800";
-              } else if (booking.status === "CANCELLED" || booking.payment?.status === "REJECTED") {
-                statusText = "ยกเลิกแล้ว";
-                statusColor = "bg-red-100 text-red-800";
-              } else if (booking.status === "PENDING" && !booking.payment) {
-                statusText = "รอชำระเงิน";
-                statusColor = "bg-orange-100 text-orange-800";
-              }
+              const statusStyles: Record<string, { text: string; color: string }> = {
+                [BookingStatus.BOOKING]: { text: "กำลังจอง", color: "bg-gray-100 text-gray-800" },
+                [BookingStatus.AWAITING_PAYMENT]: { text: "กำลังชำระเงิน", color: "bg-orange-100 text-orange-800" },
+                [BookingStatus.PAYMENT_REVIEW]: { text: "การตรวจสอบชำระเงิน", color: "bg-yellow-100 text-yellow-800" },
+                [BookingStatus.PAID]: { text: "ชำระเงินแล้ว", color: "bg-green-100 text-green-800" },
+                [BookingStatus.CANCELLED]: { text: "ยกเลิกแล้ว", color: "bg-red-100 text-red-800" },
+              };
+              const { text: statusText, color: statusColor } = statusStyles[booking.status] ?? {
+                text: "กำลังจอง",
+                color: "bg-yellow-100 text-yellow-800",
+              };
 
               return (
                 <div key={booking.id} className="border border-gray-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition-shadow">
@@ -113,17 +112,17 @@ export default async function BookingsPage() {
                         <span className="font-semibold">{booking.seats} ที่นั่ง · ฿{booking.totalPrice.toLocaleString()}</span>
                       </div>
                       
-                      {booking.status === "PENDING" && (
-                        <div className="flex items-center gap-2">
-                          <CancelBookingButton bookingId={booking.id} />
-                          <Link 
-                            href={`/payment/${booking.id}`}
-                            className="bg-[#222222] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors"
-                          >
-                            ชำระเงิน
-                          </Link>
-                        </div>
-                      )}
+                        {(booking.status === BookingStatus.BOOKING || booking.status === BookingStatus.AWAITING_PAYMENT) && (
+                          <div className="flex items-center gap-2">
+                            <CancelBookingButton bookingId={booking.id} />
+                            <Link 
+                              href={`/payment/${booking.id}`}
+                              className="bg-[#222222] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors"
+                            >
+                              ชำระเงิน
+                            </Link>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>

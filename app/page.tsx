@@ -7,6 +7,7 @@ import { logout } from "./login/actions";
 import Navbar from "@/components/navbar";
 import ClassCalendar from "@/components/class-calendar";
 import { getClassesForMonth } from "@/app/actions/calendar";
+import { BookingStatus } from "@/app/generated/prisma";
 export default async function Home() {
   const upcomingClasses = await prisma.classEvent.findMany({
     where: { date: { gte: new Date() } },
@@ -58,7 +59,7 @@ export default async function Home() {
         where: { 
           userId: dbUser.id,
           classEvent: { date: { gte: new Date() } },
-          status: { in: ['CONFIRMED', 'PENDING'] }
+          status: { in: [BookingStatus.BOOKING, BookingStatus.AWAITING_PAYMENT, BookingStatus.PAYMENT_REVIEW, BookingStatus.PAID] }
         },
         orderBy: { classEvent: { date: 'asc' } },
         take: 4,
@@ -155,9 +156,11 @@ export default async function Home() {
                         <span className="text-xs text-gray-500">{new Date(booking.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })} • {booking.seats} ที่นั่ง</span>
                       </div>
                       <div className="shrink-0">
-                        {booking.status === 'CONFIRMED' && <span className="bg-green-100 border border-green-200 text-green-700 px-3 py-1 rounded-full text-xs font-bold">สำเร็จ</span>}
-                        {booking.status === 'PENDING' && <span className="bg-yellow-100 border border-yellow-200 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">รอชำระเงิน</span>}
-                        {booking.status === 'CANCELLED' && <span className="bg-gray-200 border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">ยกเลิก</span>}
+                        {booking.status === BookingStatus.BOOKING && <span className="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">กำลังจอง</span>}
+                        {booking.status === BookingStatus.AWAITING_PAYMENT && <span className="bg-yellow-100 border border-yellow-200 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">กำลังชำระเงิน</span>}
+                        {booking.status === BookingStatus.PAYMENT_REVIEW && <span className="bg-orange-100 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">การตรวจสอบชำระเงิน</span>}
+                        {booking.status === BookingStatus.PAID && <span className="bg-green-100 border border-green-200 text-green-700 px-3 py-1 rounded-full text-xs font-bold">ชำระเงินแล้ว</span>}
+                        {booking.status === BookingStatus.CANCELLED && <span className="bg-gray-200 border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">ยกเลิก</span>}
                       </div>
                     </div>
                   ))}

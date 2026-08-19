@@ -69,3 +69,23 @@ export async function sendLineMessage(userId: string, text: string) {
     return false;
   }
 }
+
+export async function notifyAdmins(text: string) {
+  const { prisma } = await import("@/lib/prisma");
+  const admins = await prisma.user.findMany({
+    where: { role: "ADMIN", lineId: { not: null } },
+    select: { lineId: true },
+  });
+
+  const extraIds = (process.env.LINE_STAFF_USER_IDS ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const ids = new Set([
+    ...admins.map((admin) => admin.lineId).filter((id): id is string => Boolean(id)),
+    ...extraIds,
+  ]);
+
+  await Promise.all([...ids].map((id) => sendLineMessage(id, text)));
+}
