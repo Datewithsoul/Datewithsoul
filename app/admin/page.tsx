@@ -6,24 +6,29 @@ import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-heade
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { BookingStatus } from "@/app/generated/prisma";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AdminDashboard() {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  const [totalClasses, totalBookings, pendingPayments, pendingSlips, upcomingClasses, bookingsForChart] = await Promise.all([
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [totalClasses, totalBookings, pendingPayments, recentBookingsList, upcomingClasses, bookingsForChart] = await Promise.all([
     prisma.classEvent.count(),
     prisma.booking.count(),
     prisma.booking.count({ where: { status: BookingStatus.PAYMENT_REVIEW } }),
     prisma.booking.findMany({
-      where: { status: BookingStatus.PAYMENT_REVIEW },
       include: { user: true, classEvent: true, payment: true },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
     prisma.classEvent.findMany({
-      where: { date: { gte: new Date() } },
+      where: { date: { gte: today } },
       orderBy: { date: "asc" },
       take: 5,
     }),
@@ -96,17 +101,31 @@ export default async function AdminDashboard() {
       </dl>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.9fr)]">
-        <section className="border border-[#ddd4c8] bg-white">
-          <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
-            <div>
-              <h2 className="text-base font-semibold text-[#3d3229]">รายได้และการจอง</h2>
-              <p className="mt-1 text-sm text-[#6a5d50]">ข้อมูลย้อนหลัง 6 เดือน</p>
+        <div className="flex flex-col gap-8">
+          <section className="border border-[#ddd4c8] bg-white">
+            <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-[#3d3229]">รายได้ (บาท)</h2>
+                <p className="mt-1 text-sm text-[#6a5d50]">เปรียบเทียบข้อมูลย้อนหลัง 6 เดือน</p>
+              </div>
             </div>
-          </div>
-          <div className="px-3 py-4 sm:px-5">
-            <DashboardChart data={chartData} />
-          </div>
-        </section>
+            <div className="px-3 py-4 sm:px-5">
+              <DashboardChart data={chartData} dataKey="revenue" />
+            </div>
+          </section>
+
+          <section className="border border-[#ddd4c8] bg-white">
+            <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-[#3d3229]">จำนวนการจอง (ครั้ง)</h2>
+                <p className="mt-1 text-sm text-[#6a5d50]">เปรียบเทียบข้อมูลย้อนหลัง 6 เดือน</p>
+              </div>
+            </div>
+            <div className="px-3 py-4 sm:px-5">
+              <DashboardChart data={chartData} dataKey="bookings" />
+            </div>
+          </section>
+        </div>
 
         <section className="border border-[#ddd4c8] bg-white">
           <div className="border-b border-[#ddd4c8] px-5 py-4">
@@ -138,15 +157,15 @@ export default async function AdminDashboard() {
       <section className="border border-[#ddd4c8] bg-white">
         <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
           <div>
-            <h2 className="text-base font-semibold text-[#3d3229]">การชำระเงินที่รอตรวจสอบ</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">รายการล่าสุดที่ยังไม่ได้ยืนยันสลิป</p>
+            <h2 className="text-base font-semibold text-[#3d3229]">รายการจองล่าสุด</h2>
+            <p className="mt-1 text-sm text-[#6a5d50]">รายการจองคลาสเรียนล่าสุดจากลูกค้า</p>
           </div>
           <Link href="/admin/bookings" className="text-sm text-[#6a5d50] hover:text-[#3d3229]">
             ดูทั้งหมด
           </Link>
         </div>
-        {pendingSlips.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-[#6a5d50]">ไม่มีรายการรอตรวจสอบในขณะนี้</p>
+        {recentBookingsList.length === 0 ? (
+          <p className="px-5 py-8 text-sm text-[#6a5d50]">ยังไม่มีรายการจองในขณะนี้</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -159,8 +178,8 @@ export default async function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {pendingSlips.map((booking) => (
-                  <tr key={booking.id} className="border-b border-[#eee8e0] last:border-0">
+                {recentBookingsList.map((booking) => (
+                  <tr key={booking.id} className="border-b border-[#eee8e0] last:border-0 hover:bg-[#f7f4ef]/50">
                     <td className="px-5 py-3 font-medium text-[#3d3229]">{booking.user.name}</td>
                     <td className="px-5 py-3 text-[#3d3229]">
                       <div>{booking.classEvent.name}</div>

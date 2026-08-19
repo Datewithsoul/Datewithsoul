@@ -9,8 +9,11 @@ import ClassCalendar from "@/components/class-calendar";
 import { getClassesForMonth } from "@/app/actions/calendar";
 import { BookingStatus } from "@/app/generated/prisma";
 export default async function Home() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const upcomingClasses = await prisma.classEvent.findMany({
-    where: { date: { gte: new Date() } },
+    where: { date: { gte: today } },
     orderBy: { date: "asc" },
     take: 8,
     include: {
@@ -18,6 +21,12 @@ export default async function Home() {
         where: { type: 'IMAGE' },
         orderBy: { order: 'asc' },
         take: 1
+      },
+      bookings: {
+        where: {
+          status: { notIn: [BookingStatus.CANCELLED] }
+        },
+        select: { seats: true }
       }
     }
   });
@@ -58,7 +67,7 @@ export default async function Home() {
       upcomingUserClasses = await prisma.booking.findMany({
         where: { 
           userId: dbUser.id,
-          classEvent: { date: { gte: new Date() } },
+          classEvent: { date: { gte: today } },
           status: { in: [BookingStatus.BOOKING, BookingStatus.AWAITING_PAYMENT, BookingStatus.PAYMENT_REVIEW, BookingStatus.PAID] }
         },
         orderBy: { classEvent: { date: 'asc' } },
@@ -171,57 +180,113 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Course Carousel Section */}
-      <section className="max-w-[1340px] mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold mb-6">คอร์สเรียนแนะนำสำหรับคุณ</h2>
-        
+      {/* Course Carousel Section grouped by category */}
+      <section className="max-w-[1340px] mx-auto px-6 py-8 flex flex-col gap-12">
         {upcomingClasses.length === 0 ? (
-          <div className="text-center p-12 border border-gray-200 bg-gray-50">
-            <p className="text-lg text-gray-600">ยังไม่มีคลาสเรียนแนะนำในขณะนี้</p>
+          <div>
+            <h2 className="text-2xl font-bold mb-6">คอร์สเรียนแนะนำสำหรับคุณ</h2>
+            <div className="text-center p-12 border border-gray-200 bg-gray-50 rounded-2xl">
+              <p className="text-lg text-gray-600">ยังไม่มีคลาสเรียนแนะนำในขณะนี้</p>
+            </div>
           </div>
         ) : (
-          <div className="relative px-12">
-            <Carousel opts={{ align: "start" }} className="w-full">
-              <CarouselContent className="-ml-4">
-                {upcomingClasses.map((c) => (
-                  <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                    <Link href={`/classes/${c.id}`} className="group block">
-                      <div className="flex flex-col h-full">
-                        <div className="bg-gray-200 aspect-video mb-3 overflow-hidden border border-gray-200 group-hover:opacity-90 transition-opacity">
-                          {c.media && c.media.length > 0 ? (
-                            <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm">
-                              No Image
+          Object.entries(
+            upcomingClasses.reduce((acc, c) => {
+              const cat = c.category || "เวิร์กชอป";
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(c);
+              return acc;
+            }, {} as Record<string, typeof upcomingClasses>)
+          ).map(([category, classes]) => (
+            <div key={category}>
+              <h2 className="text-2xl font-bold mb-6">{category}</h2>
+              <div className="relative px-12">
+                <Carousel opts={{ align: "start" }} className="w-full">
+                  <CarouselContent className="-ml-4">
+                    {classes.map((c) => {
+                      const bookedSeats = c.bookings.reduce((sum, b) => sum + b.seats, 0);
+                      const totalCapacity = c.totalSeats + bookedSeats;
+
+                      return (
+                        <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                          <Link href={`/classes/${c.id}`} className="block h-full">
+                            <div className="bg-white rounded-2xl overflow-hidden flex flex-col h-full shadow-sm border border-gray-100">
+                              <div className="relative aspect-video overflow-hidden bg-gray-100">
+                                {c.media && c.media.length > 0 ? (
+                                  <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-xs">
+                                    ไม่มีรูปภาพ
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex flex-col flex-1 p-4">
+                                <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                                  {c.totalSeats > 0 ? (
+                                    <span className="bg-green-50 text-green-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-green-200">
+                                      เปิดรับสมัคร
+                                    </span>
+                                  ) : (
+                                    <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
+                                      เต็มแล้ว
+                                    </span>
+                                  )}
+                                  <span className="bg-blue-50 text-blue-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-blue-200">
+                                    {c.category || "เวิร์กชอป"}
+                                  </span>
+                                </div>
+
+                                <h3 className="font-bold text-sm md:text-base text-gray-900 leading-snug mb-1 line-clamp-2">
+                                  {c.name}
+                                </h3>
+                                
+                                {c.instructor && c.instructor !== "ไม่ระบุผู้สอน" && (
+                                  <p className="text-gray-500 text-xs mb-3">
+                                    ผู้สอน: {c.instructor}
+                                  </p>
+                                )}
+
+                                <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-2">
+                                  <div className="flex justify-between items-start text-xs">
+                                    <div className="flex items-start gap-1">
+                                      <Calendar className="w-3 h-3 shrink-0 mt-0.5 text-gray-400" />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium text-gray-900">
+                                          {c.date ? new Date(c.date).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : ''}
+                                          {c.endDate && new Date(c.endDate).getTime() !== new Date(c.date).getTime() && (
+                                            <> - {new Date(c.endDate).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</>
+                                          )}
+                                        </span>
+                                        <span className="text-[9px] text-gray-500 mt-0.5">
+                                          {c.startTime} - {c.endTime}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right flex flex-col items-end">
+                                      <span className={c.totalSeats > 0 ? "text-green-600 font-medium text-[9px] bg-green-50 px-1.5 py-0.5 rounded border border-green-100" : "text-gray-500 font-medium text-[9px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200"}>
+                                        จองแล้ว {bookedSeats}/{totalCapacity}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="font-bold text-lg text-gray-900">
+                                    ฿{c.price.toLocaleString()}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <h3 className="text-base font-bold text-[#1c1d1f] line-clamp-2 leading-tight mb-1 group-hover:text-[#F44336]">
-                          {c.name}
-                        </h3>
-                        <p className="text-xs text-gray-600 mb-1">{c.instructor || "ไม่ระบุผู้สอน"}</p>
-                        <p className="text-sm font-bold text-[#1c1d1f] mb-1">
-                          ฿{c.price.toLocaleString()}
-                        </p>
-                        {c.totalSeats <= 3 && c.totalSeats > 0 && (
-                          <div className="inline-block bg-[#F44336]/10 text-[#F44336] text-xs font-bold px-2 py-1 mt-1">
-                            เหลือเพียง {c.totalSeats} ที่นั่ง
-                          </div>
-                        )}
-                        {c.totalSeats === 0 && (
-                          <div className="inline-block bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 mt-1">
-                            เต็มแล้ว
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="hidden md:flex" />
-              <CarouselNext className="hidden md:flex" />
-            </Carousel>
-          </div>
+                          </Link>
+                        </CarouselItem>
+                      );
+                    })}
+                  </CarouselContent>
+                  <CarouselPrevious className="hidden md:flex" />
+                  <CarouselNext className="hidden md:flex" />
+                </Carousel>
+              </div>
+            </div>
+          ))
         )}
       </section>
 

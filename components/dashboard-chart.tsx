@@ -21,9 +21,11 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function DashboardChart({
-  data
+  data,
+  dataKey = "revenue",
 }: {
-  data: { month: string; revenue: number; bookings: number }[]
+  data: { month: string; revenue: number; bookings: number }[];
+  dataKey?: "revenue" | "bookings";
 }) {
   return (
     <ChartContainer config={chartConfig} className="min-h-[240px] w-full">
@@ -37,8 +39,7 @@ export function DashboardChart({
           tick={{ fill: "#6a5d50", fontSize: 12 }}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="revenue" fill="var(--color-revenue)" radius={2} />
-        <Bar dataKey="bookings" fill="var(--color-bookings)" radius={2} />
+        <Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={2} />
       </BarChart>
     </ChartContainer>
   )
