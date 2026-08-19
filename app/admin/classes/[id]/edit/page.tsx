@@ -7,6 +7,8 @@ import { notFound } from "next/navigation";
 import { updateClass } from "../../actions";
 import MediaUploader, { MediaItem } from "@/components/media-uploader";
 import { AdminPageHeader } from "@/components/admin-page-header";
+import ListRepeater from "../../new/list-repeater";
+import ScheduleRepeater from "../../new/schedule-repeater";
 
 export default async function EditClassPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -78,17 +80,6 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="instructor" className="text-sm font-medium leading-none">ชื่อผู้สอน</label>
-              <Input 
-                type="text" 
-                id="instructor" 
-                name="instructor" 
-                required
-                defaultValue={classEvent.instructor}
-              />
-            </div>
-
-            <div className="space-y-2">
               <label htmlFor="description" className="text-sm font-medium leading-none">รายละเอียด</label>
               <textarea 
                 id="description" 
@@ -104,52 +95,17 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
               <MediaUploader initialMedia={initialMedia} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="date" className="text-sm font-medium leading-none">วันที่เริ่มจัดกิจกรรม</label>
-                <Input 
-                  type="date" 
-                  id="date" 
-                  name="date" 
-                  required
-                  defaultValue={formattedDate}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="endDate" className="text-sm font-medium leading-none">วันที่สุดท้าย (ถ้ามีหลายวัน)</label>
-                <Input 
-                  type="date" 
-                  id="endDate" 
-                  name="endDate" 
-                  defaultValue={classEvent.endDate ? classEvent.endDate.toISOString().split('T')[0] : ""}
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">รอบเวลาเรียน (วัน/เวลา)</label>
+              <ScheduleRepeater 
+                initialData={[{
+                  date: formattedDate,
+                  timeslots: [{ startTime: classEvent.startTime, endTime: classEvent.endTime, totalSeats: classEvent.totalSeats.toString() }]
+                }]}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="startTime" className="text-sm font-medium leading-none">เวลาเริ่ม</label>
-                <Input 
-                  type="time" 
-                  id="startTime" 
-                  name="startTime" 
-                  required
-                  defaultValue={classEvent.startTime}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="endTime" className="text-sm font-medium leading-none">เวลาสิ้นสุด</label>
-                <Input 
-                  type="time" 
-                  id="endTime" 
-                  name="endTime" 
-                  required
-                  defaultValue={classEvent.endTime}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <label htmlFor="price" className="text-sm font-medium leading-none">ราคา (บาท)</label>
                 <Input 
@@ -162,40 +118,21 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
                   defaultValue={classEvent.price}
                 />
               </div>
-              <div className="space-y-2">
-                <label htmlFor="totalSeats" className="text-sm font-medium leading-none">จำนวนที่นั่ง</label>
-                <Input 
-                  type="number" 
-                  id="totalSeats" 
-                  name="totalSeats" 
-                  min="1"
-                  required
-                  defaultValue={classEvent.totalSeats}
-                />
-              </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="learningOutcomes" className="text-sm font-medium leading-none">สิ่งที่คุณจะได้เรียนรู้ (แยกแต่ละข้อด้วยการขึ้นบรรทัดใหม่)</label>
-              <textarea 
-                id="learningOutcomes" 
-                name="learningOutcomes" 
-                rows={4}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                defaultValue={(classEvent.learningOutcomes || []).join("\n")}
-              ></textarea>
-            </div>
+            <ListRepeater 
+              name="learningOutcomes"
+              label="สิ่งที่คุณจะได้เรียนรู้"
+              placeholder="เช่น พื้นฐานการเตรียมดินและการนวดดิน"
+              defaultItems={classEvent.learningOutcomes.length > 0 ? classEvent.learningOutcomes : ["", "", ""]}
+            />
 
-            <div className="space-y-2">
-              <label htmlFor="requirements" className="text-sm font-medium leading-none">ข้อกำหนด (แยกแต่ละข้อด้วยการขึ้นบรรทัดใหม่)</label>
-              <textarea 
-                id="requirements" 
-                name="requirements" 
-                rows={4}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                defaultValue={(classEvent.requirements || []).join("\n")}
-              ></textarea>
-            </div>
+            <ListRepeater 
+              name="requirements"
+              label="ข้อกำหนดและสิ่งที่ต้องเตรียม"
+              placeholder="เช่น ไม่ต้องมีพื้นฐานมาก่อน เหมาะสำหรับมือใหม่"
+              defaultItems={classEvent.requirements.length > 0 ? classEvent.requirements : ["", ""]}
+            />
 
             <button type="submit" className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
               บันทึกการแก้ไข

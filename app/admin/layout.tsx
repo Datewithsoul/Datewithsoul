@@ -7,12 +7,12 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Temporarily bypass admin auth as requested
-  // const supabase = await createClient();
-  // const { data: { user } } = await supabase.auth.getUser();
-  // if (!user) redirect("/admin/login");
-  // const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-  // if (dbUser?.role !== "ADMIN") redirect("/admin/login?error=" + encodeURIComponent("บัญชีนี้ไม่มีสิทธิ์เข้าถึงระบบจัดการ"));
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+  
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+  if (dbUser?.role !== "ADMIN") redirect("/admin/login?error=" + encodeURIComponent("บัญชีนี้ไม่มีสิทธิ์เข้าถึงระบบจัดการ"));
 
   return (
     <div data-admin className="flex min-h-screen">

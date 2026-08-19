@@ -16,8 +16,12 @@ type ScheduleDay = {
   timeslots: Timeslot[];
 };
 
-export default function ScheduleRepeater() {
-  const [scheduleDays, setScheduleDays] = useState<ScheduleDay[]>([
+export default function ScheduleRepeater({
+  initialData
+}: {
+  initialData?: ScheduleDay[]
+}) {
+  const [scheduleDays, setScheduleDays] = useState<ScheduleDay[]>(initialData || [
     { 
       date: "", 
       timeslots: [{ startTime: "", endTime: "", totalSeats: "10" }] 

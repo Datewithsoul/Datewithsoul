@@ -15,10 +15,12 @@ type Schedule = {
 
 export default function ScheduleSelector({ 
   currentId, 
-  schedules 
+  schedules,
+  baseUrl = "/classes"
 }: { 
   currentId: string, 
-  schedules: Schedule[] 
+  schedules: Schedule[],
+  baseUrl?: string
 }) {
   const router = useRouter();
   const currentSchedule = schedules.find(s => s.id === currentId) || schedules[0];
@@ -27,7 +29,7 @@ export default function ScheduleSelector({
   const handleSelect = (id: string) => {
     setIsOpen(false);
     if (id !== currentId) {
-      router.push(`/classes/${id}`);
+      router.push(`${baseUrl}/${id}`);
     }
   };
 
@@ -39,26 +41,7 @@ export default function ScheduleSelector({
     return startStr;
   };
 
-  if (schedules.length <= 1) {
-    return (
-      <div className="border border-gray-400 rounded-xl mb-4 divide-y divide-gray-400 overflow-hidden">
-        <div className="flex divide-x divide-gray-400">
-          <div className="p-3 w-1/2">
-            <div className="text-[10px] font-bold uppercase mb-1">วันที่เรียน</div>
-            <div className="text-sm font-semibold">{formatDate(currentSchedule.date, currentSchedule.endDate)}</div>
-          </div>
-          <div className="p-3 w-1/2">
-            <div className="text-[10px] font-bold uppercase mb-1">เวลา</div>
-            <div className="text-sm font-semibold">{currentSchedule.startTime} - {currentSchedule.endTime}</div>
-          </div>
-        </div>
-        <div className="p-3">
-          <div className="text-[10px] font-bold uppercase mb-1">ที่นั่งเหลือ</div>
-          <div className="text-sm font-semibold">{currentSchedule.totalSeats} ที่</div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="relative mb-4">

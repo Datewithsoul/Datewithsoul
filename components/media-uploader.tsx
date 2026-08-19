@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { GripVertical, X, Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 import {
@@ -97,6 +97,11 @@ interface MediaUploaderProps {
 export default function MediaUploader({ initialMedia = [] }: MediaUploaderProps) {
   const [items, setItems] = useState<MediaItem[]>(initialMedia.sort((a, b) => a.order - b.order));
   const [isUploading, setIsUploading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -210,7 +215,7 @@ export default function MediaUploader({ initialMedia = [] }: MediaUploaderProps)
       </div>
 
       {/* Sortable Grid */}
-      {items.length > 0 && (
+      {isMounted && items.length > 0 && (
         <div>
           <p className="mb-2 text-sm text-[#6a5d50]">เรียงลำดับการแสดงผล — ลากเพื่อสลับที่</p>
           <DndContext

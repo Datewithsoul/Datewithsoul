@@ -8,6 +8,8 @@ import { createClient } from "@/utils/supabase/server";
 import Navbar from "@/components/navbar";
 import BookingForm from "@/components/booking-form";
 
+import ScheduleSelector from "@/app/classes/[id]/schedule-selector";
+
 export default async function BookClassPage({ params }: { params: Promise<{ classId: string }> }) {
   const { classId } = await params;
   const classEvent = await prisma.classEvent.findUnique({
@@ -17,6 +19,18 @@ export default async function BookClassPage({ params }: { params: Promise<{ clas
   if (!classEvent) {
     return notFound();
   }
+
+  const now = new Date();
+  const relatedClassEvents = await prisma.classEvent.findMany({
+    where: { 
+      name: classEvent.name,
+      date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) }
+    },
+    orderBy: [
+      { date: 'asc' },
+      { startTime: 'asc' }
+    ]
+  });
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -52,15 +66,12 @@ export default async function BookClassPage({ params }: { params: Promise<{ clas
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 h-fit">
               <h2 className="text-2xl font-semibold mb-6">{classEvent.name}</h2>
               <div className="flex flex-col gap-4 text-[#222222]">
-                <div className="flex justify-between border-b border-gray-200 pb-3">
-                  <span className="text-gray-600">วันที่</span>
-                  <span className="font-semibold">{classEvent.date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-200 pb-3">
-                  <span className="text-gray-600">เวลา</span>
-                  <span className="font-semibold">{classEvent.startTime} - {classEvent.endTime}</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-200 pb-3">
+                <ScheduleSelector 
+                  currentId={classEvent.id} 
+                  schedules={relatedClassEvents} 
+                  baseUrl="/book"
+                />
+                <div className="flex justify-between border-b border-gray-200 pb-3 mt-4">
                   <span className="text-gray-600">ราคาต่อที่นั่ง</span>
                   <span className="font-semibold text-[#F44336]">฿{classEvent.price.toLocaleString()}</span>
                 </div>
