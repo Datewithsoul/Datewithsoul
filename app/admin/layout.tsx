@@ -9,10 +9,18 @@ import { ExternalLink } from "lucide-react";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
+  
+  // If not logged in, render just the children (login page) without sidebar
+  if (!user) {
+    return <>{children}</>;
+  }
   
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-  if (dbUser?.role !== "ADMIN") redirect("/admin/login?error=" + encodeURIComponent("บัญชีนี้ไม่มีสิทธิ์เข้าถึงระบบจัดการ"));
+  
+  // If not admin, render just the children so login page can show error
+  if (dbUser?.role !== "ADMIN") {
+    return <>{children}</>;
+  }
 
   return (
     <div data-admin className="flex min-h-screen">

@@ -1,7 +1,8 @@
 import { adminLogin } from "./actions";
 import { Lock } from "lucide-react";
 
-export default function AdminLoginPage({ searchParams }: { searchParams: { error?: string } }) {
+export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f1ec] px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-[#ddd4c8]">
@@ -14,9 +15,9 @@ export default function AdminLoginPage({ searchParams }: { searchParams: { error
         <h1 className="text-2xl font-bold text-center text-[#3d3229] mb-2">เข้าสู่ระบบผู้ดูแล</h1>
         <p className="text-[#6a5d50] text-center mb-8">กรุณากรอกอีเมลและรหัสผ่านเพื่อเข้าสู่ระบบจัดการ</p>
 
-        {searchParams.error && (
+        {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100 text-center">
-            {searchParams.error}
+            {error}
           </div>
         )}
 
