@@ -290,35 +290,7 @@ export default async function Home() {
         )}
       </section>
 
-      {/* Categories/Features */}
-      {categories.length > 0 && (
-        <section className="max-w-[1340px] mx-auto px-6 py-12 mb-12">
-          <h2 className="text-2xl font-bold mb-6">เรียนรู้ทักษะใหม่ๆ กับเรา</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.map((cat, idx) => {
-              // Add some variety in borders/shadows for pop-art feel
-              const colors = ['#F44336', '#FFC107', '#4CAF50', '#2196F3', '#9C27B0', '#FF9800'];
-              const color = colors[idx % colors.length];
-              return (
-                <Link 
-                  href={`/classes?category=${encodeURIComponent(cat)}`} 
-                  key={cat}
-                  className="group relative bg-white border-2 border-gray-200 p-6 flex flex-col items-center justify-center hover:border-[#1c1d1f] transition-all duration-300 overflow-hidden rounded-xl hover:-translate-y-1 hover:shadow-[4px_4px_0px_#1c1d1f]"
-                >
-                  {/* Playful background circle that expands on hover */}
-                  <div 
-                    className="absolute w-24 h-24 rounded-full opacity-10 group-hover:scale-[3] transition-transform duration-500 ease-out z-0"
-                    style={{ backgroundColor: color }}
-                  ></div>
-                  <span className="font-bold text-[#1c1d1f] relative z-10 group-hover:scale-105 transition-transform duration-300">
-                    {cat}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
+
 
     </div>
   );
