@@ -1,34 +1,33 @@
 import { createClass } from "./actions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import MediaUploader from "@/components/media-uploader";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 export default function NewClassPage() {
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div className="flex items-start gap-3">
         <Link href="/admin/classes">
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" aria-label="กลับไปรายการคอร์ส">
             <ArrowLeft size={16} />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">เพิ่มคอร์สเรียนใหม่</h1>
-          <p className="text-muted-foreground mt-1">
-            สร้างและกำหนดรายละเอียดคอร์สเรียนใหม่
-          </p>
-        </div>
+        <AdminPageHeader
+          className="flex-1"
+          title="เพิ่มคอร์สเรียน"
+          description="กำหนดรายละเอียดเพื่อเปิดรับจอง"
+        />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>ข้อมูลคอร์สเรียน</CardTitle>
-          <CardDescription>กรอกข้อมูลให้ครบถ้วนเพื่อเปิดรับจอง</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <section className="border border-[#ddd4c8] bg-white">
+        <div className="border-b border-[#ddd4c8] px-5 py-4">
+          <h2 className="text-base font-semibold text-[#3d3229]">ข้อมูลคอร์ส</h2>
+          <p className="mt-1 text-sm text-[#6a5d50]">กรอกข้อมูลให้ครบก่อนบันทึก</p>
+        </div>
+        <div className="px-5 py-5">
           <form action={createClass} className="flex flex-col gap-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -170,12 +169,12 @@ export default function NewClassPage() {
               ></textarea>
             </div>
 
-            <Button type="submit" className="w-full mt-2">
+            <button type="submit" className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
               บันทึกคอร์สเรียน
-            </Button>
+            </button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }

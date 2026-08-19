@@ -7,55 +7,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin-page-header";
+import { RoleBadge } from "@/components/admin-status-badge";
 
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: "desc" }
   });
 
   return (
-    <div className="flex flex-col gap-8 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">จัดการผู้ใช้งาน</h1>
-        <p className="text-muted-foreground mt-2">
-          ดูรายชื่อผู้ใช้งานทั้งหมดในระบบ
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <AdminPageHeader
+        title="ผู้ใช้งาน"
+        description="รายชื่อผู้ใช้ที่สมัครผ่านระบบ"
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>รายชื่อผู้ใช้ทั้งหมด</CardTitle>
-          <CardDescription>แสดงข้อมูลพื้นฐานของผู้ใช้งาน</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ชื่อ</TableHead>
-                <TableHead>อีเมล</TableHead>
-                <TableHead>บทบาท</TableHead>
-                <TableHead>วันที่สมัคร</TableHead>
+      <section className="border border-[#ddd4c8] bg-white">
+        <div className="border-b border-[#ddd4c8] px-5 py-4">
+          <h2 className="text-base font-semibold text-[#3d3229]">รายชื่อทั้งหมด</h2>
+          <p className="mt-1 text-sm text-[#6a5d50]">{users.length.toLocaleString("th-TH")} คน</p>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-5 text-[#6a5d50]">ชื่อ</TableHead>
+              <TableHead className="text-[#6a5d50]">อีเมล</TableHead>
+              <TableHead className="text-[#6a5d50]">บทบาท</TableHead>
+              <TableHead className="px-5 text-[#6a5d50]">วันที่สมัคร</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="px-5 py-10 text-center text-[#6a5d50]">
+                  ยังไม่มีผู้ใช้งานในระบบ
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email || "-"}</TableCell>
+            ) : (
+              users.map((user) => (
+                <TableRow key={user.id} className="border-[#eee8e0]">
+                  <TableCell className="px-5 font-medium text-[#3d3229]">{user.name}</TableCell>
+                  <TableCell>{user.email || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                      {user.role}
-                    </Badge>
+                    <RoleBadge role={user.role} />
                   </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString('th-TH')}</TableCell>
+                  <TableCell className="px-5 tabular-nums">{new Date(user.createdAt).toLocaleDateString("th-TH")}</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </section>
     </div>
   );
 }

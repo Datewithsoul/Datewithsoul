@@ -53,7 +53,7 @@ function SortableItem({ item, onRemove }: SortableItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative rounded-xl overflow-hidden border-2 border-[#5D4037] shadow-sm bg-white h-32 w-32 flex-shrink-0 group ${isDragging ? "opacity-50" : ""}`}
+      className={`relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-md border border-[#ddd4c8] bg-white group ${isDragging ? "opacity-50" : ""}`}
     >
       {/* Drag Handle */}
       <div 
@@ -68,13 +68,13 @@ function SortableItem({ item, onRemove }: SortableItemProps) {
       <button
         type="button"
         onClick={() => onRemove(item.id)}
-        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded hover:bg-red-600 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-1 right-1 z-10 rounded bg-[#8f3b2c] p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#7a3226]"
       >
         <X size={16} />
       </button>
 
       {/* Content */}
-      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+      <div className="flex h-full w-full items-center justify-center bg-[#f4f1ec]">
         {item.type === "IMAGE" ? (
           <img src={item.url} alt="media" className="w-full h-full object-cover" />
         ) : (
@@ -82,9 +82,9 @@ function SortableItem({ item, onRemove }: SortableItemProps) {
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full bg-black/50 text-white text-[10px] text-center p-0.5 font-bold flex items-center justify-center gap-1">
+      <div className="absolute bottom-0 left-0 flex w-full items-center justify-center gap-1 bg-[#3d3229]/80 p-0.5 text-center text-[10px] font-medium text-white">
         {item.type === "IMAGE" ? <ImageIcon size={10} /> : <VideoIcon size={10} />}
-        {item.type}
+        {item.type === "IMAGE" ? "รูปภาพ" : "วิดีโอ"}
       </div>
     </div>
   );
@@ -187,24 +187,24 @@ export default function MediaUploader({ initialMedia = [] }: MediaUploaderProps)
       {/* Drag & Drop Area */}
       <div 
         {...getRootProps()} 
-        className={`border-4 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-          isDragActive ? 'border-[#F44336] bg-red-50' : 'border-gray-300 hover:border-[#5D4037] hover:bg-gray-50'
+        className={`cursor-pointer rounded-md border border-dashed p-8 text-center transition-colors ${
+          isDragActive ? "border-[#8a6d1f] bg-[#f7f1e3]" : "border-[#ddd4c8] hover:border-[#3d3229] hover:bg-[#f7f4ef]"
         }`}
       >
         <input {...getInputProps()} />
         {isUploading ? (
-          <div className="flex flex-col items-center gap-2 text-gray-500">
-            <Loader2 className="animate-spin" size={32} />
-            <p className="font-bold">กำลังอัปโหลดไฟล์...</p>
+          <div className="flex flex-col items-center gap-2 text-[#6a5d50]">
+            <Loader2 className="animate-spin" size={24} />
+            <p className="text-sm font-medium">กำลังอัปโหลดไฟล์...</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-500">
+          <div className="flex flex-col items-center gap-2 text-[#6a5d50]">
             <div className="flex gap-2">
-              <ImageIcon size={32} />
-              <VideoIcon size={32} />
+              <ImageIcon size={22} />
+              <VideoIcon size={22} />
             </div>
-            <p className="font-bold text-lg text-[#5D4037]">ลากและวางรูปภาพ/วิดีโอที่นี่</p>
-            <p className="text-sm">หรือคลิกเพื่อเลือกไฟล์ (สามารถเลือกได้หลายไฟล์)</p>
+            <p className="text-sm font-medium text-[#3d3229]">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</p>
+            <p className="text-sm">รองรับรูปภาพและวิดีโอ เลือกได้หลายไฟล์</p>
           </div>
         )}
       </div>
@@ -212,13 +212,13 @@ export default function MediaUploader({ initialMedia = [] }: MediaUploaderProps)
       {/* Sortable Grid */}
       {items.length > 0 && (
         <div>
-          <p className="text-sm font-bold text-gray-500 mb-2">เรียงลำดับการแสดงผล (ลากเพื่อสลับที่)</p>
+          <p className="mb-2 text-sm text-[#6a5d50]">เรียงลำดับการแสดงผล — ลากเพื่อสลับที่</p>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex flex-wrap gap-4 bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
+            <div className="flex flex-wrap gap-3 rounded-md border border-[#ddd4c8] bg-[#faf8f5] p-3">
               <SortableContext
                 items={items.map(i => i.id)}
                 strategy={horizontalListSortingStrategy}

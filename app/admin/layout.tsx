@@ -14,21 +14,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (dbUser?.role !== "ADMIN") redirect("/");
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="flex min-h-screen w-full flex-1 flex-col bg-[#fbf8f2]">
-        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[#e7dfd2] bg-[#fffdf9]/95 px-4 backdrop-blur sm:px-6">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger className="-ml-1" />
-            <div className="hidden h-5 w-px bg-[#e7dfd2] sm:block" />
-            <span className="hidden text-sm font-medium text-[#806f5a] sm:block">จัดการระบบ</span>
-          </div>
-          <Link href="/" className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[#68452f] transition-colors hover:bg-[#fff3b5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d19a00]">
-            ดูหน้าเว็บไซต์ <ExternalLink className="h-4 w-4" />
-          </Link>
-        </header>
-        <div className="flex-1 p-4 sm:p-6 lg:p-8">{children}</div>
-      </main>
-    </SidebarProvider>
+    <div data-admin className="flex min-h-screen">
+      <SidebarProvider>
+        <AppSidebar />
+        <main className="flex min-h-screen w-full flex-1 flex-col bg-[#f4f1ec]">
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[#ddd4c8] bg-[#faf8f5] px-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="-ml-1 text-[#3d3229]" />
+              <div className="hidden h-4 w-px bg-[#ddd4c8] sm:block" />
+              <span className="hidden text-sm text-[#6a5d50] sm:block">ระบบจัดการ</span>
+            </div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-[#3d3229] transition-colors hover:bg-[#ece7e1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a6d1f]"
+            >
+              ดูเว็บไซต์ <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          </header>
+          <div className="flex-1 p-4 sm:p-6 lg:px-8 lg:py-7">{children}</div>
+        </main>
+      </SidebarProvider>
+    </div>
   );
 }
