@@ -15,15 +15,18 @@ export const metadata: Metadata = {
     "จองคลาสสำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น",
 };
 
+import { CartProvider } from "@/hooks/use-cart";
 import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className={`${sarabun.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
+        </CartProvider>
         <Toaster position="top-center" richColors />
       </body>
     </html>

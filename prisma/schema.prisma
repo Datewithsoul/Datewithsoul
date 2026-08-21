@@ -9,20 +9,21 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-  id        String    @id @default(uuid())
-  lineId    String?   @unique
-  name      String
-  email     String?   @unique
-  phone     String?
-  image     String?
-  role      Role      @default(CUSTOMER)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  bookings  Booking[]
+  id            String         @id @default(uuid())
+  lineId        String?        @unique
+  name          String
+  email         String?        @unique
+  phone         String?
+  image         String?
+  role          Role           @default(CUSTOMER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      Booking[]
+  bookingGroups BookingGroup[]
 }
 
 enum Role {
@@ -55,24 +56,26 @@ model ClassMedia {
   classEventId String
   classEvent   ClassEvent @relation(fields: [classEventId], references: [id], onDelete: Cascade)
   url          String
-  type         String     // "IMAGE" or "VIDEO"
+  type         String // "IMAGE" or "VIDEO"
   order        Int        @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
 
 model Booking {
-  id           String      @id @default(uuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  classEventId String
-  classEvent   ClassEvent  @relation(fields: [classEventId], references: [id])
-  status       BookingStatus @default(BOOKING)
-  seats        Int         @default(1)
-  totalPrice   Float
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  payment      Payment?
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  classEventId   String
+  classEvent     ClassEvent    @relation(fields: [classEventId], references: [id])
+  status         BookingStatus @default(BOOKING)
+  seats          Int           @default(1)
+  totalPrice     Float
+  bookingGroupId String?
+  bookingGroup   BookingGroup? @relation(fields: [bookingGroupId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  payment        Payment?
 }
 
 enum BookingStatus {
@@ -83,14 +86,36 @@ enum BookingStatus {
   CANCELLED
 }
 
+model BookingGroup {
+  id         String             @id @default(uuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id])
+  bookings   Booking[]
+  payment    Payment?
+  totalPrice Float
+  status     BookingGroupStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+enum BookingGroupStatus {
+  PENDING
+  AWAITING_PAYMENT
+  PAYMENT_REVIEW
+  PAID
+  CANCELLED
+}
+
 model Payment {
-  id        String        @id @default(uuid())
-  bookingId String        @unique
-  booking   Booking       @relation(fields: [bookingId], references: [id])
-  slipUrl   String?
-  status    PaymentStatus @default(PENDING)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id             String        @id @default(uuid())
+  bookingId      String?       @unique
+  booking        Booking?      @relation(fields: [bookingId], references: [id])
+  bookingGroupId String?       @unique
+  bookingGroup   BookingGroup? @relation(fields: [bookingGroupId], references: [id])
+  slipUrl        String?
+  status         PaymentStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 enum PaymentStatus {

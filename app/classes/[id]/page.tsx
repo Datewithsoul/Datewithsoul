@@ -6,6 +6,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import ShareButton from "@/components/share-button";
 import ScheduleSelector from "./schedule-selector";
 import Navbar from "@/components/navbar";
+import AddToCartButton from "@/components/add-to-cart-button";
+import { ClassEvent } from "@prisma/client";
 
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: classId } = await params;
@@ -170,13 +172,14 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                 schedules={relatedClassEvents}
               />
               
-              <Link href={`/book/${classEvent.id}`} className="block w-full mb-4">
-                <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
-                  จองที่นั่ง
-                </button>
-              </Link>
-              
-              
+              <div className="flex flex-col gap-3 mb-4">
+                <Link href={`/book/${classEvent.id}`} className="block w-full">
+                  <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
+                    จองที่นั่ง
+                  </button>
+                </Link>
+                <AddToCartButton classEvent={classEvent} />
+              </div>
               <div className="flex justify-between text-gray-700 underline mb-2 text-sm">
                 <span>ราคาคอร์ส</span>
                 <span>฿{classEvent.price.toLocaleString()}</span>

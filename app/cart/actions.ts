@@ -1,0 +1,113 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { createClient } from "@/utils/supabase/server";
+
+interface BookingItemInput {
+  classEventId: string;
+  seats: number;
+}
+
+export async function createCartBookings(items: BookingItemInput[], name: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    if (!authUser) {
+      return { error: "กรุณาเข้าสู่ระบบ" };
+    }
+
+    if (items.length === 0) {
+      return { error: "ตะกร้าว่างเปล่า" };
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { id: authUser.id },
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: authUser.id, name: name || authUser.email!, email: authUser.email! },
+      });
+    } else if (user.name !== name && name) {
+      // Update name if changed
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { name }
+      });
+    }
+
+    // Verify all classes exist and calculate total price
+    let totalPrice = 0;
+    const classEvents = await Promise.all(
+      items.map(async (item) => {
+        const ce = await prisma.classEvent.findUnique({ where: { id: item.classEventId } });
+        if (!ce) throw new Error(`Class event ${item.classEventId} not found`);
+        if (ce.totalSeats < item.seats) throw new Error(`ที่นั่งสำหรับ ${ce.name} ไม่เพียงพอ`);
+        totalPrice += ce.price * item.seats;
+        return { ...ce, requestedSeats: item.seats };
+      })
+    );
+
+    // Create the BookingGroup and all nested Bookings inside a transaction
+    const bookingGroup = await prisma.$transaction(async (tx) => {
+      const group = await tx.bookingGroup.create({
+        data: {
+          userId: user.id,
+          totalPrice,
+          status: "BOOKING", // using same literal as BOOKING
+        }
+      });
+
+      // Create individual bookings
+      for (const item of classEvents) {
+        await tx.booking.create({
+          data: {
+            userId: user.id,
+            classEventId: item.id,
+            bookingGroupId: group.id,
+            seats: item.requestedSeats,
+            totalPrice: item.price * item.requestedSeats,
+            status: "BOOKING",
+          }
+        });
+
+        // Decrement seats
+        await tx.classEvent.update({
+          where: { id: item.id },
+          data: { totalSeats: { decrement: item.requestedSeats } }
+        });
+      }
+
+      // Create Group Payment
+      await tx.payment.create({
+        data: {
+          bookingGroupId: group.id,
+          status: "PENDING",
+        }
+      });
+
+      return group;
+    });
+
+    // Notify Line asynchronously (don't block return)
+    try {
+      const classNames = classEvents.map(c => `• ${c.name} (${c.requestedSeats} ที่นั่ง)`).join('\n');
+      if (user.lineId) {
+        const { sendLineMessage, notifyAdmins } = await import('@/lib/line');
+        await sendLineMessage(user.lineId, `ระบบได้รับคำสั่งจองคลาสแบบกลุ่มของคุณแล้ว:\n${classNames}\n\nยอดรวม: ฿${totalPrice.toLocaleString("th-TH")}\n(สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ`);
+        await notifyAdmins(`มีการจองใหม่ (กลุ่ม): ${user.name}\n${classNames}\nยอดรวม ฿${totalPrice.toLocaleString("th-TH")}`);
+      } else {
+        const { notifyAdmins } = await import('@/lib/line');
+        await notifyAdmins(`มีการจองใหม่ (กลุ่ม): ${user.name}\n${classNames}\nยอดรวม ฿${totalPrice.toLocaleString("th-TH")}`);
+      }
+    } catch (e) {
+      console.error("Failed to send LINE notification for cart checkout", e);
+    }
+
+    return { groupId: bookingGroup.id };
+  } catch (error: any) {
+    console.error("Cart checkout error:", error);
+    return { error: error.message || "Unknown error" };
+  }
+}

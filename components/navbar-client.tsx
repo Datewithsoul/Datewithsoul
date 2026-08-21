@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, Menu, X, User, BookOpen, Settings, ShieldCheck, LogOut } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import CartButton from "./cart-button";
 
 const navLinks = [
   { href: "/classes", label: "คลาสเรียน" },
@@ -77,6 +78,8 @@ export default function NavbarClient({
 
           {/* Right side */}
           <div className="flex items-center gap-2 md:gap-4">
+            <CartButton />
+
             {/* Desktop: user menu or auth links */}
             <div className="hidden md:block">
               {user ? (
@@ -129,22 +132,24 @@ export default function NavbarClient({
             </div>
 
             {/* Mobile: avatar (if logged in) + hamburger */}
-            {user && (
-              <div className="flex md:hidden items-center justify-center w-8 h-8 rounded-full border border-gray-200 overflow-hidden text-gray-600 shrink-0">
-                {user.image ? (
-                  <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                ) : (
-                  <User size={16} />
-                )}
-              </div>
-            )}
-            <button
-              className="md:hidden p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            <div className="flex items-center gap-2 md:hidden">
+              {user && (
+                <div className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 overflow-hidden text-gray-600 shrink-0">
+                  {user.image ? (
+                    <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={16} />
+                  )}
+                </div>
+              )}
+              <button
+                className="p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Toggle menu"
+              >
+                {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              </button>
+            </div>
           </div>
         </div>
 
