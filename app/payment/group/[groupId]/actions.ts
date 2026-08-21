@@ -86,3 +86,57 @@ export async function uploadGroupSlip(formData: FormData) {
 
   redirect(`/payment/group/${groupId}`);
 }
+
+export async function cancelGroupBooking(groupId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const group = await prisma.bookingGroup.findUnique({
+    where: { id: groupId },
+    include: {
+      user: true,
+      bookings: { include: { classEvent: true } }
+    }
+  });
+
+  if (!group || (group.status !== BookingGroupStatus.PENDING && group.status !== BookingGroupStatus.AWAITING_PAYMENT)) {
+    return { success: false, error: "Invalid group" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.bookingGroup.update({
+      where: { id: groupId },
+      data: { status: BookingGroupStatus.CANCELLED },
+    });
+
+    for (const b of group.bookings) {
+      await tx.booking.update({
+        where: { id: b.id },
+        data: { status: BookingStatus.CANCELLED }
+      });
+      await tx.classEvent.update({
+        where: { id: b.classEventId },
+        data: { totalSeats: { increment: b.seats } }
+      });
+    }
+
+    const p = await tx.payment.findUnique({ where: { bookingGroupId: groupId } });
+    if (p) {
+      await tx.payment.update({
+        where: { id: p.id },
+        data: { status: PaymentStatus.REJECTED }
+      });
+    }
+  });
+
+  if (group.user.lineId) {
+    const { sendLineMessage } = await import('@/lib/line');
+    await sendLineMessage(group.user.lineId, `การจองกลุ่มของคุณถูกยกเลิกแล้ว (สถานะ: ยกเลิก)`);
+  }
+
+  return { success: true };
+}

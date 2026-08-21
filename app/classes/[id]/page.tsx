@@ -7,7 +7,7 @@ import ShareButton from "@/components/share-button";
 import ScheduleSelector from "./schedule-selector";
 import Navbar from "@/components/navbar";
 import AddToCartButton from "@/components/add-to-cart-button";
-import { ClassEvent } from "@prisma/client";
+import { ClassEvent } from "@/app/generated/prisma";
 
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: classId } = await params;

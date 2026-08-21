@@ -8,10 +8,12 @@ import { useRouter } from "next/navigation";
 export default function PaymentTimer({ 
   createdAt, 
   bookingId,
+  groupId,
   onExpire
 }: { 
-  createdAt: Date; 
-  bookingId: string;
+  createdAt: Date | string; 
+  bookingId?: string;
+  groupId?: string;
   onExpire?: () => void;
 }) {
   const [timeLeft, setTimeLeft] = useState<number>(10 * 60);
@@ -47,7 +49,12 @@ export default function PaymentTimer({
 
   const handleExpire = async () => {
     // Automatically cancel booking
-    await cancelBooking(bookingId);
+    if (groupId) {
+      const { cancelGroupBooking } = await import("@/app/payment/group/[groupId]/actions");
+      await cancelGroupBooking(groupId);
+    } else if (bookingId) {
+      await cancelBooking(bookingId);
+    }
     if (onExpire) {
       onExpire();
     }

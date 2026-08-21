@@ -4,6 +4,7 @@ import { useCart } from "@/hooks/use-cart";
 import { X, Trash2, Plus, Minus, CalendarDays, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import CartItemRow from "./cart-item-row";
 
 interface CartDrawerProps {
   open: boolean;
@@ -61,57 +62,7 @@ export default function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </div>
           ) : (
             items.map((item) => (
-              <div
-                key={item.classEventId}
-                className="bg-white p-4 rounded-xl border-[1.5px] border-[var(--brand-brown)] flex flex-col gap-3 relative"
-                style={{ boxShadow: "2px 2px 0 var(--brand-brown)" }}
-              >
-                <div className="pr-6">
-                  <h3 className="font-bold text-[var(--brand-brown)] text-sm line-clamp-2 leading-tight">
-                    {item.className}
-                  </h3>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-600 font-medium">
-                    <span className="flex items-center gap-1">
-                      <CalendarDays size={12} className="text-gray-400" />
-                      {item.date.toLocaleDateString("th-TH", { month: "short", day: "numeric" })}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock size={12} className="text-gray-400" />
-                      {item.startTime} - {item.endTime}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => removeFromCart(item.classEventId)}
-                  className="absolute top-3 right-3 text-gray-400 hover:text-red-500 p-1"
-                >
-                  <Trash2 size={16} />
-                </button>
-
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-2 border-[1.5px] border-gray-200 rounded-lg p-0.5">
-                    <button
-                      onClick={() => updateSeats(item.classEventId, item.seats - 1)}
-                      disabled={item.seats <= 1}
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:hover:bg-transparent"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-4 text-center text-sm font-semibold">{item.seats}</span>
-                    <button
-                      onClick={() => updateSeats(item.classEventId, item.seats + 1)}
-                      disabled={item.seats >= item.maxSeats}
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:hover:bg-transparent"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                  <div className="font-black text-[var(--brand-brown)]">
-                    ฿{(item.price * item.seats).toLocaleString()}
-                  </div>
-                </div>
-              </div>
+              <CartItemRow key={item.classEventId} item={item} />
             ))
           )}
         </div>

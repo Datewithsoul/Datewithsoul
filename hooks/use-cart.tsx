@@ -19,6 +19,7 @@ type CartContextType = {
   addToCart: (item: CartItem) => void;
   removeFromCart: (classEventId: string) => void;
   updateSeats: (classEventId: string, seats: number) => void;
+  changeSchedule: (oldClassEventId: string, newCartItem: CartItem) => void;
   clearCart: () => void;
   totalPrice: number;
   totalItems: number;
@@ -88,6 +89,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
+  const changeSchedule = (oldClassEventId: string, newCartItem: CartItem) => {
+    setItems((prev) => {
+      const existingNewIndex = prev.findIndex(i => i.classEventId === newCartItem.classEventId && i.classEventId !== oldClassEventId);
+      
+      let newItems = [...prev];
+      if (existingNewIndex >= 0) {
+        const existingNew = newItems[existingNewIndex];
+        const oldItem = newItems.find(i => i.classEventId === oldClassEventId);
+        if (oldItem) {
+           newItems[existingNewIndex] = { ...existingNew, seats: Math.min(existingNew.seats + oldItem.seats, existingNew.maxSeats) };
+           newItems = newItems.filter(i => i.classEventId !== oldClassEventId);
+        }
+      } else {
+        newItems = newItems.map(i => i.classEventId === oldClassEventId ? newCartItem : i);
+      }
+      return newItems;
+    });
+  };
+
   const totalPrice = items.reduce((sum, item) => sum + item.price * item.seats, 0);
   const totalItems = items.reduce((sum, item) => sum + item.seats, 0);
 
@@ -98,6 +118,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToCart,
         removeFromCart,
         updateSeats,
+        changeSchedule,
         clearCart,
         totalPrice,
         totalItems,

@@ -3,7 +3,7 @@
 import { useCart } from "@/hooks/use-cart";
 import { toast } from "sonner";
 import { ShoppingBag } from "lucide-react";
-import { ClassEvent } from "@prisma/client";
+import { ClassEvent } from "@/app/generated/prisma";
 
 interface AddToCartButtonProps {
   classEvent: Pick<ClassEvent, "id" | "name" | "date" | "startTime" | "endTime" | "price" | "totalSeats">;

@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { createCartBookings } from "./actions";
 import { toast } from "sonner";
 import { CalendarDays, Clock, Trash2, Plus, Minus } from "lucide-react";
+import CartItemRow from "@/components/cart-item-row";
 
 interface CheckoutClientProps {
   user: any;
@@ -80,58 +81,7 @@ export default function CheckoutClient({ user, authUserEmail }: CheckoutClientPr
         <h2 className="text-xl font-semibold mb-6">รายการคลาสในตะกร้า</h2>
         <div className="flex flex-col gap-4">
           {items.map((item) => (
-            <div 
-              key={item.classEventId} 
-              className="bg-white p-5 rounded-xl border-[1.5px] border-[var(--brand-brown)] flex flex-col gap-3 relative"
-              style={{ boxShadow: "2px 2px 0 var(--brand-brown)" }}
-            >
-              <div className="pr-6">
-                <h3 className="font-bold text-[var(--brand-brown)] text-base leading-tight">
-                  {item.className}
-                </h3>
-                <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600 font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays size={14} className="text-gray-400" />
-                    {item.date.toLocaleDateString("th-TH", { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock size={14} className="text-gray-400" />
-                    {item.startTime} - {item.endTime}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => removeFromCart(item.classEventId)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
-                title="ลบออก"
-              >
-                <Trash2 size={18} />
-              </button>
-
-              <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-2 border-[1.5px] border-gray-200 rounded-lg p-0.5">
-                  <button
-                    onClick={() => updateSeats(item.classEventId, item.seats - 1)}
-                    disabled={item.seats <= 1 || isPending}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-md disabled:opacity-50"
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-6 text-center text-sm font-bold text-[var(--brand-brown)]">{item.seats}</span>
-                  <button
-                    onClick={() => updateSeats(item.classEventId, item.seats + 1)}
-                    disabled={item.seats >= item.maxSeats || isPending}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-md disabled:opacity-50"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-                <div className="font-black text-lg text-[var(--brand-brown)]">
-                  ฿{(item.price * item.seats).toLocaleString()}
-                </div>
-              </div>
-            </div>
+            <CartItemRow key={item.classEventId} item={item} />
           ))}
         </div>
       </div>

@@ -55,7 +55,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
         data: {
           userId: user.id,
           totalPrice,
-          status: "BOOKING", // using same literal as BOOKING
+          status: "PENDING", // Correct enum value
         }
       });
 
@@ -111,3 +111,19 @@ export async function createCartBookings(items: BookingItemInput[], name: string
     return { error: error.message || "Unknown error" };
   }
 }
+
+export async function getAlternativeSchedules(className: string) {
+  const now = new Date();
+  const schedules = await prisma.classEvent.findMany({
+    where: {
+      name: className,
+      date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) }
+    },
+    orderBy: [
+      { date: 'asc' },
+      { startTime: 'asc' }
+    ]
+  });
+  return schedules;
+}
+
