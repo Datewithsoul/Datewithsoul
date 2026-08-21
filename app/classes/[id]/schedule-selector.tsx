@@ -11,6 +11,7 @@ type Schedule = {
   startTime: string;
   endTime: string;
   totalSeats: number;
+  maxSeats: number;
 };
 
 export default function ScheduleSelector({ 
@@ -64,7 +65,7 @@ export default function ScheduleSelector({
         </div>
         <div className="p-3 bg-gray-50">
           <div className="text-[10px] font-bold uppercase mb-1 text-gray-500">ที่นั่งเหลือ</div>
-          <div className="text-sm font-semibold">{currentSchedule.totalSeats} ที่</div>
+          <div className="text-sm font-semibold">{currentSchedule.totalSeats}/{currentSchedule.maxSeats} คน</div>
         </div>
       </div>
 
@@ -91,7 +92,7 @@ export default function ScheduleSelector({
                 </div>
                 <div className="text-right">
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${schedule.totalSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                    เหลือ {schedule.totalSeats} ที่
+                    เหลือ {schedule.totalSeats}/{schedule.maxSeats} คน
                   </span>
                 </div>
               </div>

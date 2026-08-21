@@ -26,15 +26,35 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
 
   // Fetch all class events with the same name (upcoming) to populate the dropdown
   const now = new Date();
-  const relatedClassEvents = await prisma.classEvent.findMany({
+  const relatedClassEventsData = await prisma.classEvent.findMany({
     where: { 
       name: classEvent.name,
       date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } // from today onwards
+    },
+    include: {
+      bookings: {
+        where: {
+          status: { not: "CANCELLED" }
+        }
+      }
     },
     orderBy: [
       { date: 'asc' },
       { startTime: 'asc' }
     ]
+  });
+
+  const relatedClassEvents = relatedClassEventsData.map(ce => {
+    const bookedSeats = ce.bookings.reduce((sum, b) => sum + b.seats, 0);
+    return {
+      id: ce.id,
+      date: ce.date,
+      endDate: ce.endDate,
+      startTime: ce.startTime,
+      endTime: ce.endTime,
+      totalSeats: ce.totalSeats,
+      maxSeats: ce.totalSeats + bookedSeats
+    };
   });
 
   return (
