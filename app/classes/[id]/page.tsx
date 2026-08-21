@@ -16,6 +16,11 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
     include: {
       media: {
         orderBy: { order: 'asc' }
+      },
+      bookings: {
+        where: {
+          status: { not: "CANCELLED" }
+        }
       }
     }
   });
@@ -23,6 +28,9 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
   if (!classEvent) {
     notFound();
   }
+
+  const currentBookedSeats = classEvent.bookings.reduce((sum, b) => sum + b.seats, 0);
+  const currentMaxSeats = classEvent.totalSeats + currentBookedSeats;
 
   // Fetch all class events with the same name (upcoming) to populate the dropdown
   const now = new Date();
@@ -139,8 +147,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           <div className="lg:w-2/3">
             
             <div className="pb-8 border-b border-gray-200 mb-8">
-              <h2 className="text-2xl font-semibold mb-2">สอนโดย {classEvent.instructor || "ไม่ระบุ"}</h2>
-              <p className="text-gray-600">รับสมัครสูงสุด {classEvent.totalSeats} ที่นั่ง · รวมอุปกรณ์พื้นฐานแล้ว</p>
+              <p className="text-gray-600 text-lg font-medium">รับสมัครสูงสุด {currentMaxSeats} ที่นั่ง · รวมอุปกรณ์พื้นฐานแล้ว</p>
             </div>
             
             {/* Description */}
