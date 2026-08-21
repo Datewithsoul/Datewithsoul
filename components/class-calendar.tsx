@@ -119,11 +119,14 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
 
             const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
             
-            // Find classes for this day
-            const dayClasses = classes.filter(c => {
-              const cDate = new Date(c.date);
-              return cDate.getDate() === day && cDate.getMonth() === month && cDate.getFullYear() === year;
-            });
+            // Find classes for this day, sorted by startTime
+            const dayClasses = classes
+              .filter(c => {
+                const cDate = new Date(c.date);
+                return cDate.getDate() === day && cDate.getMonth() === month && cDate.getFullYear() === year;
+              })
+              .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
 
             return (
               <div 
