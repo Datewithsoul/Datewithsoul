@@ -143,10 +143,14 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
               <div className="bg-white border-[1.5px] border-[var(--brand-brown)] rounded-2xl p-8" style={{ boxShadow: "3px 3px 0 var(--brand-brown)" }}>
                 <h2 className="text-xl font-bold mb-6">ช่องทางการชำระเงิน</h2>
                 
-                <div className="bg-gray-50 rounded-xl p-6 mb-8 text-center border border-gray-200">
-                  <p className="text-gray-500 text-sm mb-2">ธนาคารกสิกรไทย</p>
-                  <p className="text-2xl font-bold tracking-wider mb-2">012-3-45678-9</p>
-                  <p className="text-gray-700 font-semibold mb-4">บจก. เดทวิทโซล</p>
+                <div className="bg-gray-50 rounded-xl p-6 mb-8 text-center border border-gray-200 flex flex-col items-center">
+                  <h2 className="text-lg font-semibold mb-2">สแกนจ่ายผ่านพร้อมเพย์</h2>
+                  <div className="bg-[#113566] text-white px-3 py-1 rounded-md font-semibold text-xs mb-6 w-max">
+                    PromptPay
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 w-64 h-64 flex items-center justify-center mb-6 shadow-sm">
+                    <img src="/qrcode.jpg" alt="PromptPay QR Code" className="w-full h-full object-contain" />
+                  </div>
                   <div className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 font-medium">
                     ยอดชำระ: ฿{bookingGroup.totalPrice.toLocaleString()}
                   </div>
