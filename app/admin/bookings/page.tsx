@@ -10,16 +10,30 @@ import {
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { AdminBookingControls } from "@/components/admin-booking-controls";
+import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
 
 export default async function AdminBookings() {
-  const bookings = await prisma.booking.findMany({
-    include: {
-      user: true,
-      classEvent: true,
-      payment: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [bookings, classEvents] = await Promise.all([
+    prisma.booking.findMany({
+      include: {
+        user: true,
+        classEvent: true,
+        payment: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.classEvent.findMany({
+      orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        date: true,
+        startTime: true,
+        endTime: true,
+        totalSeats: true,
+      },
+    }),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -41,13 +55,14 @@ export default async function AdminBookings() {
               <TableHead className="text-center text-[#6a5d50]">ที่นั่ง</TableHead>
               <TableHead className="text-right text-[#6a5d50]">ยอดรวม (บาท)</TableHead>
               <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
-              <TableHead className="px-5 text-[#6a5d50]">ตรวจสอบสลิป</TableHead>
+              <TableHead className="text-[#6a5d50]">ตรวจสอบสลิป</TableHead>
+              <TableHead className="px-5 text-[#6a5d50]">เปลี่ยนรอบ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {bookings.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="px-5 py-10 text-center text-[#6a5d50]">
+                <TableCell colSpan={7} className="px-5 py-10 text-center text-[#6a5d50]">
                   ยังไม่มีรายการจอง เมื่อลูกค้าจองคอร์ส จะแสดงที่นี่
                 </TableCell>
               </TableRow>
@@ -57,7 +72,12 @@ export default async function AdminBookings() {
                   <TableCell className="px-5 font-medium text-[#3d3229]">{b.user.name}</TableCell>
                   <TableCell>
                     <div className="font-medium text-[#3d3229]">{b.classEvent.name}</div>
-                    <div className="text-xs text-[#6a5d50]">{b.classEvent.date.toLocaleDateString("th-TH")}</div>
+                    <div className="text-xs text-[#6a5d50]">
+                      {b.classEvent.date.toLocaleDateString("th-TH")}
+                    </div>
+                    <div className="text-xs text-[#6a5d50]">
+                      {b.classEvent.startTime}–{b.classEvent.endTime} น.
+                    </div>
                   </TableCell>
                   <TableCell className="text-center tabular-nums">{b.seats}</TableCell>
                   <TableCell className="text-right tabular-nums">{b.totalPrice.toLocaleString("th-TH")}</TableCell>
@@ -70,6 +90,18 @@ export default async function AdminBookings() {
                       status={b.status}
                       slipUrl={b.payment?.slipUrl ?? null}
                     />
+                  </TableCell>
+                  <TableCell className="px-5 py-3">
+                    {b.status !== "CANCELLED" ? (
+                      <AdminChangeClassDialog
+                        bookingId={b.id}
+                        currentClassEventId={b.classEventId}
+                        seats={b.seats}
+                        classEvents={classEvents}
+                      />
+                    ) : (
+                      <span className="text-xs text-[#6a5d50]">—</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

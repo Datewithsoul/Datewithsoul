@@ -110,3 +110,74 @@ export async function confirmPayment(bookingId: string) {
   revalidatePath("/admin");
   return { success: true };
 }
+
+export async function changeBookingClass(bookingId: string, newClassEventId: string) {
+  await requireAdmin();
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { user: true, classEvent: true },
+  });
+
+  if (!booking) {
+    return { success: false, error: "ไม่พบรายการจอง" };
+  }
+
+  if (booking.status === BookingStatus.CANCELLED) {
+    return { success: false, error: "ไม่สามารถเปลี่ยนรอบของการจองที่ยกเลิกแล้วได้" };
+  }
+
+  if (booking.classEventId === newClassEventId) {
+    return { success: false, error: "รอบเรียนที่เลือกเป็นรอบเดิมอยู่แล้ว" };
+  }
+
+  const newClassEvent = await prisma.classEvent.findUnique({
+    where: { id: newClassEventId },
+  });
+
+  if (!newClassEvent) {
+    return { success: false, error: "ไม่พบรอบเรียนที่เลือก" };
+  }
+
+  if (newClassEvent.totalSeats < booking.seats) {
+    return {
+      success: false,
+      error: `ที่นั่งในรอบที่เลือกไม่เพียงพอ (ว่าง ${newClassEvent.totalSeats} ที่ / ต้องการ ${booking.seats} ที่)`,
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // คืนที่นั่งให้รอบเดิม
+    await tx.classEvent.update({
+      where: { id: booking.classEventId },
+      data: { totalSeats: { increment: booking.seats } },
+    });
+
+    // ลดที่นั่งในรอบใหม่
+    await tx.classEvent.update({
+      where: { id: newClassEventId },
+      data: { totalSeats: { decrement: booking.seats } },
+    });
+
+    // อัปเดต booking ให้ชี้ไปรอบใหม่
+    await tx.booking.update({
+      where: { id: bookingId },
+      data: { classEventId: newClassEventId },
+    });
+  });
+
+  // แจ้งลูกค้าทาง LINE
+  if (booking.user.lineId) {
+    const dateStr = newClassEvent.date.toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const message = `ทีมงานได้เปลี่ยนรอบเรียนของคุณเป็น "${newClassEvent.name}" วันที่ ${dateStr} เวลา ${newClassEvent.startTime}–${newClassEvent.endTime} น. หากมีข้อสงสัยกรุณาติดต่อเจ้าหน้าที่ค่ะ`;
+    await sendLineMessage(booking.user.lineId, message);
+  }
+
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  return { success: true };
+}
