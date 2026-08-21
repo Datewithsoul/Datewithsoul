@@ -3,15 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Heart, Upload, ArrowLeft } from "lucide-react";
 import PaymentTimer from "@/components/payment-timer";
-import generatePayload from "promptpay-qr";
-import qrcode from "qrcode";
 import { uploadSlip } from "./actions";
 import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 
 import Navbar from "@/components/navbar";
-
-// Default PromptPay Number (User can change this later)
-const PROMPTPAY_NUMBER = "0800000000"; // Fake number for prototype
 
 export default async function PaymentPage({ params }: { params: Promise<{ bookingId: string }> }) {
   const { bookingId } = await params;
@@ -64,17 +59,6 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
 
     booking.status = BookingStatus.CANCELLED;
   }
-
-  // Generate QR Code Data URL
-  const payload = generatePayload(PROMPTPAY_NUMBER, { amount: booking.totalPrice });
-  const qrDataURL = await qrcode.toDataURL(payload, { 
-    color: {
-      dark: '#000000',
-      light: '#ffffff'
-    },
-    margin: 2,
-    scale: 8
-  });
 
   return (
     <div className="min-h-screen bg-white text-[#222222] font-sans pb-24">
@@ -143,7 +127,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
               </div>
               
               <div className="bg-white p-4 rounded-xl border border-gray-200 w-64 h-64 flex items-center justify-center mb-6 shadow-sm">
-                <img src={qrDataURL} alt="PromptPay QR Code" className="w-full h-full object-contain" />
+                <img src="/qrcode.jpg" alt="PromptPay QR Code" className="w-full h-full object-contain" />
               </div>
               
               <div className="text-3xl font-bold text-[#F44336] mb-4">
@@ -153,11 +137,11 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
               <div className="w-full bg-white border border-gray-200 rounded-lg p-4 text-left text-sm">
                 <div className="flex justify-between border-b border-gray-100 pb-2 mb-2">
                   <span className="text-gray-500">ชื่อบัญชี</span>
-                  <span className="font-semibold text-gray-700">Date With Soul (ทดสอบ)</span>
+                  <span className="font-semibold text-gray-700">น.ส. ธนธรณ์ วณิชเพิ่มทรัพย์</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">พร้อมเพย์</span>
-                  <span className="font-semibold text-gray-700">{PROMPTPAY_NUMBER}</span>
+                  <span className="font-semibold text-gray-700">สแกน QR Code ด้านบน</span>
                 </div>
               </div>
             </div>
