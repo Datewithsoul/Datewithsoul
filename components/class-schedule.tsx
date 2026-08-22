@@ -335,13 +335,14 @@ export function ClassSchedule() {
                       <div
                         className="w-full py-3 rounded-full text-center text-sm font-black"
                         style={{
-                          backgroundColor: "#f0f0f0",
-                          border: "2px solid #ccc",
-                          color: "#aaa",
+                          backgroundColor: "#f5f5f5",
+                          border: "3px solid var(--brand-brown)",
+                          color: "var(--brand-brown)",
+                          opacity: 0.6,
                           cursor: "not-allowed",
                         }}
                       >
-                        เต็มแล้ว
+                        Class Full / คลาสเต็มแล้ว
                       </div>
                     ) : (
                       <a
