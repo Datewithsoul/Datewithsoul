@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { submitBooking } from "@/app/book/[classId]/actions";
+import { SubmitButton } from "@/components/submit-button";
 
 interface BookingFormProps {
   classEventId: string;
@@ -89,12 +90,11 @@ export default function BookingForm({
           />
         </div>
 
-        <button 
-          type="submit"
-          className="mt-6 bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors w-full"
+        <SubmitButton 
+          className="mt-6 pop-btn-red text-white font-bold py-3.5 rounded-xl text-lg transition-colors w-full"
         >
           ยืนยันการจอง
-        </button>
+        </SubmitButton>
       </form>
     </>
   );

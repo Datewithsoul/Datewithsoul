@@ -9,6 +9,7 @@ import MediaUploader, { MediaItem } from "@/components/media-uploader";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import ListRepeater from "../../new/list-repeater";
 import ScheduleRepeater from "../../new/schedule-repeater";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function EditClassPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -134,9 +135,9 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
               defaultItems={classEvent.requirements.length > 0 ? classEvent.requirements : ["", ""]}
             />
 
-            <button type="submit" className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
+            <SubmitButton className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
               บันทึกการแก้ไข
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </section>

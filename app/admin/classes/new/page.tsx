@@ -7,6 +7,7 @@ import MediaUploader from "@/components/media-uploader";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import ScheduleRepeater from "./schedule-repeater";
 import ListRepeater from "./list-repeater";
+import { SubmitButton } from "@/components/submit-button";
 
 export default function NewClassPage() {
   return (
@@ -103,9 +104,9 @@ export default function NewClassPage() {
               defaultItems={["", ""]}
             />
 
-            <button type="submit" className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
+            <SubmitButton className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
               บันทึกคอร์สเรียน
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </section>

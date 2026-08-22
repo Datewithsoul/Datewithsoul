@@ -24,14 +24,14 @@ export default function ScheduleRepeater({
   const [scheduleDays, setScheduleDays] = useState<ScheduleDay[]>(initialData || [
     { 
       date: "", 
-      timeslots: [{ startTime: "", endTime: "", totalSeats: "10" }] 
+      timeslots: [{ startTime: "10:00", endTime: "13:00", totalSeats: "10" }] 
     }
   ]);
 
   const addDay = () => {
     setScheduleDays([
       ...scheduleDays, 
-      { date: "", timeslots: [{ startTime: "", endTime: "", totalSeats: "10" }] }
+      { date: "", timeslots: [{ startTime: "10:00", endTime: "13:00", totalSeats: "10" }] }
     ]);
   };
 
@@ -49,7 +49,7 @@ export default function ScheduleRepeater({
 
   const addTimeslot = (dayIndex: number) => {
     const newDays = [...scheduleDays];
-    newDays[dayIndex].timeslots.push({ startTime: "", endTime: "", totalSeats: "10" });
+    newDays[dayIndex].timeslots.push({ startTime: "10:00", endTime: "13:00", totalSeats: "10" });
     setScheduleDays(newDays);
   };
 

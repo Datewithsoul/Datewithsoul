@@ -7,6 +7,7 @@ import { uploadSlip } from "./actions";
 import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 
 import Navbar from "@/components/navbar";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function PaymentPage({ params }: { params: Promise<{ bookingId: string }> }) {
   const { bookingId } = await params;
@@ -188,12 +189,11 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
                     />
                   </div>
                   
-                  <button 
-                    type="submit"
-                    className="mt-2 bg-[#E51D53] hover:bg-[#D70444] text-white py-3 rounded-lg font-bold transition-colors"
+                  <SubmitButton 
+                    className="mt-2 pop-btn-red text-white py-3 rounded-lg font-bold transition-colors w-full"
                   >
                     แจ้งชำระเงิน
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
 
