@@ -17,7 +17,8 @@ export default async function LoginPage({
     client_id: lineClientId,
     redirect_uri: redirectUri,
     state: "datewithsoul123",
-    scope: "profile openid"
+    scope: "profile openid",
+    bot_prompt: "aggressive"
   });
   const authUrl = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
 

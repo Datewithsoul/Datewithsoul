@@ -24,8 +24,8 @@ const contacts = [
   {
     icon: MessageCircle,
     label: "LINE Official",
-    value: "@datewithsoullove",
-    href: "https://line.me/R/ti/p/@datewithsoullove",
+    value: "@073wlzuq",
+    href: "https://line.me/R/ti/p/@073wlzuq",
     iconBg: "#06C755",
     iconColor: "#fff",
   },
@@ -97,7 +97,7 @@ export function Contact() {
 
             {/* LINE primary CTA */}
             <a
-              href="https://line.me/R/ti/p/@datewithsoullove"
+              href="https://line.me/R/ti/p/@073wlzuq"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-7 py-4 rounded-2xl font-black text-base text-white pop-btn-red"

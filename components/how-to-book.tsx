@@ -124,7 +124,7 @@ export function HowToBook() {
             <Pin className="w-4 h-4 flex-shrink-0 mt-0.5" />
             มีข้อสงสัยสามารถสอบถามได้ที่{" "}
             <a
-              href="https://line.me/R/ti/p/@datewithsoullove"
+              href="https://line.me/R/ti/p/@073wlzuq"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 font-black"

@@ -346,7 +346,7 @@ export function ClassSchedule() {
                       </div>
                     ) : (
                       <a
-                        href="https://line.me/R/ti/p/@datewithsoullove"
+                        href="https://line.me/R/ti/p/@073wlzuq"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full py-3 rounded-full text-center text-sm pop-btn-primary block"
