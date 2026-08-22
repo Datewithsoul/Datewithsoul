@@ -145,12 +145,36 @@ export async function uploadMediaAction(formData: FormData) {
 export async function deleteClass(formData: FormData) {
   const id = formData.get("id") as string;
   
-  // Note: We might want to check if there are active bookings before deleting.
-  // For now, we will simply delete the class (it might fail if there are foreign key constraints, 
-  // so normally we'd delete bookings first or mark as cancelled).
-  
-  await prisma.classEvent.delete({
-    where: { id }
+  await prisma.$transaction(async (tx) => {
+    // 1. Mark the class as CANCELLED
+    await tx.classEvent.update({
+      where: { id },
+      data: { status: "CANCELLED" }
+    });
+
+    // 2. Cancel all active bookings
+    const activeBookings = await tx.booking.findMany({
+      where: {
+        classEventId: id,
+        status: { in: ["BOOKING", "AWAITING_PAYMENT", "PAYMENT_REVIEW", "PAID"] }
+      },
+      include: {
+        payment: true,
+      }
+    });
+
+    for (const booking of activeBookings) {
+      await tx.booking.update({
+        where: { id: booking.id },
+        data: { status: "CANCELLED" }
+      });
+      if (booking.payment) {
+        await tx.payment.update({
+          where: { bookingId: booking.id },
+          data: { status: "REJECTED" }
+        });
+      }
+    }
   });
 
   redirect("/admin/classes");

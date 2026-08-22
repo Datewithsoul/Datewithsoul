@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
+import { CancelClassButton } from "@/components/cancel-class-button";
 
 export default async function AdminClasses() {
   const classes = await prisma.classEvent.findMany({
@@ -42,13 +43,14 @@ export default async function AdminClasses() {
               <TableHead className="text-[#6a5d50]">เวลา</TableHead>
               <TableHead className="text-[#6a5d50]">ราคา (บาท)</TableHead>
               <TableHead className="text-[#6a5d50]">ที่นั่ง</TableHead>
+              <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
               <TableHead className="px-5 text-right text-[#6a5d50]">จัดการ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {classes.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="px-5 py-10 text-center text-[#6a5d50]">
+                <TableCell colSpan={7} className="px-5 py-10 text-center text-[#6a5d50]">
                   ยังไม่มีคอร์สเรียน ใช้ปุ่มเพิ่มคอร์สเรียนเพื่อเปิดรอบแรก
                 </TableCell>
               </TableRow>
@@ -60,20 +62,32 @@ export default async function AdminClasses() {
                   <TableCell className="tabular-nums">{c.startTime} – {c.endTime}</TableCell>
                   <TableCell className="tabular-nums">{c.price.toLocaleString("th-TH")}</TableCell>
                   <TableCell className="tabular-nums">{c.totalSeats}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                      c.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
+                      c.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                      c.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
+                      "bg-blue-100 text-blue-800"
+                    }`}>
+                      {c.status}
+                    </span>
+                  </TableCell>
                   <TableCell className="px-5 text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`/admin/classes/${c.id}/edit`}>
                         <Button variant="outline" size="sm">แก้ไข</Button>
                       </Link>
-                      <form action={async () => {
-                        "use server";
-                        const { deleteClass } = await import("./actions");
-                        const formData = new FormData();
-                        formData.append("id", c.id);
-                        await deleteClass(formData);
-                      }}>
-                        <Button variant="destructive" size="sm" type="submit">ลบ</Button>
-                      </form>
+                      {c.status !== "CANCELLED" && (
+                        <form action={async () => {
+                          "use server";
+                          const { deleteClass } = await import("./actions");
+                          const formData = new FormData();
+                          formData.append("id", c.id);
+                          await deleteClass(formData);
+                        }}>
+                          <CancelClassButton />
+                        </form>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

@@ -47,10 +47,18 @@ model ClassEvent {
   totalSeats       Int
   learningOutcomes String[]     @default([])
   requirements     String[]     @default([])
+  status           ClassEventStatus @default(PUBLISHED)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   bookings         Booking[]
   media            ClassMedia[]
+}
+
+enum ClassEventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
 }
 
 model ClassMedia {

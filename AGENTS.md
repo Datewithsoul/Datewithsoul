@@ -170,3 +170,13 @@ In addition to "warm, friendly, trustworthy," bring in a fun, vibrant **pop art*
 - Use Brown as the primary outline/border color instead of plain gray/black, so the pop-art style stays warm rather than feeling cold
 
 This direction fits the Class Listing cards and Booking Status page best, since those are where you want fun + clarity at the same time. The admin dashboard should tone it down (same colors, but more minimal) for easier day-to-day readability.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
