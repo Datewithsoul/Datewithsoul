@@ -147,6 +147,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           <div className="lg:w-2/3">
             
             <div className="pb-8 border-b border-gray-200 mb-8">
+              <h2 className="text-2xl font-semibold mb-2">{classEvent.name}</h2>
               <p className="text-gray-600 text-lg font-medium">รับสมัครสูงสุด {currentMaxSeats} ที่นั่ง · รวมอุปกรณ์พื้นฐานแล้ว</p>
             </div>
             
