@@ -11,7 +11,7 @@ import {
 import { requireAdmin } from "@/lib/require-admin";
 import { sendLineMessage } from "@/lib/line";
 
-async function applyBookingStatus(bookingId: string, status: AppBookingStatus) {
+async function applyBookingStatus(bookingId: string, status: AppBookingStatus, reviewerId?: string, reason?: string) {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { user: true, classEvent: true, payment: true },
@@ -33,15 +33,41 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus) {
     });
 
     const paymentStatus = paymentStatusForBooking(status);
+    let paymentId = booking.payment?.id;
+
     if (booking.payment) {
+      const prevPaymentStatus = booking.payment.status;
       await tx.payment.update({
         where: { bookingId },
         data: { status: paymentStatus },
       });
+      if (reviewerId && prevPaymentStatus !== paymentStatus) {
+        await tx.paymentReviewLog.create({
+          data: {
+            paymentId,
+            reviewerId,
+            previousStatus: prevPaymentStatus,
+            newStatus: paymentStatus,
+            reason
+          }
+        });
+      }
     } else {
-      await tx.payment.create({
+      const newPayment = await tx.payment.create({
         data: { bookingId, status: paymentStatus },
       });
+      paymentId = newPayment.id;
+      if (reviewerId) {
+        await tx.paymentReviewLog.create({
+          data: {
+            paymentId,
+            reviewerId,
+            previousStatus: "PENDING",
+            newStatus: paymentStatus,
+            reason
+          }
+        });
+      }
     }
 
     if (previousStatus !== BookingStatus.CANCELLED && status === BookingStatus.CANCELLED) {
@@ -60,14 +86,21 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus) {
   });
 
   if (booking.user.lineId) {
-    const messages: Partial<Record<AppBookingStatus, string>> = {
-      [BookingStatus.PAID]: `ยืนยันการชำระเงินสำหรับคลาส "${booking.classEvent.name}" เรียบร้อยแล้ว (สถานะ: ชำระเงินแล้ว) ขอบคุณที่ใช้บริการค่ะ`,
-      [BookingStatus.PAYMENT_REVIEW]: `สลิปการชำระเงินของคลาส "${booking.classEvent.name}" อยู่ระหว่างการตรวจสอบค่ะ`,
-      [BookingStatus.AWAITING_PAYMENT]: `กรุณาชำระเงินสำหรับคลาส "${booking.classEvent.name}" เพื่อยืนยันที่นั่งค่ะ (สถานะ: กำลังชำระเงิน)`,
-      [BookingStatus.BOOKING]: `การจองคลาส "${booking.classEvent.name}" ของคุณอยู่ในสถานะกำลังจองค่ะ`,
-      [BookingStatus.CANCELLED]: `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้วค่ะ`,
-    };
-    const message = messages[status];
+    let message = "";
+    if (status === BookingStatus.PAID) {
+      message = `ยืนยันการชำระเงินสำหรับคลาส "${booking.classEvent.name}" เรียบร้อยแล้ว (สถานะ: ชำระเงินแล้ว) ขอบคุณที่ใช้บริการค่ะ`;
+    } else if (status === BookingStatus.PAYMENT_REVIEW) {
+      message = `สลิปการชำระเงินของคลาส "${booking.classEvent.name}" อยู่ระหว่างการตรวจสอบค่ะ`;
+    } else if (status === BookingStatus.AWAITING_PAYMENT) {
+      message = `กรุณาชำระเงินสำหรับคลาส "${booking.classEvent.name}" เพื่อยืนยันที่นั่งค่ะ (สถานะ: กำลังชำระเงิน)`;
+      if (reason) message += `\nหมายเหตุ: ${reason}`;
+    } else if (status === BookingStatus.BOOKING) {
+      message = `การจองคลาส "${booking.classEvent.name}" ของคุณอยู่ในสถานะกำลังจองค่ะ`;
+    } else if (status === BookingStatus.CANCELLED) {
+      message = `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้วค่ะ`;
+      if (reason) message += `\nเหตุผล: ${reason}`;
+    }
+
     if (message) {
       await sendLineMessage(booking.user.lineId, message);
     }
@@ -76,21 +109,21 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus) {
   return booking;
 }
 
-export async function updateBookingStatus(bookingId: string, status: string) {
-  await requireAdmin();
+export async function updateBookingStatus(bookingId: string, status: string, reason?: string) {
+  const admin = await requireAdmin();
 
   if (!isBookingStatus(status)) {
     return { success: false, error: "สถานะไม่ถูกต้อง" };
   }
 
-  await applyBookingStatus(bookingId, status);
+  await applyBookingStatus(bookingId, status, admin.id, reason);
   revalidatePath("/admin/bookings");
   revalidatePath("/admin");
   return { success: true };
 }
 
 export async function confirmPayment(bookingId: string) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
@@ -105,7 +138,7 @@ export async function confirmPayment(bookingId: string) {
     return { success: false, error: "ยังไม่มีสลิปจากลูกค้า" };
   }
 
-  await applyBookingStatus(bookingId, BookingStatus.PAID);
+  await applyBookingStatus(bookingId, BookingStatus.PAID, admin.id);
   revalidatePath("/admin/bookings");
   revalidatePath("/admin");
   return { success: true };

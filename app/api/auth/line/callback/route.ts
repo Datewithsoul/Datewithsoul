@@ -20,6 +20,11 @@ export async function GET(request: Request) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
     const redirectUri = `${siteUrl}/api/auth/line/callback`;
 
+    if (!process.env.LINE_CLIENT_ID || !process.env.LINE_CLIENT_SECRET) {
+      console.error("Missing LINE credentials");
+      return NextResponse.redirect(`${origin}/login?error=ConfigurationError`);
+    }
+
     // 1. Exchange code for LINE token
     const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
       method: 'POST',
@@ -34,7 +39,7 @@ export async function GET(request: Request) {
     })
 
     const tokenData = await tokenResponse.json()
-    if (tokenData.error) throw new Error(tokenData.error_description)
+    if (tokenData.error) throw new Error("Token exchange failed")
 
     // 2. Get LINE Profile
     const profileResponse = await fetch('https://api.line.me/v2/profile', {
@@ -51,82 +56,83 @@ export async function GET(request: Request) {
     )
 
     const dummyEmail = `${profile.userId.toLowerCase()}@line.datewithsoul.local`
-    const defaultPassword = profile.userId // use their LINE ID as password internally
-
-    let authUser;
     
-    // Check if user exists in Supabase Auth
-    const { data: usersData } = await supabaseAdmin.auth.admin.listUsers()
-    const existingUser = usersData.users.find(u => u.email === dummyEmail)
+    // Check if user exists in our DB first
+    let dbUser = await prisma.user.findFirst({ where: { lineId: profile.userId } });
+    const oneTimePassword = crypto.randomUUID(); // Secure dynamic password
 
-    if (existingUser) {
-      authUser = existingUser
-      // Ensure the user has the correct password set (in case they were created via OIDC previously)
-      await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
-        password: defaultPassword
-      })
+    let authUserId = "";
+
+    if (dbUser) {
+      authUserId = dbUser.id;
+      // Update the user's password in Supabase for this login session
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+        password: oneTimePassword
+      });
+      if (updateError) throw new Error("Failed to update auth session");
+      
+      dbUser = await prisma.user.update({
+        where: { id: dbUser.id },
+        data: {
+          name: profile.displayName,
+          image: profile.pictureUrl,
+        }
+      });
     } else {
       // Create new user in Supabase Auth
       const { data: newUserData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: dummyEmail,
-        password: defaultPassword,
+        password: oneTimePassword,
         email_confirm: true,
         user_metadata: {
           name: profile.displayName,
           avatar_url: profile.pictureUrl
         }
       })
-      if (createError) throw createError
-      authUser = newUserData.user
+      if (createError) throw new Error("Failed to create auth profile");
+      authUserId = newUserData.user.id;
+
+      // Check if any admin exists
+      const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+      const roleToAssign = adminCount === 0 ? 'ADMIN' : undefined;
+
+      dbUser = await prisma.user.create({
+        data: {
+          id: authUserId,
+          lineId: profile.userId,
+          name: profile.displayName,
+          email: dummyEmail,
+          image: profile.pictureUrl,
+          ...(roleToAssign ? { role: roleToAssign } : {}),
+        }
+      });
+
+      // Send Welcome Notification
+      const { sendLineMessage } = await import('@/lib/line')
+      await sendLineMessage(profile.userId, `สวัสดีคุณ ${profile.displayName} เข้าสู่ระบบ Date with Soul เรียบร้อยแล้วค่ะ`)
     }
 
-    // 4. Sync with Prisma DB
-    // Check if any admin exists
-    const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
-    const roleToAssign = adminCount === 0 ? 'ADMIN' : undefined;
-
-    const dbUser = await prisma.user.upsert({
-      where: { id: authUser.id },
-      update: {
-        lineId: profile.userId,
-        name: profile.displayName,
-        image: profile.pictureUrl,
-        ...(roleToAssign ? { role: roleToAssign } : {}),
-      },
-      create: {
-        id: authUser.id,
-        lineId: profile.userId,
-        name: profile.displayName,
-        image: profile.pictureUrl,
-        ...(roleToAssign ? { role: roleToAssign } : {}),
-      }
-    })
-
-    // 4.1 Send LINE Notification for Login
-    const { sendLineMessage } = await import('@/lib/line')
-    await sendLineMessage(profile.userId, `สวัสดีคุณ ${profile.displayName} เข้าสู่ระบบ Date with Soul เรียบร้อยแล้วค่ะ`)
-
-    // 5. Sign the user in (creates session cookies via our normal SSR client)
+    // 4. Sign the user in (creates session cookies via our normal SSR client)
     const { createClient: createSSRClient } = await import('@/utils/supabase/server')
     const supabase = await createSSRClient()
     
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: dummyEmail,
-      password: defaultPassword
+      password: oneTimePassword
     })
 
-    if (signInError) throw signInError
+    if (signInError) throw new Error("Sign in failed");
 
-    // 6. Check if onboarding is required
-    if (!dbUser.phone || !dbUser.email) {
+    // 5. Check if onboarding is required
+    if (!dbUser.phone || !dbUser.email || dbUser.email === dummyEmail) {
       return NextResponse.redirect(`${origin}/onboarding`)
     }
 
     // Success! Redirect home
     return NextResponse.redirect(`${origin}/`)
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('LINE Auth Error:', err)
-    return NextResponse.redirect(`${origin}/login?error=Authentication failed: ${err.message}`)
+    return NextResponse.redirect(`${origin}/login?error=AuthenticationFailed`)
   }
 }

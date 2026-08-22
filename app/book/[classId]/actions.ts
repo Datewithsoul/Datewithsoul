@@ -9,13 +9,20 @@ export async function submitBooking(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const seats = parseInt(formData.get("seats") as string, 10);
-  
+  if (isNaN(seats) || seats <= 0) {
+    throw new Error("จำนวนที่นั่งต้องเป็นจำนวนเต็มบวก");
+  }
+
   const classEvent = await prisma.classEvent.findUnique({
     where: { id: classEventId }
   });
 
   if (!classEvent) {
     throw new Error("Class event not found");
+  }
+
+  if (classEvent.totalSeats < seats) {
+    throw new Error(`ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
   }
 
   const totalPrice = classEvent.price * seats;
@@ -25,6 +32,19 @@ export async function submitBooking(formData: FormData) {
 
   if (!authUser) {
     redirect("/login?error=กรุณาเข้าสู่ระบบก่อนทำการจอง");
+  }
+
+  // Prevent duplicate active bookings for the same class
+  const existingBooking = await prisma.booking.findFirst({
+    where: {
+      userId: authUser.id,
+      classEventId: classEventId,
+      status: { in: ['BOOKING', 'AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PAID'] }
+    }
+  });
+
+  if (existingBooking) {
+    redirect(`/payment/${existingBooking.id}?error=คุณมีการจองคลาสนี้อยู่แล้ว`);
   }
 
   let user = await prisma.user.findUnique({
@@ -37,31 +57,49 @@ export async function submitBooking(formData: FormData) {
     });
   }
 
-  const booking = await prisma.booking.create({
-    data: {
-      userId: user.id,
-      classEventId,
-      seats,
-      totalPrice,
-      status: "BOOKING",
-    },
-  });
+  let booking;
+  try {
+    booking = await prisma.$transaction(async (tx) => {
+      // Safely decrement seats only if enough are available
+      const updatedClassEvent = await tx.classEvent.updateMany({
+        where: { 
+          id: classEventId,
+          totalSeats: { gte: seats }
+        },
+        data: {
+          totalSeats: { decrement: seats },
+        },
+      });
 
-  // Mock payment record creation
-  await prisma.payment.create({
-    data: {
-      bookingId: booking.id,
-      status: "PENDING",
-    },
-  });
+      if (updatedClassEvent.count === 0) {
+        throw new Error("NOT_ENOUGH_SEATS");
+      }
 
-  // Decrease available seats
-  await prisma.classEvent.update({
-    where: { id: classEventId },
-    data: {
-      totalSeats: { decrement: seats },
-    },
-  });
+      const b = await tx.booking.create({
+        data: {
+          userId: user.id,
+          classEventId,
+          seats,
+          totalPrice,
+          status: "BOOKING",
+        },
+      });
+
+      await tx.payment.create({
+        data: {
+          bookingId: b.id,
+          status: "PENDING",
+        },
+      });
+
+      return b;
+    });
+  } catch (error: any) {
+    if (error.message === "NOT_ENOUGH_SEATS") {
+      redirect(`/classes/${classEventId}?error=ขออภัย ที่นั่งไม่เพียงพอ กรุณาลองใหม่อีกครั้ง`);
+    }
+    throw error;
+  }
 
   if (user.lineId) {
     const { sendLineMessage, notifyAdmins } = await import('@/lib/line');

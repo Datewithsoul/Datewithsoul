@@ -13,12 +13,43 @@ export async function uploadGroupSlip(formData: FormData) {
     throw new Error("กรุณาแนบสลิปโอนเงิน");
   }
 
+  if (slipFile.size > 5 * 1024 * 1024) {
+    throw new Error("ขนาดไฟล์เกิน 5MB");
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(slipFile.type)) {
+    throw new Error("รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WEBP) เท่านั้น");
+  }
+
   // Generate a unique filename
   const fileExt = slipFile.name.split('.').pop();
   const fileName = `group-${groupId}-${Date.now()}.${fileExt}`;
   const filePath = `slips/${fileName}`;
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const group = await prisma.bookingGroup.findUnique({
+    where: { id: groupId },
+    select: { userId: true, status: true }
+  });
+
+  if (!group) {
+    throw new Error("Group not found");
+  }
+
+  if (group.status !== BookingGroupStatus.PENDING && group.status !== BookingGroupStatus.AWAITING_PAYMENT) {
+    throw new Error("รายการจองนี้ไม่สามารถอัปโหลดสลิปได้");
+  }
+
+  if (group.userId !== user.id) {
+    throw new Error("Unauthorized");
+  }
   
   // Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
@@ -105,6 +136,10 @@ export async function cancelGroupBooking(groupId: string) {
 
   if (!group || (group.status !== BookingGroupStatus.PENDING && group.status !== BookingGroupStatus.AWAITING_PAYMENT)) {
     return { success: false, error: "Invalid group" };
+  }
+
+  if (group.userId !== user.id) {
+    return { success: false, error: "Unauthorized" };
   }
 
   await prisma.$transaction(async (tx) => {

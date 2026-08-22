@@ -3,27 +3,30 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { confirmPayment, updateBookingStatus } from "@/app/admin/bookings/actions";
-import { BOOKING_STATUSES, BOOKING_STATUS_LABELS } from "@/lib/booking-status";
+import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-status";
 import type { AppBookingStatus } from "@/lib/booking-status";
+import { format } from "date-fns";
 
 export function AdminBookingControls({
   bookingId,
   status,
   slipUrl,
+  reviewLogs = [],
 }: {
   bookingId: string;
   status: AppBookingStatus;
   slipUrl: string | null;
+  reviewLogs?: any[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showSlip, setShowSlip] = useState(false);
 
-  function changeStatus(nextStatus: string) {
+  function changeStatus(nextStatus: string, reason?: string) {
     setError(null);
     startTransition(async () => {
-      const result = await updateBookingStatus(bookingId, nextStatus);
+      const result = await updateBookingStatus(bookingId, nextStatus, reason);
       if (!result.success) {
         setError(result.error ?? "เปลี่ยนสถานะไม่สำเร็จ");
         return;
@@ -107,15 +110,55 @@ export function AdminBookingControls({
             </div>
             <img src={slipUrl} alt="สลิปการชำระเงิน" className="w-full border border-[#eee8e0]" />
             {status !== "PAID" ? (
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={verifyPayment}
-                className="admin-btn-primary mt-4 inline-flex h-9 w-full items-center justify-center text-sm disabled:opacity-50"
-              >
-                ตรวจสอบแล้ว ยืนยันชำระเงินแล้ว
-              </button>
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => {
+                    const reason = window.prompt("ระบุเหตุผลที่ปฏิเสธสลิป:");
+                    if (reason !== null) {
+                      changeStatus("AWAITING_PAYMENT", reason);
+                      setShowSlip(false);
+                    }
+                  }}
+                  className="inline-flex h-9 flex-1 items-center justify-center text-sm border border-[#8f3b2c] text-[#8f3b2c] hover:bg-[#8f3b2c]/10 rounded-md disabled:opacity-50"
+                >
+                  สลิปไม่ถูกต้อง
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={verifyPayment}
+                  className="admin-btn-primary inline-flex h-9 flex-1 items-center justify-center text-sm disabled:opacity-50"
+                >
+                  ยืนยันชำระเงิน
+                </button>
+              </div>
             ) : null}
+
+            {reviewLogs && reviewLogs.length > 0 && (
+              <div className="mt-6 border-t border-[#eee8e0] pt-4">
+                <h4 className="text-sm font-semibold text-[#3d3229] mb-2">ประวัติการตรวจสอบ</h4>
+                <div className="space-y-2">
+                  {reviewLogs.map((log: any) => (
+                    <div key={log.id} className="text-xs text-[#6a5d50] bg-gray-50 p-2 rounded">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-[#3d3229]">{log.reviewer?.name || "Admin"}</span>
+                        <span>{format(new Date(log.createdAt), "dd MMM yyyy HH:mm")}</span>
+                      </div>
+                      <div className="mt-1">
+                        เปลี่ยนสถานะเป็น <span className="font-medium">{PAYMENT_STATUS_LABELS[log.newStatus as keyof typeof PAYMENT_STATUS_LABELS] || log.newStatus}</span>
+                      </div>
+                      {log.reason && (
+                        <div className="mt-1 text-[#8f3b2c]">
+                          เหตุผล: {log.reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : null}

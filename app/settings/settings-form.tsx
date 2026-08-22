@@ -98,7 +98,25 @@ export default function SettingsForm({ initialName, initialPhone, initialEmail, 
           <p className="text-xs text-gray-500">อีเมลใช้สำหรับส่งข้อมูลยืนยันการจองคลาสและใบเสร็จ</p>
         </div>
 
-        <div className="pt-4 border-t border-gray-100 flex justify-end">
+        <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={async () => {
+              if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบบัญชี? การกระทำนี้ไม่สามารถกู้คืนได้ และข้อมูลประวัติการจองจะถูกลบหรือเก็บเป็นข้อมูลนิรนาม")) {
+                const { deleteAccount } = await import("./actions");
+                const res = await deleteAccount();
+                if (res.error) {
+                  setError(res.error);
+                } else {
+                  window.location.href = "/";
+                }
+              }
+            }}
+            className="text-sm font-medium text-red-600 hover:text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
+          >
+            ลบบัญชีผู้ใช้
+          </button>
           <button 
             type="submit" 
             disabled={isPending}

@@ -41,22 +41,24 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
   }
 
   if (isExpired && isPayable) {
-    await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: BookingStatus.CANCELLED },
-    });
-
-    await prisma.classEvent.update({
-      where: { id: booking.classEventId },
-      data: { totalSeats: { increment: booking.seats } },
-    });
-
-    if (booking.payment) {
-      await prisma.payment.update({
-        where: { bookingId },
-        data: { status: PaymentStatus.REJECTED },
+    await prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: BookingStatus.CANCELLED },
       });
-    }
+
+      await tx.classEvent.update({
+        where: { id: booking.classEventId },
+        data: { totalSeats: { increment: booking.seats } },
+      });
+
+      if (booking.payment) {
+        await tx.payment.update({
+          where: { bookingId },
+          data: { status: PaymentStatus.REJECTED },
+        });
+      }
+    });
 
     booking.status = BookingStatus.CANCELLED;
   }

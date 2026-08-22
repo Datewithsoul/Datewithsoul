@@ -41,30 +41,32 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
   }
 
   if (isExpired && isPayable) {
-    // Cancel Group
-    await prisma.bookingGroup.update({
-      where: { id: groupId },
-      data: { status: BookingGroupStatus.CANCELLED },
+    await prisma.$transaction(async (tx) => {
+      // Cancel Group
+      await tx.bookingGroup.update({
+        where: { id: groupId },
+        data: { status: BookingGroupStatus.CANCELLED },
+      });
+
+      // Cancel individual bookings and refund seats
+      for (const b of bookingGroup.bookings) {
+        await tx.booking.update({
+          where: { id: b.id },
+          data: { status: BookingStatus.CANCELLED },
+        });
+        await tx.classEvent.update({
+          where: { id: b.classEventId },
+          data: { totalSeats: { increment: b.seats } },
+        });
+      }
+
+      if (bookingGroup.payment) {
+        await tx.payment.update({
+          where: { bookingGroupId: groupId },
+          data: { status: PaymentStatus.REJECTED },
+        });
+      }
     });
-
-    // Cancel individual bookings and refund seats
-    for (const b of bookingGroup.bookings) {
-      await prisma.booking.update({
-        where: { id: b.id },
-        data: { status: BookingStatus.CANCELLED },
-      });
-      await prisma.classEvent.update({
-        where: { id: b.classEventId },
-        data: { totalSeats: { increment: b.seats } },
-      });
-    }
-
-    if (bookingGroup.payment) {
-      await prisma.payment.update({
-        where: { bookingGroupId: groupId },
-        data: { status: PaymentStatus.REJECTED },
-      });
-    }
 
     bookingGroup.status = BookingGroupStatus.CANCELLED;
   }

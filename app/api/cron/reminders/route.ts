@@ -8,8 +8,8 @@ export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      // In a real app you should enforce this, but for testing we can be flexible if needed
-      // return new Response('Unauthorized', { status: 401 });
+      console.warn("Unauthorized cron access attempt");
+      return new Response('Unauthorized', { status: 401 });
     }
 
     const today = new Date();
@@ -32,7 +32,10 @@ export async function GET(request: Request) {
       },
       include: {
         bookings: {
-          where: { status: 'PAID' },
+          where: { 
+            status: 'PAID',
+            notifications: { none: { type: 'REMINDER_1_DAY' } }
+          },
           include: { user: true },
         },
       },
@@ -47,6 +50,13 @@ export async function GET(request: Request) {
             booking.user.lineId,
             `แจ้งเตือน: คลาส "${cls.name}" ที่คุณจองไว้จะเริ่มในวันพรุ่งนี้ (${dateStr}) เวลา ${cls.startTime} - ${cls.endTime} ค่ะ`
           );
+          await prisma.notificationLog.create({
+            data: {
+              bookingId: booking.id,
+              userId: booking.userId,
+              type: 'REMINDER_1_DAY',
+            }
+          });
           countTomorrow++;
         }
       }
@@ -63,7 +73,10 @@ export async function GET(request: Request) {
       },
       include: {
         bookings: {
-          where: { status: 'PAID' },
+          where: { 
+            status: 'PAID',
+            notifications: { none: { type: 'REMINDER_SAME_DAY' } }
+          },
           include: { user: true },
         },
       },
@@ -78,6 +91,13 @@ export async function GET(request: Request) {
             booking.user.lineId,
             `แจ้งเตือน: กำหนดเรียนวันนี้! คลาส "${cls.name}" วันนี้ (${dateStr}) เวลา ${cls.startTime} - ${cls.endTime} อย่าลืมมาเรียนกันนะคะ`
           );
+          await prisma.notificationLog.create({
+            data: {
+              bookingId: booking.id,
+              userId: booking.userId,
+              type: 'REMINDER_SAME_DAY',
+            }
+          });
           countToday++;
         }
       }

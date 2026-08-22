@@ -39,8 +39,28 @@ export async function createCartBookings(items: BookingItemInput[], name: string
 
     // Verify all classes exist and calculate total price
     let totalPrice = 0;
+    
+    // Check for existing bookings first
+    const classEventIds = items.map(i => i.classEventId);
+    const existingBookings = await prisma.booking.findMany({
+      where: {
+        userId: authUser.id,
+        classEventId: { in: classEventIds },
+        status: { in: ['BOOKING', 'AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PAID'] }
+      },
+      include: { classEvent: true }
+    });
+
+    if (existingBookings.length > 0) {
+      const names = existingBookings.map(b => b.classEvent.name).join(", ");
+      return { error: `คุณมีการจองคลาสเหล่านี้อยู่แล้ว: ${names}` };
+    }
+
     const classEvents = await Promise.all(
       items.map(async (item) => {
+        if (!item.seats || isNaN(item.seats) || item.seats <= 0) {
+           throw new Error("จำนวนที่นั่งไม่ถูกต้อง");
+        }
         const ce = await prisma.classEvent.findUnique({ where: { id: item.classEventId } });
         if (!ce) throw new Error(`Class event ${item.classEventId} not found`);
         if (ce.totalSeats < item.seats) throw new Error(`ที่นั่งสำหรับ ${ce.name} ไม่เพียงพอ`);
@@ -72,11 +92,18 @@ export async function createCartBookings(items: BookingItemInput[], name: string
           }
         });
 
-        // Decrement seats
-        await tx.classEvent.update({
-          where: { id: item.id },
+        // Decrement seats atomically
+        const updatedClassEvent = await tx.classEvent.updateMany({
+          where: { 
+            id: item.id,
+            totalSeats: { gte: item.requestedSeats }
+          },
           data: { totalSeats: { decrement: item.requestedSeats } }
         });
+        
+        if (updatedClassEvent.count === 0) {
+          throw new Error(`ขออภัย ที่นั่งสำหรับ ${item.name} ไม่เพียงพอ หรือมีการจองพร้อมกัน`);
+        }
       }
 
       // Create Group Payment

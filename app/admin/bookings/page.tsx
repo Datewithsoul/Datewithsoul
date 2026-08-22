@@ -18,7 +18,14 @@ export default async function AdminBookings() {
       include: {
         user: true,
         classEvent: true,
-        payment: true,
+        payment: {
+          include: {
+            reviewLogs: {
+              include: { reviewer: true },
+              orderBy: { createdAt: "desc" },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -89,6 +96,7 @@ export default async function AdminBookings() {
                       bookingId={b.id}
                       status={b.status}
                       slipUrl={b.payment?.slipUrl ?? null}
+                      reviewLogs={b.payment?.reviewLogs ?? []}
                     />
                   </TableCell>
                   <TableCell className="px-5 py-3">

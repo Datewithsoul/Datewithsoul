@@ -19,6 +19,15 @@ export async function uploadSlip(formData: FormData) {
     throw new Error("Missing required fields");
   }
 
+  if (slipImage.size > 5 * 1024 * 1024) {
+    redirect(`/payment/${bookingId}?error=ขนาดไฟล์เกิน 5MB`);
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(slipImage.type)) {
+    redirect(`/payment/${bookingId}?error=รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WEBP) เท่านั้น`);
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -36,6 +45,10 @@ export async function uploadSlip(formData: FormData) {
 
   if (!booking) {
     throw new Error("Booking not found");
+  }
+
+  if (booking.userId !== user.id) {
+    throw new Error("Unauthorized");
   }
 
   const now = new Date();
@@ -140,19 +153,35 @@ export async function cancelBooking(bookingId: string) {
     return { success: false, error: "Invalid booking" };
   }
 
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: { status: BookingStatus.CANCELLED },
-  });
+  if (booking.userId !== user.id) {
+    return { success: false, error: "Unauthorized" };
+  }
 
-  await prisma.classEvent.update({
-    where: { id: booking.classEventId },
-    data: { totalSeats: { increment: booking.seats } },
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.update({
+      where: { id: bookingId },
+      data: { status: BookingStatus.CANCELLED },
+    });
 
-  await prisma.payment.update({
-    where: { bookingId: bookingId },
-    data: { status: PaymentStatus.REJECTED },
+    await tx.classEvent.update({
+      where: { id: booking.classEventId },
+      data: { totalSeats: { increment: booking.seats } },
+    });
+
+    const paymentStatus = PaymentStatus.REJECTED;
+    const existingPayment = await tx.payment.findUnique({
+      where: { bookingId },
+    });
+    if (existingPayment) {
+      await tx.payment.update({
+        where: { bookingId },
+        data: { status: paymentStatus },
+      });
+    } else {
+      await tx.payment.create({
+        data: { bookingId, status: paymentStatus },
+      });
+    }
   });
 
   if (booking.user.lineId) {

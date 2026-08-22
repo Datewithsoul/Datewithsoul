@@ -24,6 +24,8 @@ model User {
   updatedAt     DateTime       @updatedAt
   bookings      Booking[]
   bookingGroups BookingGroup[]
+  notifications NotificationLog[]
+  paymentReviews PaymentReviewLog[]
 }
 
 enum Role {
@@ -76,6 +78,7 @@ model Booking {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   payment        Payment?
+  notifications  NotificationLog[]
 }
 
 enum BookingStatus {
@@ -116,6 +119,7 @@ model Payment {
   status         PaymentStatus @default(PENDING)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  reviewLogs     PaymentReviewLog[]
 }
 
 enum PaymentStatus {
@@ -123,4 +127,27 @@ enum PaymentStatus {
   UNDER_REVIEW
   VERIFIED
   REJECTED
+}
+
+model NotificationLog {
+  id             String   @id @default(uuid())
+  bookingId      String?
+  booking        Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String   // e.g. "REMINDER_1_DAY", "REMINDER_SAME_DAY"
+  message        String?
+  sentAt         DateTime @default(now())
+}
+
+model PaymentReviewLog {
+  id             String        @id @default(uuid())
+  paymentId      String
+  payment        Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  reviewerId     String
+  reviewer       User          @relation(fields: [reviewerId], references: [id])
+  previousStatus PaymentStatus
+  newStatus      PaymentStatus
+  reason         String?
+  createdAt      DateTime      @default(now())
 }
