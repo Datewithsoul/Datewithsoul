@@ -92,11 +92,16 @@ export async function GET(request: Request) {
       let authUserId = "";
       if (createError) {
         if (createError.message.includes("already") || createError.message.includes("registered") || createError.message.includes("Database error")) {
-          // Check if there is an orphaned user or identity
-          const existingUsers = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM auth.users WHERE email = ${dummyEmail}`;
-          if (existingUsers && existingUsers.length > 0) {
-            authUserId = existingUsers[0].id;
-            await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: oneTimePassword });
+          // Check if there is an orphaned user or identity using Supabase API
+          const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+          const existingUser = usersData?.users.find(u => u.email === dummyEmail);
+          
+          if (existingUser) {
+            authUserId = existingUser.id;
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: oneTimePassword });
+            if (updateError) {
+              throw new Error("Failed to update user password: " + updateError.message);
+            }
           } else {
             // It might be an orphaned identity blocking the creation
             console.log("Checking for orphaned identity for", dummyEmail);
