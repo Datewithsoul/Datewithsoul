@@ -67,14 +67,25 @@ export async function deleteAccount() {
       process.env.SUPABASE_SECRET_KEY!
     );
     
-    await supabaseAdmin.auth.admin.deleteUser(user.id);
-    
     const randomSuffix = Math.random().toString(36).substring(7);
+    const deletedEmail = `deleted-${randomSuffix}@example.com`;
+
+    // Free up the original email in Supabase auth in case deleteUser fails silently or is delayed
+    await supabaseAdmin.auth.admin.updateUserById(user.id, { email: deletedEmail });
+    
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+    
+    if (deleteError) {
+      console.error("Supabase deleteUser error:", deleteError);
+      // We don't throw here because we already freed up the email, 
+      // so the user can re-register. We just proceed to anonymize in Prisma.
+    }
+    
     await prisma.user.update({
       where: { id: user.id },
       data: {
         name: `Deleted User ${randomSuffix}`,
-        email: `deleted-${randomSuffix}@example.com`,
+        email: deletedEmail,
         phone: null,
         lineId: null,
         image: null,

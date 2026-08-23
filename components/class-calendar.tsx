@@ -140,7 +140,7 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
                 </div>
                 
                 <div className="flex flex-col gap-1 md:gap-2 flex-grow overflow-y-auto no-scrollbar">
-                  {dayClasses.map(c => (
+                  {dayClasses.slice(0, 2).map(c => (
                     <Link href={`/classes/${c.id}`} key={c.id}>
                       <div className="bg-[#1c1d1f] text-white p-1 md:p-2 border md:border-2 border-black rounded md:rounded-lg hover:bg-[#F44336] transition-colors cursor-pointer group">
                         <div className="flex items-center gap-1 text-[8px] md:text-xs text-gray-300 group-hover:text-white md:mb-1 font-bold leading-none md:leading-normal">
@@ -160,6 +160,11 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
                       </div>
                     </Link>
                   ))}
+                  {dayClasses.length > 2 && (
+                    <Link href="/classes" className="text-[10px] md:text-xs text-center text-[#6a5d50] hover:text-[#1c1d1f] hover:underline py-1 font-semibold mt-auto">
+                      ดูรายการเพิ่มของวันนี้
+                    </Link>
+                  )}
                 </div>
               </div>
             );

@@ -89,8 +89,25 @@ export async function GET(request: Request) {
           avatar_url: profile.pictureUrl
         }
       })
-      if (createError) throw new Error("Failed to create auth profile");
-      authUserId = newUserData.user.id;
+      let authUserId = "";
+      if (createError) {
+        if (createError.message.includes("already") || createError.message.includes("registered")) {
+          // Recover the orphaned auth user
+          const existingUsers = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM auth.users WHERE email = ${dummyEmail}`;
+          if (existingUsers && existingUsers.length > 0) {
+            authUserId = existingUsers[0].id;
+            await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: oneTimePassword });
+          } else {
+            console.error("Create User Error:", createError);
+            throw new Error(createError.message || "Failed to create auth profile");
+          }
+        } else {
+          console.error("Create User Error:", createError);
+          throw new Error(createError.message || "Failed to create auth profile");
+        }
+      } else {
+        authUserId = newUserData!.user.id;
+      }
 
       // Check if any admin exists
       const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
@@ -121,7 +138,10 @@ export async function GET(request: Request) {
       password: oneTimePassword
     })
 
-    if (signInError) throw new Error("Sign in failed");
+    if (signInError) {
+      console.error("Sign In Error:", signInError);
+      throw new Error(signInError.message || "Sign in failed");
+    }
 
     // 5. Check if onboarding is required
     if (!dbUser.phone || !dbUser.email || dbUser.email === dummyEmail) {
@@ -131,8 +151,8 @@ export async function GET(request: Request) {
     // Success! Redirect home
     return NextResponse.redirect(`${origin}/`)
 
-  } catch (err: unknown) {
+  } catch (err: any) {
     console.error('LINE Auth Error:', err)
-    return NextResponse.redirect(`${origin}/login?error=AuthenticationFailed`)
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(err.message || "AuthenticationFailed")}`)
   }
 }

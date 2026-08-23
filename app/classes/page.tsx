@@ -1,16 +1,30 @@
 import { prisma } from "@/lib/prisma";
-import { BookingStatus } from "@/app/generated/prisma";
+import { BookingStatus, ClassEventStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Calendar } from "lucide-react";
 import ClassCarousel from "@/components/class-carousel";
 import Navbar from "@/components/navbar";
 
-export default async function ClassesPage() {
+export default async function ClassesPage(props: { searchParams: Promise<{ date?: string }> }) {
+  const searchParams = await props.searchParams;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  let dateFilter: any = { gte: today };
+  let title = "คลาสเรียนและเวิร์กชอป";
+  let subtitle = "ค้นหาแรงบันดาลใจและสร้างสรรค์ผลงานศิลปะในแบบของคุณ";
+
+  if (searchParams?.date) {
+    const d = new Date(searchParams.date);
+    if (!isNaN(d.getTime())) {
+      dateFilter = d;
+      title = `รายการสอนวันที่ ${d.toLocaleDateString("th-TH")}`;
+      subtitle = "";
+    }
+  }
+
   const rawUpcomingClasses = await prisma.classEvent.findMany({
-    where: { date: { gte: today } },
+    where: { date: dateFilter, status: { notIn: [ClassEventStatus.CANCELLED, ClassEventStatus.DRAFT] } },
     orderBy: { date: "asc" },
     include: {
       media: {
@@ -42,11 +56,13 @@ export default async function ClassesPage() {
       <section className="pt-12 pb-6 px-6 max-w-[1280px] mx-auto">
         <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-gray-100 mb-12 text-center max-w-3xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3 text-gray-900">
-            คลาสเรียนและเวิร์กชอป
+            {title}
           </h1>
-          <p className="text-gray-600 text-lg">
-            ค้นหาแรงบันดาลใจและสร้างสรรค์ผลงานศิลปะในแบบของคุณ
-          </p>
+          {subtitle && (
+            <p className="text-gray-600 text-lg">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-16">
