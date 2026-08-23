@@ -91,7 +91,7 @@ export async function GET(request: Request) {
       })
       let authUserId = "";
       if (createError) {
-        if (createError.message.includes("already") || createError.message.includes("registered")) {
+        if (createError.message.includes("already") || createError.message.includes("registered") || createError.message.includes("Database error")) {
           // Recover the orphaned auth user
           const existingUsers = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM auth.users WHERE email = ${dummyEmail}`;
           if (existingUsers && existingUsers.length > 0) {

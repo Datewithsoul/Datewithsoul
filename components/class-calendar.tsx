@@ -161,7 +161,7 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
                     </Link>
                   ))}
                   {dayClasses.length > 2 && (
-                    <Link href="/classes" className="text-[10px] md:text-xs text-center text-[#6a5d50] hover:text-[#1c1d1f] hover:underline py-1 font-semibold mt-auto">
+                    <Link href={`/classes?date=${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`} className="text-[10px] md:text-xs text-center text-[#6a5d50] hover:text-[#1c1d1f] hover:underline py-1 font-semibold mt-auto">
                       ดูรายการเพิ่มของวันนี้
                     </Link>
                   )}

@@ -17,7 +17,12 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
   if (searchParams?.date) {
     const d = new Date(searchParams.date);
     if (!isNaN(d.getTime())) {
-      dateFilter = d;
+      const nextDay = new Date(d);
+      nextDay.setDate(d.getDate() + 1);
+      dateFilter = {
+        gte: d,
+        lt: nextDay
+      };
       title = `รายการสอนวันที่ ${d.toLocaleDateString("th-TH")}`;
       subtitle = "";
     }
