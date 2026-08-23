@@ -69,16 +69,32 @@ export async function GET(request: Request) {
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
         password: oneTimePassword
       });
-      if (updateError) throw new Error("Failed to update auth session");
-      
-      dbUser = await prisma.user.update({
-        where: { id: dbUser.id },
-        data: {
-          name: profile.displayName,
-          image: profile.pictureUrl,
-        }
-      });
-    } else {
+
+      if (updateError) {
+        // Auth user was deleted externally (e.g. from Supabase dashboard)
+        // Anonymize the old Prisma record and fall through to create a new one
+        console.log("Auth user not found for existing Prisma user, anonymizing and re-creating...", updateError.message);
+        const randomSuffix = Math.random().toString(36).substring(7);
+        await prisma.user.update({
+          where: { id: dbUser.id },
+          data: {
+            lineId: null,
+            email: `deleted-${randomSuffix}@example.com`,
+          }
+        });
+        dbUser = null; // fall through to create new user below
+      } else {
+        dbUser = await prisma.user.update({
+          where: { id: dbUser.id },
+          data: {
+            name: profile.displayName,
+            image: profile.pictureUrl,
+          }
+        });
+      }
+    }
+
+    if (!dbUser) {
       // Create new user in Supabase Auth
       const { data: newUserData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: dummyEmail,
