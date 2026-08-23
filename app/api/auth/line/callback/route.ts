@@ -92,14 +92,32 @@ export async function GET(request: Request) {
       let authUserId = "";
       if (createError) {
         if (createError.message.includes("already") || createError.message.includes("registered") || createError.message.includes("Database error")) {
-          // Recover the orphaned auth user
+          // Check if there is an orphaned user or identity
           const existingUsers = await prisma.$queryRaw<{id: string}[]>`SELECT id FROM auth.users WHERE email = ${dummyEmail}`;
           if (existingUsers && existingUsers.length > 0) {
             authUserId = existingUsers[0].id;
             await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: oneTimePassword });
           } else {
-            console.error("Create User Error:", createError);
-            throw new Error(createError.message || "Failed to create auth profile");
+            // It might be an orphaned identity blocking the creation
+            console.log("Checking for orphaned identity for", dummyEmail);
+            await prisma.$executeRaw`DELETE FROM auth.identities WHERE provider = 'email' AND provider_id = ${dummyEmail}`;
+            
+            // Try creating the user again
+            const { data: retryData, error: retryError } = await supabaseAdmin.auth.admin.createUser({
+              email: dummyEmail,
+              password: oneTimePassword,
+              email_confirm: true,
+              user_metadata: {
+                name: profile.displayName,
+                avatar_url: profile.pictureUrl
+              }
+            });
+            
+            if (retryError) {
+              console.error("Retry Create User Error:", retryError);
+              throw new Error(retryError.message || "Failed to create auth profile after cleanup");
+            }
+            authUserId = retryData!.user.id;
           }
         } else {
           console.error("Create User Error:", createError);
