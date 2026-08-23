@@ -81,8 +81,9 @@ export default async function AdminPayments(props: {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-5 text-[#6a5d50]">ลูกค้า</TableHead>
-                <TableHead className="text-[#6a5d50]">คอร์สเรียน</TableHead>
-                <TableHead className="text-right text-[#6a5d50]">ยอดรวม (บาท)</TableHead>
+                <TableHead className="text-[#6a5d50]">คอร์สที่จอง</TableHead>
+                <TableHead className="text-[#6a5d50]">เวลาแจ้งโอน</TableHead>
+                <TableHead className="text-right text-[#6a5d50]">ยอดโอน (บาท)</TableHead>
                 <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
                 <TableHead className="text-[#6a5d50]">จัดการ</TableHead>
               </TableRow>
@@ -100,24 +101,29 @@ export default async function AdminPayments(props: {
                     <TableCell className="px-5 py-4">
                       <div className="font-medium text-[#3d3229]">{b.user.name}</div>
                       {b.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{b.user.phone}</div>}
-                      <div className="text-[10px] text-[#a09486] font-mono mt-1" title={b.id}>
-                        {b.id.substring(0, 8)}
-                      </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="font-medium text-[#3d3229]">{b.classEvent.name}</div>
                       <div className="text-xs text-[#6a5d50] mt-0.5">
-                        {b.classEvent.date.toLocaleDateString("th-TH")}
+                        จองเรียนวันที่: {b.classEvent.date.toLocaleDateString("th-TH")}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums font-medium py-4">
-                      {b.totalPrice.toLocaleString("th-TH")}
+                    <TableCell className="py-4">
+                      <div className="text-sm font-medium text-[#3d3229]">
+                        {b.payment?.createdAt ? b.payment.createdAt.toLocaleString('th-TH', { 
+                          dateStyle: 'short', timeStyle: 'short' 
+                        }) : "-"}
+                      </div>
+                      <div className="text-xs text-[#6a5d50] mt-0.5">เวลาโอนเงิน</div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-medium py-4 text-[#8a6d1f]">
+                      ฿{b.totalPrice.toLocaleString("th-TH")}
                     </TableCell>
                     <TableCell className="py-4">
                       <BookingStatusBadge status={b.status} />
                     </TableCell>
                     <TableCell className="px-5 py-4 flex items-start gap-2">
-                      <AdminBookingSheet booking={b} />
+                      <AdminBookingSheet booking={b} triggerLabel="ตรวจสลิป" />
                     </TableCell>
                   </TableRow>
                 ))
@@ -150,12 +156,19 @@ export default async function AdminPayments(props: {
                   <div className="text-[#6a5d50]">วันที่:</div>
                   <div className="text-[#3d3229] text-right">{b.classEvent.date.toLocaleDateString("th-TH")}</div>
                   
-                  <div className="text-[#6a5d50]">ยอดรวม:</div>
-                  <div className="font-medium text-[#3d3229] text-right">{b.totalPrice.toLocaleString("th-TH")} บาท</div>
+                  <div className="text-[#6a5d50]">ยอดโอน:</div>
+                  <div className="font-medium text-[#8a6d1f] text-right">{b.totalPrice.toLocaleString("th-TH")} บาท</div>
+                  
+                  <div className="text-[#6a5d50]">เวลาแจ้งโอน:</div>
+                  <div className="text-[#3d3229] text-right">
+                    {b.payment?.createdAt ? b.payment.createdAt.toLocaleString('th-TH', { 
+                      dateStyle: 'short', timeStyle: 'short' 
+                    }) : "-"}
+                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-[#ddd4c8]">
-                  <AdminBookingSheet booking={b} />
+                <div className="pt-3 border-t border-[#ddd4c8] flex justify-end">
+                  <AdminBookingSheet booking={b} triggerLabel="ตรวจสลิป" />
                 </div>
               </div>
             ))

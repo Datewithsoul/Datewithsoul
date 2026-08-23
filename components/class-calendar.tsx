@@ -99,19 +99,19 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
         </div>
 
         {/* Calendar Grid Container */}
-        <div className="w-full">
-          <div>
+        <div className="w-full overflow-x-auto pb-4 no-scrollbar">
+          <div className="min-w-[600px] md:min-w-0">
             {/* Days Header */}
             <div className="relative z-10 grid grid-cols-7 gap-1 md:gap-4 mb-1 md:mb-2">
               {dayNames.map(day => (
-                <div key={day} className="text-center font-black text-[10px] md:text-lg py-1 md:py-2 border-b-2 md:border-b-4 border-black truncate">
+                <div key={day} className="text-center font-black text-xs md:text-lg py-1 md:py-2 border-b-2 md:border-b-4 border-black truncate">
                   {day}
                 </div>
               ))}
             </div>
 
             {/* Calendar Cells */}
-            <div className={`relative z-10 grid grid-cols-7 gap-1 md:gap-4 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+            <div className={`relative z-10 grid grid-cols-7 gap-2 md:gap-4 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
               {days.map((day, index) => {
                 if (day === null) {
                   return <div key={`empty-${index}`} className="min-h-[70px] md:min-h-[120px] bg-gray-50 border-2 md:border-4 border-gray-200/50 rounded-lg md:rounded-xl"></div>;
@@ -131,38 +131,38 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
             return (
               <div 
                 key={`day-${day}`} 
-                className={`min-h-[70px] md:min-h-[140px] border-2 md:border-4 border-black rounded-lg md:rounded-xl p-1 md:p-2 flex flex-col transition-transform hover:-translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${isToday ? 'bg-[#FFC107]' : 'bg-white'}`}
+                className={`min-h-[100px] md:min-h-[140px] border-2 md:border-4 border-black rounded-lg md:rounded-xl p-1.5 md:p-2 flex flex-col transition-transform hover:-translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${isToday ? 'bg-[#FFC107]' : 'bg-white'}`}
               >
                 <div className="flex justify-between items-start mb-1 md:mb-2">
-                  <span className={`font-black text-xs md:text-xl w-5 h-5 md:w-8 md:h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-black text-white' : ''}`}>
+                  <span className={`font-black text-sm md:text-xl w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-black text-white' : ''}`}>
                     {day}
                   </span>
                 </div>
                 
-                <div className="flex flex-col gap-1 md:gap-2 flex-grow overflow-y-auto no-scrollbar">
+                <div className="flex flex-col gap-1.5 md:gap-2 flex-grow overflow-y-auto no-scrollbar">
                   {dayClasses.slice(0, 2).map(c => (
                     <Link href={`/classes/${c.id}`} key={c.id}>
-                      <div className="bg-[#1c1d1f] text-white p-1 md:p-2 border md:border-2 border-black rounded md:rounded-lg hover:bg-[#F44336] transition-colors cursor-pointer group">
-                        <div className="flex items-center gap-1 text-[8px] md:text-xs text-gray-300 group-hover:text-white md:mb-1 font-bold leading-none md:leading-normal">
-                          <Clock size={8} className="hidden md:block" /> {c.startTime}
+                      <div className="bg-[#1c1d1f] text-white p-1.5 md:p-2 border border-black md:border-2 rounded md:rounded-lg hover:bg-[#F44336] transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-1 text-[10px] md:text-xs text-gray-300 group-hover:text-white mb-0.5 md:mb-1 font-bold">
+                          <Clock size={10} className="hidden md:block" /> {c.startTime}
                         </div>
-                        <h4 className="font-bold text-[9px] md:text-sm leading-tight line-clamp-1 md:line-clamp-2 mt-0.5 md:mt-0">
+                        <h4 className="font-bold text-[11px] md:text-sm leading-tight line-clamp-2">
                           {c.name}
                         </h4>
-                        <div className="mt-0.5 md:mt-1 flex flex-col xl:flex-row xl:items-center justify-between gap-0.5">
-                          <span className="text-[8px] md:text-xs font-black text-[#FFC107] group-hover:text-white hidden md:inline-block">฿{c.price.toLocaleString()}</span>
+                        <div className="mt-1 flex flex-col xl:flex-row xl:items-center justify-between gap-1">
+                          <span className="text-[9px] md:text-xs font-black text-[#FFC107] group-hover:text-white hidden md:inline-block">฿{c.price.toLocaleString()}</span>
                           {c.totalSeats <= 3 && c.totalSeats > 0 ? (
-                            <span className="text-[8px] bg-[#FFC107] text-black px-1 rounded font-bold self-start xl:self-auto">เหลือ {c.totalSeats}</span>
+                            <span className="text-[9px] bg-[#FFC107] text-black px-1.5 py-0.5 rounded font-bold self-start xl:self-auto">เหลือ {c.totalSeats}</span>
                           ) : c.totalSeats === 0 ? (
-                            <span className="text-[8px] bg-red-900 text-white px-1 rounded font-bold self-start xl:self-auto">เต็ม</span>
+                            <span className="text-[9px] bg-red-900 text-white px-1.5 py-0.5 rounded font-bold self-start xl:self-auto">เต็ม</span>
                           ) : null}
                         </div>
                       </div>
                     </Link>
                   ))}
                   {dayClasses.length > 2 && (
-                    <Link href={`/classes?date=${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`} className="text-[10px] md:text-xs text-center text-[#6a5d50] hover:text-[#1c1d1f] hover:underline py-1 font-semibold mt-auto">
-                      ดูรายการเพิ่มเติ่มของวันนี้
+                    <Link href={`/classes?date=${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`} className="text-[11px] md:text-xs text-center text-[#6a5d50] hover:text-[#1c1d1f] hover:underline py-1 font-semibold mt-auto">
+                      ดูเพิ่มเติม
                     </Link>
                   )}
                 </div>

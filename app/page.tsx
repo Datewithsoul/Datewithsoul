@@ -232,7 +232,11 @@ export default async function Home() {
 
                               <div className="flex flex-col flex-1 p-4">
                                 <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-                                  {c.totalSeats > 0 ? (
+                                  {c.status === "COMPLETED" ? (
+                                    <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
+                                      ปิดรับสมัคร
+                                    </span>
+                                  ) : c.totalSeats > 0 ? (
                                     <span className="bg-green-50 text-green-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-green-200">
                                       เปิดรับสมัคร
                                     </span>

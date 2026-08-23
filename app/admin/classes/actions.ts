@@ -182,3 +182,14 @@ export async function deleteClass(formData: FormData) {
 
   redirect("/admin/classes");
 }
+
+export async function closeClass(formData: FormData) {
+  const id = formData.get("id") as string;
+  
+  await prisma.classEvent.update({
+    where: { id },
+    data: { status: "COMPLETED" }
+  });
+
+  redirect("/admin/classes");
+}

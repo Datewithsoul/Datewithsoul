@@ -110,7 +110,11 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
                         <Link href={`/classes/${c.id}`} className="flex flex-col flex-1 p-5">
                           {/* Badges Row */}
                           <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {c.totalSeats > 0 ? (
+                            {c.status === "COMPLETED" ? (
+                              <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-gray-200">
+                                ปิดรับสมัคร
+                              </span>
+                            ) : c.totalSeats > 0 ? (
                               <span className="bg-green-50 text-green-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-green-200">
                                 เปิดรับสมัคร
                               </span>

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
 import { CancelClassButton } from "@/components/cancel-class-button";
+import { CloseClassButton } from "@/components/close-class-button";
 
 export default async function AdminClasses() {
   const classes = await prisma.classEvent.findMany({
@@ -82,6 +83,17 @@ export default async function AdminClasses() {
                         <Link href={`/admin/classes/${c.id}/edit`}>
                           <Button variant="outline" size="sm">แก้ไข</Button>
                         </Link>
+                        {c.status === "PUBLISHED" && (
+                          <form action={async () => {
+                            "use server";
+                            const { closeClass } = await import("./actions");
+                            const formData = new FormData();
+                            formData.append("id", c.id);
+                            await closeClass(formData);
+                          }}>
+                            <CloseClassButton />
+                          </form>
+                        )}
                         {c.status !== "CANCELLED" && (
                           <form action={async () => {
                             "use server";
@@ -141,12 +153,25 @@ export default async function AdminClasses() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-[#ddd4c8] flex justify-end gap-2">
-                  <Link href={`/admin/classes/${c.id}/edit`} className="flex-1">
+                <div className="pt-3 border-t border-[#ddd4c8] flex flex-wrap justify-end gap-2">
+                  <Link href={`/admin/classes/${c.id}/edit`} className="flex-1 min-w-[30%]">
                     <Button variant="outline" size="sm" className="w-full">แก้ไข</Button>
                   </Link>
+                  {c.status === "PUBLISHED" && (
+                    <form className="flex-1 min-w-[30%]" action={async () => {
+                      "use server";
+                      const { closeClass } = await import("./actions");
+                      const formData = new FormData();
+                      formData.append("id", c.id);
+                      await closeClass(formData);
+                    }}>
+                      <div className="w-full">
+                        <CloseClassButton className="w-full" />
+                      </div>
+                    </form>
+                  )}
                   {c.status !== "CANCELLED" && (
-                    <form className="flex-1" action={async () => {
+                    <form className="flex-1 min-w-[30%]" action={async () => {
                       "use server";
                       const { deleteClass } = await import("./actions");
                       const formData = new FormData();

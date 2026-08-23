@@ -201,12 +201,20 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
               />
               
               <div className="flex flex-col gap-3 mb-4">
-                <Link href={`/book/${classEvent.id}`} className="block w-full">
-                  <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
-                    จองที่นั่ง
+                {classEvent.status === "COMPLETED" ? (
+                  <button disabled className="w-full bg-gray-300 text-gray-500 font-bold py-3.5 rounded-lg text-lg cursor-not-allowed">
+                    คอร์สนี้ปิดรับสมัครแล้ว
                   </button>
-                </Link>
-                <AddToCartButton classEvent={classEvent} />
+                ) : (
+                  <>
+                    <Link href={`/book/${classEvent.id}`} className="block w-full">
+                      <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
+                        จองที่นั่ง
+                      </button>
+                    </Link>
+                    <AddToCartButton classEvent={classEvent} />
+                  </>
+                )}
               </div>
               <div className="flex justify-between text-gray-700 underline mb-2 text-sm">
                 <span>ราคาคอร์ส</span>

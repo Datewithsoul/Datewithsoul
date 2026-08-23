@@ -30,14 +30,14 @@ type BookingWithDetails = Prisma.BookingGetPayload<{
   };
 }>;
 
-export function AdminBookingSheet({ booking }: { booking: BookingWithDetails }) {
+export function AdminBookingSheet({ booking, triggerLabel = "รายละเอียด" }: { booking: BookingWithDetails, triggerLabel?: string }) {
   const [open, setOpen] = React.useState(false);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
-          รายละเอียด
+        <Button variant={triggerLabel === "รายละเอียด" ? "outline" : "default"} size="sm" className="h-8 px-3 text-xs">
+          {triggerLabel}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-xl md:max-w-2xl overflow-y-auto bg-[#f4f1ec]" side="right" data-admin>
@@ -109,11 +109,9 @@ export function AdminBookingSheet({ booking }: { booking: BookingWithDetails }) 
                   <h3 className="text-sm font-medium text-[#3d3229]">สลิปโอนเงิน</h3>
                   {booking.payment?.slipUrl ? (
                     <a href={booking.payment.slipUrl} target="_blank" rel="noreferrer" className="block w-full rounded border border-[#ddd4c8] overflow-hidden hover:opacity-90 transition-opacity bg-black/5">
-                      <Image 
+                      <img 
                         src={booking.payment.slipUrl} 
                         alt="Payment Slip" 
-                        width={300} 
-                        height={500} 
                         className="w-full h-auto object-contain max-h-[300px]"
                       />
                     </a>

@@ -13,8 +13,8 @@ export default async function AdminReports() {
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
   const bookingsForChart = await prisma.booking.findMany({
-    where: { createdAt: { gte: sixMonthsAgo } },
-    select: { createdAt: true, totalPrice: true, status: true, seats: true },
+    where: { status: BookingStatus.PAID },
+    select: { createdAt: true, totalPrice: true, status: true, seats: true, payment: { select: { updatedAt: true } } },
   });
 
   const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
@@ -36,11 +36,13 @@ export default async function AdminReports() {
   }
 
   bookingsForChart.forEach(b => {
-    const d = new Date(b.createdAt);
-    const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
-    if (chartDataMap.has(monthKey)) {
-      const data = chartDataMap.get(monthKey);
-      if (b.status === BookingStatus.PAID) {
+    if (b.status === BookingStatus.PAID) {
+      // Use payment verified date if available, otherwise fallback to booking creation date
+      const eventDate = b.payment?.updatedAt ? new Date(b.payment.updatedAt) : new Date(b.createdAt);
+      const monthKey = `${eventDate.getFullYear()}-${eventDate.getMonth()}`;
+      
+      if (chartDataMap.has(monthKey)) {
+        const data = chartDataMap.get(monthKey);
         data.bookings += 1;
         data.revenue += b.totalPrice;
         totalRevenue += b.totalPrice;
