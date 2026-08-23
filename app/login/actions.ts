@@ -23,7 +23,7 @@ export async function loginWithLine() {
     redirect("/login?error=" + encodeURIComponent("LINE_CLIENT_ID is missing in .env.local"));
   }
 
-  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineClientId}&redirect_uri=${redirectUri}&state=datewithsoul123&scope=profile openid&bot_prompt=aggressive`;
+  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineClientId}&redirect_uri=${redirectUri}&state=datewithsoul123&scope=profile openid`;
   
   redirect(authUrl);
 }
