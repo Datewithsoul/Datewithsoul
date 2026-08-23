@@ -9,6 +9,7 @@ export async function toggleAttendance(bookingId: string, status: boolean) {
     data: { attended: status }
   });
   
-  revalidatePath("/admin/classes/[id]/attendance", "page");
+  revalidatePath("/admin/attendance", "page");
+  revalidatePath("/admin/attendance/[id]", "page");
   return { success: true };
 }

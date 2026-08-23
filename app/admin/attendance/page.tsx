@@ -4,6 +4,7 @@ import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { AttendanceToggle } from "./[id]/attendance-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ export default async function AttendanceListPage() {
     include: {
       bookings: {
         where: { status: BookingStatus.PAID },
+        include: { user: true },
+        orderBy: { createdAt: "asc" }
       }
     }
   });
@@ -57,8 +60,12 @@ export default async function AttendanceListPage() {
                   <div className="pb-5 pt-2 px-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {events.map((c) => {
+                        // In this app, c.totalSeats is the REMAINING capacity. We need to add all bookings to get real total, 
+                        // but since we only have PAID bookings here, we'll estimate or just show the paid fraction.
+                        // Wait, let's just show {totalPaid} / {c.totalSeats + totalPaid}
                         const totalPaid = c.bookings.reduce((sum, b) => sum + b.seats, 0);
                         const totalAttended = c.bookings.filter(b => b.attended).reduce((sum, b) => sum + b.seats, 0);
+                        const totalCapacity = c.totalSeats + totalPaid;
                         
                         return (
                           <div key={c.id} className="bg-[#fbfaf8] border border-[#ddd4c8] rounded-lg p-4 flex flex-col hover:border-[#8a6d1f] hover:shadow-sm transition-all">
@@ -73,14 +80,36 @@ export default async function AttendanceListPage() {
                             
                             <div className="text-sm text-[#6a5d50] mb-4 space-y-1">
                               <div>⏰ เวลา: {c.startTime} - {c.endTime}</div>
-                              <div className="mt-2 pt-2 border-t border-[#eee8e0] font-medium text-[#3d3229]">
-                                มาแล้ว: <span className="text-green-600 font-bold">{totalAttended}</span> / {totalPaid} ที่นั่ง
+                              <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#eee8e0]">
+                                <span>จองแล้ว: <span className="font-bold text-[#3d3229]">{totalPaid} / {totalCapacity}</span> ที่นั่ง</span>
+                                <span>มาแล้ว: <span className="font-bold text-green-600">{totalAttended}</span></span>
                               </div>
                             </div>
 
-                            <div className="mt-auto pt-2 flex gap-2">
+                            {/* Show names right here so they can click immediately */}
+                            {c.bookings.length > 0 ? (
+                              <div className="mt-2 flex flex-col gap-2 border-t border-[#eee8e0] pt-3">
+                                {c.bookings.map(b => (
+                                  <div key={b.id} className="flex items-center justify-between gap-2 text-sm bg-white p-2 rounded border border-[#eee8e0]">
+                                    <div className="flex flex-col truncate">
+                                      <span className="font-semibold text-[#3d3229] truncate">{b.user.name}</span>
+                                      <span className="text-[10px] text-[#6a5d50]">{b.seats} ที่นั่ง</span>
+                                    </div>
+                                    <div className="shrink-0 scale-75 origin-right">
+                                      <AttendanceToggle bookingId={b.id} initialStatus={b.attended} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="mt-2 text-xs text-center text-[#a09486] border-t border-[#eee8e0] pt-3">
+                                ยังไม่มีผู้ชำระเงิน
+                              </div>
+                            )}
+
+                            <div className="mt-4 pt-2 flex gap-2">
                               <Link href={`/admin/attendance/${c.id}`} className="flex-1">
-                                <Button size="sm" className="w-full bg-[#8a6d1f] hover:bg-[#6c5518] text-white">เปิดใบเช็คชื่อ</Button>
+                                <Button variant="outline" size="sm" className="w-full text-xs">จัดการเต็มรูปแบบ</Button>
                               </Link>
                             </div>
                           </div>
