@@ -10,20 +10,21 @@ import {
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { AdminBookingControls } from "@/components/admin-booking-controls";
-import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
-import { AdminBookingFilters } from "@/components/admin-booking-filters";
 import { AdminBookingSheet } from "@/components/admin-booking-sheet";
-import { BookingStatus, Prisma } from "@/app/generated/prisma";
+import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
-export default async function AdminBookings(props: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+export default async function AdminPayments(props: {
+  searchParams: Promise<{ q?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const query = searchParams?.q ?? "";
-  const status = searchParams?.status ?? "ALL";
 
-  const whereCondition: Prisma.BookingWhereInput = {};
+  const whereCondition: any = {
+    status: BookingStatus.PAYMENT_REVIEW,
+  };
 
   if (query) {
     whereCondition.OR = [
@@ -33,56 +34,47 @@ export default async function AdminBookings(props: {
     ];
   }
 
-  if (status !== "ALL" && Object.values(BookingStatus).includes(status as BookingStatus)) {
-    whereCondition.status = status as BookingStatus;
-  }
-
-  const [bookings, classEvents] = await Promise.all([
-    prisma.booking.findMany({
-      where: whereCondition,
-      include: {
-        user: true,
-        classEvent: true,
-        payment: {
-          include: {
-            reviewLogs: {
-              include: { reviewer: true },
-              orderBy: { createdAt: "desc" },
-            },
+  const bookings = await prisma.booking.findMany({
+    where: whereCondition,
+    include: {
+      user: true,
+      classEvent: true,
+      payment: {
+        include: {
+          reviewLogs: {
+            include: { reviewer: true },
+            orderBy: { createdAt: "desc" },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.classEvent.findMany({
-      orderBy: [{ date: "asc" }, { startTime: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        date: true,
-        startTime: true,
-        endTime: true,
-        totalSeats: true,
-      },
-    }),
-  ]);
+    },
+    orderBy: { createdAt: "asc" }, // Oldest first for review queue
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
-        title="รายการจอง"
-        description="ดูสลิปจากลูกค้า ตรวจสอบว่าชำระเงินจริง แล้วยืนยันเป็นชำระเงินแล้ว หรือเปลี่ยนสถานะได้เอง"
+        title="ตรวจสอบการชำระเงิน"
+        description="ตรวจสอบสลิปโอนเงินที่ลูกค้าอัปโหลดเข้ามา และยืนยันสถานะการจอง"
       />
 
       <section className="border border-[#ddd4c8] bg-white shadow-sm">
         <div className="border-b border-[#ddd4c8] px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-base font-semibold text-[#3d3229]">รายการทั้งหมด</h2>
+            <h2 className="text-base font-semibold text-[#3d3229]">รายการรอตรวจสอบ</h2>
             <p className="mt-1 text-sm text-[#6a5d50]">พบ {bookings.length.toLocaleString("th-TH")} รายการ</p>
           </div>
+          
+          <form className="relative w-full sm:w-72">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#a09486]" />
+            <Input
+              name="q"
+              placeholder="ค้นหาชื่อ, เบอร์โทร, รหัส..."
+              defaultValue={query}
+              className="pl-9 bg-[#fbfaf8] border-[#ddd4c8] focus-visible:ring-[#8a6d1f]"
+            />
+          </form>
         </div>
-        
-        <AdminBookingFilters />
 
         <div className="hidden md:block overflow-x-auto">
           <Table>
@@ -90,18 +82,16 @@ export default async function AdminBookings(props: {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-5 text-[#6a5d50]">ลูกค้า</TableHead>
                 <TableHead className="text-[#6a5d50]">คอร์สเรียน</TableHead>
-                <TableHead className="text-center text-[#6a5d50]">ที่นั่ง</TableHead>
                 <TableHead className="text-right text-[#6a5d50]">ยอดรวม (บาท)</TableHead>
                 <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
-                <TableHead className="text-[#6a5d50]">ตรวจสอบสลิป</TableHead>
-                <TableHead className="px-5 text-[#6a5d50]">จัดการ</TableHead>
+                <TableHead className="text-[#6a5d50]">จัดการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {bookings.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={7} className="px-5 py-10 text-center text-[#6a5d50]">
-                    ไม่พบรายการจองที่ตรงกับเงื่อนไข
+                  <TableCell colSpan={5} className="px-5 py-10 text-center text-[#6a5d50]">
+                    ไม่มีรายการรอตรวจสอบการชำระเงินในขณะนี้
                   </TableCell>
                 </TableRow>
               ) : (
@@ -119,33 +109,15 @@ export default async function AdminBookings(props: {
                       <div className="text-xs text-[#6a5d50] mt-0.5">
                         {b.classEvent.date.toLocaleDateString("th-TH")}
                       </div>
-                      <div className="text-xs text-[#6a5d50]">
-                        {b.classEvent.startTime}–{b.classEvent.endTime} น.
-                      </div>
                     </TableCell>
-                    <TableCell className="text-center tabular-nums py-4">{b.seats}</TableCell>
-                    <TableCell className="text-right tabular-nums font-medium py-4">{b.totalPrice.toLocaleString("th-TH")}</TableCell>
+                    <TableCell className="text-right tabular-nums font-medium py-4">
+                      {b.totalPrice.toLocaleString("th-TH")}
+                    </TableCell>
                     <TableCell className="py-4">
                       <BookingStatusBadge status={b.status} />
                     </TableCell>
-                    <TableCell className="py-4">
-                      <AdminBookingControls
-                        bookingId={b.id}
-                        status={b.status}
-                        slipUrl={b.payment?.slipUrl ?? null}
-                        reviewLogs={b.payment?.reviewLogs ?? []}
-                      />
-                    </TableCell>
-                    <TableCell className="px-5 py-4 flex flex-col items-start gap-2">
+                    <TableCell className="px-5 py-4 flex items-start gap-2">
                       <AdminBookingSheet booking={b} />
-                      {b.status !== "CANCELLED" ? (
-                        <AdminChangeClassDialog
-                          bookingId={b.id}
-                          currentClassEventId={b.classEventId}
-                          seats={b.seats}
-                          classEvents={classEvents}
-                        />
-                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))
@@ -158,7 +130,7 @@ export default async function AdminBookings(props: {
         <div className="md:hidden flex flex-col gap-4 p-4 bg-[#f4f1ec]">
           {bookings.length === 0 ? (
             <div className="py-10 text-center text-sm text-[#6a5d50] bg-white rounded-md border border-[#ddd4c8]">
-              ไม่พบรายการจองที่ตรงกับเงื่อนไข
+              ไม่มีรายการรอตรวจสอบการชำระเงิน
             </div>
           ) : (
             bookings.map((b) => (
@@ -178,35 +150,12 @@ export default async function AdminBookings(props: {
                   <div className="text-[#6a5d50]">วันที่:</div>
                   <div className="text-[#3d3229] text-right">{b.classEvent.date.toLocaleDateString("th-TH")}</div>
                   
-                  <div className="text-[#6a5d50]">ที่นั่ง:</div>
-                  <div className="text-[#3d3229] text-right">{b.seats} ที่นั่ง</div>
-                  
                   <div className="text-[#6a5d50]">ยอดรวม:</div>
                   <div className="font-medium text-[#3d3229] text-right">{b.totalPrice.toLocaleString("th-TH")} บาท</div>
                 </div>
 
-                <div className="pt-3 border-t border-[#ddd4c8] flex flex-col gap-2">
-                  <AdminBookingControls
-                    bookingId={b.id}
-                    status={b.status}
-                    slipUrl={b.payment?.slipUrl ?? null}
-                    reviewLogs={b.payment?.reviewLogs ?? []}
-                  />
-                  <div className="flex gap-2 w-full mt-2">
-                    <div className="flex-1">
-                      <AdminBookingSheet booking={b} />
-                    </div>
-                    {b.status !== "CANCELLED" ? (
-                      <div className="flex-1">
-                        <AdminChangeClassDialog
-                          bookingId={b.id}
-                          currentClassEventId={b.classEventId}
-                          seats={b.seats}
-                          classEvents={classEvents}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
+                <div className="pt-3 border-t border-[#ddd4c8]">
+                  <AdminBookingSheet booking={b} />
                 </div>
               </div>
             ))

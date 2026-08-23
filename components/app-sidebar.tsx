@@ -2,14 +2,18 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { BookOpen, Calendar, LayoutDashboard, Users } from "lucide-react"
+import { BookOpen, Calendar, LayoutDashboard, Users, CreditCard, MessageSquare, BarChart3, Settings } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
 
 const navItems = [
   { title: "ภาพรวม", url: "/admin", icon: LayoutDashboard },
-  { title: "คอร์สเรียน", url: "/admin/classes", icon: Calendar },
   { title: "รายการจอง", url: "/admin/bookings", icon: BookOpen },
-  { title: "ผู้ใช้งาน", url: "/admin/users", icon: Users },
+  { title: "ตรวจสอบการชำระเงิน", url: "/admin/payments", icon: CreditCard },
+  { title: "คอร์สและตารางเรียน", url: "/admin/classes", icon: Calendar },
+  { title: "ลูกค้า", url: "/admin/users", icon: Users },
+  { title: "การแจ้งเตือน LINE", url: "/admin/notifications", icon: MessageSquare },
+  { title: "รายงาน", url: "/admin/reports", icon: BarChart3 },
+  { title: "การตั้งค่า", url: "/admin/settings", icon: Settings },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -40,7 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       tooltip={item.title}
                       isActive={active}
                       render={<a href={item.url} />}
-                      className="h-9 rounded-md px-3 text-[#6a5d50] hover:bg-[#ece7e1] hover:text-[#3d3229] data-[active=true]:bg-[#ece7e1] data-[active=true]:font-medium data-[active=true]:text-[#3d3229]"
+                      className="h-9 rounded-md px-3 text-[#6a5d50] hover:bg-[#ece7e1] hover:text-[#3d3229] data-[active=true]:bg-[var(--brand-yellow)] data-[active=true]:font-medium data-[active=true]:text-[#3d3229]"
                     >
                       <item.icon />
                       <span>{item.title}</span>

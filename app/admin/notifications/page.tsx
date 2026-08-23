@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { RetryNotificationButton } from "@/components/retry-notification-button";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +56,13 @@ export default async function AdminNotifications() {
                 <TableHead className="text-[#6a5d50]">ประเภท</TableHead>
                 <TableHead className="text-[#6a5d50]">ข้อความ (บางส่วน)</TableHead>
                 <TableHead className="px-5 text-[#6a5d50]">อ้างอิง</TableHead>
+                <TableHead className="px-5 text-[#6a5d50] text-right">จัดการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {notifications.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="px-5 py-10 text-center text-[#6a5d50]">
+                  <TableCell colSpan={6} className="px-5 py-10 text-center text-[#6a5d50]">
                     ยังไม่มีประวัติการแจ้งเตือน
                   </TableCell>
                 </TableRow>
@@ -99,6 +101,9 @@ export default async function AdminNotifications() {
                       ) : (
                         "-"
                       )}
+                    </TableCell>
+                    <TableCell className="px-5 py-3 text-right">
+                      <RetryNotificationButton notificationId={log.id} />
                     </TableCell>
                   </TableRow>
                 ))
