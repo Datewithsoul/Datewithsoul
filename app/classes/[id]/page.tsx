@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, PlayCircle, Check, Heart, Globe, Calendar, Clock, User, Share, Share2 } from "lucide-react";
+import { ArrowLeft, PlayCircle, Check, Heart, Globe, Calendar, Clock, User, Share, Share2, MapPin, Users, BookOpen, AlertCircle } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ShareButton from "@/components/share-button";
 import ScheduleSelector from "./schedule-selector";
@@ -91,6 +91,18 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                 <Clock size={16} />
                 <span>{classEvent.startTime} - {classEvent.endTime}</span>
               </span>
+              {classEvent.locationName && (
+                <span className="flex items-center gap-1">
+                  <MapPin size={16} />
+                  {classEvent.googleMapUrl ? (
+                    <a href={classEvent.googleMapUrl} target="_blank" rel="noreferrer" className="underline hover:text-[#8a6d1f]">
+                      {classEvent.locationName}
+                    </a>
+                  ) : (
+                    <span>{classEvent.locationName}</span>
+                  )}
+                </span>
+              )}
               <span className="underline cursor-pointer">{classEvent.category || "เวิร์กชอป"}</span>
             </div>
             

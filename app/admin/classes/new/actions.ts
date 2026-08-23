@@ -8,6 +8,8 @@ export async function createClass(formData: FormData) {
   const description = formData.get("description") as string;
   const price = parseFloat(formData.get("price") as string);
   const category = (formData.get("category") as string) || "เวิร์กชอป";
+  const locationName = formData.get("locationName") as string || "Date with Soul Love";
+  const googleMapUrl = formData.get("googleMapUrl") as string || null;
   const learningOutcomesStr = formData.get("learningOutcomes") as string;
   const requirementsStr = formData.get("requirements") as string;
   
@@ -43,6 +45,8 @@ export async function createClass(formData: FormData) {
         name,
         description,
         category,
+        locationName,
+        googleMapUrl,
         instructor: "ไม่ระบุผู้สอน", // Use default since we removed the field
         date: new Date(schedule.date),
         endDate: schedule.endDate ? new Date(schedule.endDate) : null,

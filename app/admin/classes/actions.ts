@@ -11,6 +11,8 @@ export async function updateClass(formData: FormData) {
   const instructor = "ไม่ระบุผู้สอน";
   const price = parseFloat(formData.get("price") as string);
   const category = (formData.get("category") as string) || "เวิร์กชอป";
+  const locationName = formData.get("locationName") as string || "Date with Soul Love";
+  const googleMapUrl = formData.get("googleMapUrl") as string || null;
   const endDate = null;
   const status = formData.get("status") as any;
   
@@ -54,6 +56,8 @@ export async function updateClass(formData: FormData) {
         name,
         description,
         category,
+        locationName,
+        googleMapUrl,
         instructor,
         date: firstDate,
         endDate,
@@ -86,6 +90,8 @@ export async function updateClass(formData: FormData) {
           name,
           description,
           category,
+          locationName,
+          googleMapUrl,
           instructor,
           date: dDate,
           endDate: null,
@@ -114,6 +120,8 @@ export async function updateClass(formData: FormData) {
         name,
         description,
         category,
+        locationName,
+        googleMapUrl,
         instructor,
         price,
         status: status || undefined,

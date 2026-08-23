@@ -56,6 +56,28 @@ export default function NewClassPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="locationName" className="text-sm font-medium leading-none">สถานที่</label>
+                <Input 
+                  type="text" 
+                  id="locationName" 
+                  name="locationName" 
+                  defaultValue="Date with Soul Love"
+                  placeholder="ชื่อสถานที่"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="googleMapUrl" className="text-sm font-medium leading-none">Google Map URL (ถ้ามี)</label>
+                <Input 
+                  type="url" 
+                  id="googleMapUrl" 
+                  name="googleMapUrl" 
+                  placeholder="https://maps.app.goo.gl/..."
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label htmlFor="description" className="text-sm font-medium leading-none">รายละเอียด</label>
               <textarea 

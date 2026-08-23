@@ -79,6 +79,26 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
                 />
               </div>
 
+              <div className="space-y-2">
+                <label htmlFor="locationName" className="text-sm font-medium leading-none">สถานที่</label>
+                <Input 
+                  type="text" 
+                  id="locationName" 
+                  name="locationName" 
+                  defaultValue={classEvent.locationName || "Date with Soul Love"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="googleMapUrl" className="text-sm font-medium leading-none">Google Map URL (ถ้ามี)</label>
+                <Input 
+                  type="url" 
+                  id="googleMapUrl" 
+                  name="googleMapUrl" 
+                  defaultValue={classEvent.googleMapUrl || ""}
+                />
+              </div>
+
               <div className="space-y-2 col-span-2">
                 <label htmlFor="status" className="text-sm font-medium leading-none">สถานะ</label>
                 <select 

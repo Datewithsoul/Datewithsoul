@@ -43,6 +43,8 @@ model ClassEvent {
   endDate          DateTime?
   startTime        String
   endTime          String
+  locationName     String?          @default("Date with Soul Love")
+  googleMapUrl     String?
   price            Float
   totalSeats       Int
   learningOutcomes String[]         @default([])
