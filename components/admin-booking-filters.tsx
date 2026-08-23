@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useTransition, useState, useEffect } from "react";
+import { useTransition, useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
@@ -19,18 +19,25 @@ export function AdminBookingFilters() {
   const [search, setSearch] = useState(currentSearch);
   const debouncedSearch = useDebounce(search, 500);
 
+  // Use a ref to track the previous debounced value so we only push when it actually changes
+  const prevDebouncedRef = useRef(currentSearch);
+
   useEffect(() => {
+    if (debouncedSearch === prevDebouncedRef.current) return;
+    prevDebouncedRef.current = debouncedSearch;
+
     const params = new URLSearchParams(searchParams.toString());
     if (debouncedSearch) {
       params.set("q", debouncedSearch);
     } else {
       params.delete("q");
     }
-    
+
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
     });
-  }, [debouncedSearch, pathname, router, searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   const handleStatusChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -39,7 +46,7 @@ export function AdminBookingFilters() {
     } else {
       params.delete("status");
     }
-    
+
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
     });
@@ -64,11 +71,14 @@ export function AdminBookingFilters() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">สถานะทั้งหมด</SelectItem>
-            <SelectItem value="PENDING_PAYMENT">กำลังจอง</SelectItem>
-            <SelectItem value="PENDING_PAYMENT">รอชำระเงิน</SelectItem>
+            <SelectItem value="PENDING_PAYMENT">กำลังจอง/ชำระเงิน</SelectItem>
             <SelectItem value="PAYMENT_REVIEW">รอตรวจสอบชำระเงิน</SelectItem>
-            <SelectItem value="CONFIRMED">ชำระเงินแล้ว</SelectItem>
+            <SelectItem value="CONFIRMED">ยืนยันแล้ว</SelectItem>
+            <SelectItem value="CHANGE_REQUESTED">ขอเปลี่ยนรอบ</SelectItem>
+            <SelectItem value="CANCELLATION_REQUESTED">ขอยกเลิก</SelectItem>
             <SelectItem value="CANCELLED">ยกเลิกแล้ว</SelectItem>
+            <SelectItem value="EXPIRED">หมดอายุ</SelectItem>
+            <SelectItem value="COMPLETED">เรียนแล้ว</SelectItem>
           </SelectContent>
         </Select>
       </div>
