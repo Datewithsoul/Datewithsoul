@@ -3,12 +3,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { ChevronDown } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -44,21 +39,22 @@ export default async function AttendanceListPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-[#ddd4c8] shadow-sm overflow-hidden p-2">
-          <Accordion type="single" collapsible className="w-full">
+          <div className="w-full flex flex-col gap-2">
             {Object.entries(groupedClasses).map(([courseName, events], index) => {
               const totalPaidCourse = events.reduce((sum, e) => sum + e.bookings.reduce((s, b) => s + b.seats, 0), 0);
               
               return (
-                <AccordionItem key={index} value={`item-${index}`} className="border-b border-[#eee8e0] px-4 last:border-0">
-                  <AccordionTrigger className="hover:no-underline py-4 text-[#3d3229]">
+                <details key={index} className="group border-b border-[#eee8e0] pb-2 last:border-0 last:pb-0 px-2">
+                  <summary className="flex cursor-pointer list-none items-center justify-between py-4 text-[#3d3229] hover:bg-[#fbfaf8] rounded-lg px-2 transition-colors [&::-webkit-details-marker]:hidden">
                     <div className="flex flex-col md:flex-row md:items-center justify-between w-full pr-4 gap-2 text-left">
                       <h3 className="font-bold text-lg">{courseName}</h3>
-                      <div className="text-sm font-normal text-[#6a5d50] bg-[#fbfaf8] px-3 py-1 rounded-full">
+                      <div className="text-sm font-normal text-[#6a5d50] bg-[#fbfaf8] px-3 py-1 rounded-full border border-[#eee8e0]">
                         {events.length} รอบเรียน • ผู้ลงทะเบียนทั้งหมด {totalPaidCourse} ที่นั่ง
                       </div>
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-5 pt-2">
+                    <ChevronDown className="h-5 w-5 text-[#6a5d50] transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="pb-5 pt-2 px-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {events.map((c) => {
                         const totalPaid = c.bookings.reduce((sum, b) => sum + b.seats, 0);
@@ -91,11 +87,11 @@ export default async function AttendanceListPage() {
                         );
                       })}
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </div>
+                </details>
               );
             })}
-          </Accordion>
+          </div>
         </div>
       )}
     </div>
