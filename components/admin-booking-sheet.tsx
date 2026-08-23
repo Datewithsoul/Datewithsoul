@@ -35,10 +35,12 @@ export function AdminBookingSheet({ booking, triggerLabel = "รายละเ�
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant={triggerLabel === "รายละเอียด" ? "outline" : "default"} size="sm" className="h-8 px-3 text-xs">
-          {triggerLabel}
-        </Button>
+      <SheetTrigger 
+        render={
+          <Button variant={triggerLabel === "รายละเอียด" ? "outline" : "default"} size="sm" className="h-8 px-3 text-xs" />
+        }
+      >
+        {triggerLabel}
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-xl md:max-w-2xl overflow-y-auto bg-[#f4f1ec]" side="right" data-admin>
         <SheetHeader className="mb-6 border-b border-[#ddd4c8] pb-4">
