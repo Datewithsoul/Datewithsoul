@@ -13,7 +13,7 @@ export default async function AttendanceListPage() {
     orderBy: [{ date: 'desc' }, { startTime: 'desc' }],
     include: {
       bookings: {
-        where: { status: BookingStatus.PAID },
+        where: { status: BookingStatus.CONFIRMED },
         include: { user: true },
         orderBy: { createdAt: "asc" }
       }

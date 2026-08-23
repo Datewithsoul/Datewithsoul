@@ -13,19 +13,21 @@ datasource db {
 }
 
 model User {
-  id             String             @id @default(uuid())
-  lineId         String?            @unique
-  name           String
-  email          String?            @unique
-  phone          String?
-  image          String?
-  role           Role               @default(CUSTOMER)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  bookings       Booking[]
-  bookingGroups  BookingGroup[]
-  notifications  NotificationLog[]
-  paymentReviews PaymentReviewLog[]
+  id               String             @id @default(uuid())
+  lineId           String?            @unique
+  name             String
+  email            String?            @unique
+  phone            String?
+  image            String?
+  role             Role               @default(CUSTOMER)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  bookings         Booking[]
+  bookingGroups    BookingGroup[]
+  notifications    NotificationLog[]
+  paymentReviews   PaymentReviewLog[]
+  changeRequests   ChangeRequest[]
+  approvedRequests ChangeRequest[]    @relation("ApprovedRequests")
 }
 
 enum Role {
@@ -34,26 +36,28 @@ enum Role {
 }
 
 model ClassEvent {
-  id               String           @id @default(uuid())
-  name             String
-  description      String?
-  category         String?          @default("เวิร์กชอป")
-  instructor       String           @default("ไม่ระบุผู้สอน")
-  date             DateTime
-  endDate          DateTime?
-  startTime        String
-  endTime          String
-  locationName     String?          @default("Date with Soul Love")
-  googleMapUrl     String?
-  price            Float
-  totalSeats       Int
-  learningOutcomes String[]         @default([])
-  requirements     String[]         @default([])
-  status           ClassEventStatus @default(PUBLISHED)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  bookings         Booking[]
-  media            ClassMedia[]
+  id                String           @id @default(uuid())
+  name              String
+  description       String?
+  category          String?          @default("เวิร์กชอป")
+  instructor        String           @default("ไม่ระบุผู้สอน")
+  date              DateTime
+  endDate           DateTime?
+  startTime         String
+  endTime           String
+  locationName      String?          @default("Date with Soul Love")
+  googleMapUrl      String?
+  price             Float
+  totalSeats        Int
+  learningOutcomes  String[]         @default([])
+  requirements      String[]         @default([])
+  status            ClassEventStatus @default(PUBLISHED)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  bookings          Booking[]
+  media             ClassMedia[]
+  originalRequests  ChangeRequest[]  @relation("OriginalEvent")
+  requestedRequests ChangeRequest[]  @relation("RequestedEvent")
 }
 
 enum ClassEventStatus {
@@ -80,7 +84,7 @@ model Booking {
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   classEventId   String
   classEvent     ClassEvent        @relation(fields: [classEventId], references: [id])
-  status         BookingStatus     @default(BOOKING)
+  status         BookingStatus     @default(PENDING_PAYMENT)
   seats          Int               @default(1)
   totalPrice     Float
   bookingGroupId String?
@@ -91,14 +95,18 @@ model Booking {
   updatedAt      DateTime          @updatedAt
   payment        Payment?
   notifications  NotificationLog[]
+  changeRequests ChangeRequest[]
 }
 
 enum BookingStatus {
-  BOOKING
-  AWAITING_PAYMENT
+  PENDING_PAYMENT
   PAYMENT_REVIEW
-  PAID
+  CONFIRMED
+  CHANGE_REQUESTED
+  CANCELLATION_REQUESTED
   CANCELLED
+  EXPIRED
+  COMPLETED
 }
 
 model BookingGroup {
@@ -108,17 +116,18 @@ model BookingGroup {
   bookings   Booking[]
   payment    Payment?
   totalPrice Float
-  status     BookingGroupStatus @default(PENDING)
+  status     BookingGroupStatus @default(PENDING_PAYMENT)
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
 }
 
 enum BookingGroupStatus {
-  PENDING
-  AWAITING_PAYMENT
+  PENDING_PAYMENT
   PAYMENT_REVIEW
-  PAID
+  CONFIRMED
   CANCELLED
+  EXPIRED
+  COMPLETED
 }
 
 model Payment {
@@ -128,16 +137,19 @@ model Payment {
   bookingGroupId String?            @unique
   bookingGroup   BookingGroup?      @relation(fields: [bookingGroupId], references: [id])
   slipUrl        String?
-  status         PaymentStatus      @default(PENDING)
+  status         PaymentStatus      @default(UNPAID)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   reviewLogs     PaymentReviewLog[]
 }
 
 enum PaymentStatus {
-  PENDING
+  UNPAID
+  UPLOADED
   UNDER_REVIEW
   VERIFIED
+  REFUND_PENDING
+  REFUNDED
   REJECTED
 }
 
@@ -162,4 +174,45 @@ model PaymentReviewLog {
   newStatus      PaymentStatus
   reason         String?
   createdAt      DateTime      @default(now())
+}
+
+model ChangeRequest {
+  id        String      @id @default(uuid())
+  bookingId String
+  booking   Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      RequestType
+
+  originalEventId  String?
+  originalEvent    ClassEvent? @relation("OriginalEvent", fields: [originalEventId], references: [id])
+  requestedEventId String?
+  requestedEvent   ClassEvent? @relation("RequestedEvent", fields: [requestedEventId], references: [id])
+
+  originalPrice   Float?
+  newPrice        Float?
+  priceDifference Float?
+
+  customerReason String?
+  status         RequestStatus @default(PENDING)
+  adminDecision  String?
+  adminReason    String?
+  approvedById   String?
+  approvedBy     User?         @relation("ApprovedRequests", fields: [approvedById], references: [id])
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+}
+
+enum RequestType {
+  CANCELLATION
+  COURSE_CHANGE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
 }

@@ -62,10 +62,10 @@ export default async function BookingsPage() {
             {bookings.map(booking => {
               const c = booking.classEvent;
               const statusStyles: Record<string, { text: string; color: string }> = {
-                [BookingStatus.BOOKING]: { text: "กำลังจอง", color: "bg-gray-100 text-gray-800" },
-                [BookingStatus.AWAITING_PAYMENT]: { text: "กำลังชำระเงิน", color: "bg-orange-100 text-orange-800" },
+                [BookingStatus.PENDING_PAYMENT]: { text: "กำลังจอง", color: "bg-gray-100 text-gray-800" },
+                [BookingStatus.PENDING_PAYMENT]: { text: "กำลังชำระเงิน", color: "bg-orange-100 text-orange-800" },
                 [BookingStatus.PAYMENT_REVIEW]: { text: "การตรวจสอบชำระเงิน", color: "bg-yellow-100 text-yellow-800" },
-                [BookingStatus.PAID]: { text: "ชำระเงินแล้ว", color: "bg-green-100 text-green-800" },
+                [BookingStatus.CONFIRMED]: { text: "ชำระเงินแล้ว", color: "bg-green-100 text-green-800" },
                 [BookingStatus.CANCELLED]: { text: "ยกเลิกแล้ว", color: "bg-red-100 text-red-800" },
               };
               const { text: statusText, color: statusColor } = statusStyles[booking.status] ?? {
@@ -112,7 +112,7 @@ export default async function BookingsPage() {
                         <span className="font-semibold">{booking.seats} ที่นั่ง · ฿{booking.totalPrice.toLocaleString()}</span>
                       </div>
                       
-                        {(booking.status === BookingStatus.BOOKING || booking.status === BookingStatus.AWAITING_PAYMENT) && (
+                        {(booking.status === BookingStatus.PENDING_PAYMENT || booking.status === BookingStatus.PENDING_PAYMENT) && (
                           <div className="flex items-center gap-2">
                             <CancelBookingButton bookingId={booking.id} />
                             <Link 

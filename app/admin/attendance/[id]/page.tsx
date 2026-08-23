@@ -15,7 +15,7 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
     where: { id },
     include: {
       bookings: {
-        where: { status: BookingStatus.PAID },
+        where: { status: BookingStatus.CONFIRMED },
         include: { user: true },
         orderBy: { createdAt: "asc" }
       }

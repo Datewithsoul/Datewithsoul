@@ -20,7 +20,7 @@ export default async function AdminDashboard() {
 
   const [totalClasses, totalBookings, pendingPayments, recentBookingsList, upcomingClasses, bookingsForChart, newBookingsToday, awaitingPaymentBookings, almostFullClasses] = await Promise.all([
     prisma.classEvent.count(),
-    prisma.booking.count({ where: { status: BookingStatus.PAID } }),
+    prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
     prisma.booking.count({ where: { status: BookingStatus.PAYMENT_REVIEW } }),
     prisma.booking.findMany({
       include: { user: true, classEvent: true, payment: true },
@@ -37,7 +37,7 @@ export default async function AdminDashboard() {
       select: { createdAt: true, totalPrice: true, status: true },
     }),
     prisma.booking.count({ where: { createdAt: { gte: today } } }),
-    prisma.booking.count({ where: { status: BookingStatus.AWAITING_PAYMENT } }),
+    prisma.booking.count({ where: { status: BookingStatus.PENDING_PAYMENT } }),
     prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: 3, gt: 0 } } })
   ]);
 
@@ -60,7 +60,7 @@ export default async function AdminDashboard() {
     const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
     if (chartDataMap.has(monthKey)) {
       const data = chartDataMap.get(monthKey);
-      if (b.status === BookingStatus.PAID) {
+      if (b.status === BookingStatus.CONFIRMED) {
         data.bookings += 1;
         data.revenue += b.totalPrice;
       }

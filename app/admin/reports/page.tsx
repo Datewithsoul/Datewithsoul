@@ -13,7 +13,7 @@ export default async function AdminReports() {
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
   const bookingsForChart = await prisma.booking.findMany({
-    where: { status: BookingStatus.PAID },
+    where: { status: BookingStatus.CONFIRMED },
     select: { createdAt: true, totalPrice: true, status: true, seats: true, payment: { select: { updatedAt: true } } },
   });
 
@@ -36,7 +36,7 @@ export default async function AdminReports() {
   }
 
   bookingsForChart.forEach(b => {
-    if (b.status === BookingStatus.PAID) {
+    if (b.status === BookingStatus.CONFIRMED) {
       // Use payment verified date if available, otherwise fallback to booking creation date
       const eventDate = b.payment?.updatedAt ? new Date(b.payment.updatedAt) : new Date(b.createdAt);
       const monthKey = `${eventDate.getFullYear()}-${eventDate.getMonth()}`;

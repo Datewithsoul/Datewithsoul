@@ -331,3 +331,214 @@ Every major screen should define:
 8. Responsive behavior and mobile actions
 9. Loading, empty, error, and accessibility states
 10. Final brand styling and interaction polish
+
+## 15. Cancellation and Course Change Workflow
+
+Customer cancellation and course-change requests must be handled as requests, not as immediate destructive updates. This prevents accidental refunds, lost bookings, and incorrect seat counts.
+
+### Customer Cancellation Request
+
+When a customer requests cancellation:
+
+1. Create a cancellation request.
+2. Change the booking status to `CANCELLATION_REQUESTED`.
+3. Keep the original booking and seat reserved until Admin approval.
+4. Do not issue a refund automatically.
+5. Send a LINE message asking the customer to wait for Admin to contact them about the refund.
+6. Notify Admin through the dashboard and LINE staff notification.
+
+When Admin approves:
+
+1. Change the booking status to `CANCELLED`.
+2. Change the payment status to `REFUND_PENDING`.
+3. Release the original seat.
+4. Process the refund.
+5. Change the payment status to `REFUNDED`.
+6. Send the cancellation and refund result to the customer through LINE.
+
+If Admin rejects the request, change the request status to `REJECTED`, store the reason, keep the original booking active, and notify the customer.
+
+### Course or Session Change Request
+
+Customers may request a different course, date, or time slot. The system must validate availability and pricing before applying any change.
+
+#### Same-Price Change
+
+For a course or session with the same price:
+
+- Check that the requested session has available capacity.
+- Check that the original booking is still active.
+- Check that the change is within the allowed change period.
+- Create a change request instead of directly modifying the booking.
+- Keep the original booking active until the request is completed.
+- After approval, move the booking to the new session and notify the customer through LINE.
+
+Recommended status flow:
+
+```text
+CONFIRMED
+→ CHANGE_REQUESTED
+→ COURSE_CHANGED
+```
+
+#### Different-Price Change
+
+For a course or session with a different price:
+
+1. Store the requested course and session.
+2. Calculate the price difference.
+3. Create a `CHANGE_REQUESTED` record.
+4. Keep the original booking and seat unchanged.
+5. Do not reserve the new seat until Admin approves the request, unless the business explicitly supports temporary holds.
+6. Send a LINE message asking the customer to wait for Admin to contact them about the price difference.
+7. Let Admin approve, reject, or request more information.
+
+If approved, the system must handle the price adjustment before completing the booking change.
+
+### Booking and Payment Statuses
+
+#### Booking Status
+
+```text
+PENDING_PAYMENT
+PAYMENT_REVIEW
+CONFIRMED
+CHANGE_REQUESTED
+CANCELLATION_REQUESTED
+CANCELLED
+EXPIRED
+COMPLETED
+```
+
+#### Payment Status
+
+```text
+UNPAID
+UPLOADED
+UNDER_REVIEW
+VERIFIED
+REFUND_PENDING
+REFUNDED
+REJECTED
+```
+
+#### Request Status
+
+```text
+PENDING
+APPROVED
+REJECTED
+COMPLETED
+CANCELLED
+```
+
+### Seat Availability Rules
+
+Seat availability must be calculated from the source booking records rather than from scattered manual counter updates.
+
+Recommended calculation:
+
+```text
+availableSeats = capacity - activeBookings
+```
+
+Bookings that hold a seat:
+
+```text
+PENDING_PAYMENT
+PAYMENT_REVIEW
+CONFIRMED
+CHANGE_REQUESTED
+CANCELLATION_REQUESTED
+```
+
+Bookings that do not hold a seat:
+
+```text
+CANCELLED
+EXPIRED
+REFUNDED
+```
+
+A cancellation request must not release a seat until the cancellation is approved. This prevents another customer from taking the seat while the original booking is still valid.
+
+### Safe Session Transfer
+
+Moving a booking from one session to another must be completed in a single database transaction.
+
+Example: moving a booking from 12 August 2026 to 13 August 2026:
+
+```text
+Begin Transaction
+
+1. Verify that the original booking is still active.
+2. Verify that the requested session has capacity.
+3. Lock both the original and requested sessions.
+4. Update the booking session.
+5. Record the original and new session in the change request history.
+6. Recalculate availability for both sessions.
+7. Commit the transaction.
+
+If any step fails:
+Rollback all changes.
+```
+
+The system must never update the old session, booking, and new session as separate independent operations. Otherwise, a failure in the middle can cause incorrect availability or a lost seat.
+
+For a session with capacity 15 and 11 active bookings, moving one booking away should result in:
+
+```text
+Original session: 11/15 → 10/15
+New session: active booking count increases by 1
+```
+
+For cancellation only:
+
+```text
+Original session: 11/15 → 10/15
+```
+
+### Idempotency and Duplicate Protection
+
+Important actions must be safe if the user clicks multiple times or a request is retried:
+
+- Approving a payment must not approve it twice.
+- Cancelling a booking must not release the seat twice.
+- Changing a session must not create duplicate bookings.
+- Refunding a payment must not create multiple refunds.
+- LINE notifications must support retry without creating duplicate business actions.
+
+Use status checks, unique constraints, idempotency keys, and database transactions for these operations.
+
+### Change Request Data
+
+Each request should store:
+
+- Booking ID
+- Customer ID
+- Request type: cancellation or course change
+- Original course and session
+- Requested course and session
+- Original price
+- New price
+- Price difference
+- Customer reason
+- Request status
+- Admin decision and reason
+- Approved by
+- Created time
+- Completed time
+
+### LINE Notification Messages
+
+Send LINE notifications when:
+
+- A cancellation request is received
+- A course-change request is received
+- Admin approves or rejects a request
+- Additional payment is required
+- A refund is pending
+- A refund is completed
+- A course or session change is completed
+
+LINE is used for communication, but the database remains the source of truth for booking, payment, seat, and request status.

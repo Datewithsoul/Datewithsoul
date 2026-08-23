@@ -167,7 +167,7 @@ export async function deleteClass(formData: FormData) {
     const activeBookings = await tx.booking.findMany({
       where: {
         classEventId: id,
-        status: { in: ["BOOKING", "AWAITING_PAYMENT", "PAYMENT_REVIEW", "PAID"] }
+        status: { in: ["PENDING_PAYMENT", "PENDING_PAYMENT", "PAYMENT_REVIEW", "CONFIRMED"] }
       },
       include: {
         payment: true,

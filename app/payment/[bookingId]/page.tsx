@@ -29,15 +29,15 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
   const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  const payableStatuses = [BookingStatus.BOOKING, BookingStatus.AWAITING_PAYMENT] as const;
+  const payableStatuses = [BookingStatus.PENDING_PAYMENT, BookingStatus.PENDING_PAYMENT] as const;
   const isPayable = payableStatuses.includes(booking.status as (typeof payableStatuses)[number]);
 
-  if (!isExpired && booking.status === BookingStatus.BOOKING) {
+  if (!isExpired && booking.status === BookingStatus.PENDING_PAYMENT) {
     await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: BookingStatus.AWAITING_PAYMENT },
+      data: { status: BookingStatus.PENDING_PAYMENT },
     });
-    booking.status = BookingStatus.AWAITING_PAYMENT;
+    booking.status = BookingStatus.PENDING_PAYMENT;
   }
 
   if (isExpired && isPayable) {
@@ -87,7 +87,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
               กลับไปดูคลาสเรียนทั้งหมด
             </Link>
           </div>
-        ) : booking.status === BookingStatus.PAID ? (
+        ) : booking.status === BookingStatus.CONFIRMED ? (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-green-600 mb-6 flex justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>

@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const expiredBookings = await prisma.booking.findMany({
       where: {
         createdAt: { lt: expirationThreshold },
-        status: { in: ["BOOKING"] },
+        status: { in: ["PENDING_PAYMENT"] },
         bookingGroupId: null // single bookings
       },
       include: {
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       await prisma.$transaction(async (tx) => {
         // Double check status inside tx
         const b = await tx.booking.findUnique({ where: { id: booking.id } });
-        if (!b || b.status !== "BOOKING") return;
+        if (!b || b.status !== "PENDING_PAYMENT") return;
 
         await tx.booking.update({
           where: { id: booking.id },

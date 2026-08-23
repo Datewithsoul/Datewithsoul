@@ -87,14 +87,14 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
 
   if (booking.user.lineId) {
     let message = "";
-    if (status === BookingStatus.PAID) {
+    if (status === BookingStatus.CONFIRMED) {
       message = `ยืนยันการชำระเงินสำหรับคลาส "${booking.classEvent.name}" เรียบร้อยแล้ว (สถานะ: ชำระเงินแล้ว) ขอบคุณที่ใช้บริการค่ะ`;
     } else if (status === BookingStatus.PAYMENT_REVIEW) {
       message = `สลิปการชำระเงินของคลาส "${booking.classEvent.name}" อยู่ระหว่างการตรวจสอบค่ะ`;
-    } else if (status === BookingStatus.AWAITING_PAYMENT) {
+    } else if (status === BookingStatus.PENDING_PAYMENT) {
       message = `กรุณาชำระเงินสำหรับคลาส "${booking.classEvent.name}" เพื่อยืนยันที่นั่งค่ะ (สถานะ: กำลังชำระเงิน)`;
       if (reason) message += `\nหมายเหตุ: ${reason}`;
-    } else if (status === BookingStatus.BOOKING) {
+    } else if (status === BookingStatus.PENDING_PAYMENT) {
       message = `การจองคลาส "${booking.classEvent.name}" ของคุณอยู่ในสถานะกำลังจองค่ะ`;
     } else if (status === BookingStatus.CANCELLED) {
       message = `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้วค่ะ`;
@@ -138,7 +138,7 @@ export async function confirmPayment(bookingId: string) {
     return { success: false, error: "ยังไม่มีสลิปจากลูกค้า" };
   }
 
-  await applyBookingStatus(bookingId, BookingStatus.PAID, admin.id);
+  await applyBookingStatus(bookingId, BookingStatus.CONFIRMED, admin.id);
   revalidatePath("/admin/bookings");
   revalidatePath("/admin");
   return { success: true };

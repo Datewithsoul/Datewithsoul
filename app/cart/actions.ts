@@ -88,7 +88,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
             bookingGroupId: group.id,
             seats: item.requestedSeats,
             totalPrice: item.price * item.requestedSeats,
-            status: "BOOKING",
+            status: "PENDING_PAYMENT",
           }
         });
 

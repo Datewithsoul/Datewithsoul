@@ -64,10 +64,10 @@ export function AdminBookingFilters() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">สถานะทั้งหมด</SelectItem>
-            <SelectItem value="BOOKING">กำลังจอง</SelectItem>
-            <SelectItem value="AWAITING_PAYMENT">รอชำระเงิน</SelectItem>
+            <SelectItem value="PENDING_PAYMENT">กำลังจอง</SelectItem>
+            <SelectItem value="PENDING_PAYMENT">รอชำระเงิน</SelectItem>
             <SelectItem value="PAYMENT_REVIEW">รอตรวจสอบชำระเงิน</SelectItem>
-            <SelectItem value="PAID">ชำระเงินแล้ว</SelectItem>
+            <SelectItem value="CONFIRMED">ชำระเงินแล้ว</SelectItem>
             <SelectItem value="CANCELLED">ยกเลิกแล้ว</SelectItem>
           </SelectContent>
         </Select>

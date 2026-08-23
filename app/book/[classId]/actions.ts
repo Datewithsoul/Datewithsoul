@@ -81,7 +81,7 @@ export async function submitBooking(formData: FormData) {
           classEventId,
           seats,
           totalPrice,
-          status: "BOOKING",
+          status: "PENDING_PAYMENT",
         },
       });
 

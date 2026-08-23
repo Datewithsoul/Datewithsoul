@@ -75,7 +75,7 @@ export function AdminBookingControls({
           <span className="text-xs text-[#6a5d50]">ยังไม่มีสลิป</span>
         )}
 
-        {status !== "PAID" && slipUrl ? (
+        {status !== "CONFIRMED" && slipUrl ? (
           <button
             type="button"
             disabled={isPending}
@@ -109,7 +109,7 @@ export function AdminBookingControls({
               </button>
             </div>
             <img src={slipUrl} alt="สลิปการชำระเงิน" className="w-full border border-[#eee8e0]" />
-            {status !== "PAID" ? (
+            {status !== "CONFIRMED" ? (
               <div className="flex gap-2 mt-4">
                 <button
                   type="button"
@@ -117,7 +117,7 @@ export function AdminBookingControls({
                   onClick={() => {
                     const reason = window.prompt("ระบุเหตุผลที่ปฏิเสธสลิป:");
                     if (reason !== null) {
-                      changeStatus("AWAITING_PAYMENT", reason);
+                      changeStatus("PENDING_PAYMENT", reason);
                       setShowSlip(false);
                     }
                   }}

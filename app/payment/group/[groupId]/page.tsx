@@ -29,15 +29,15 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
   const expiryTime = new Date(bookingGroup.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  const payableStatuses = [BookingGroupStatus.PENDING, BookingGroupStatus.AWAITING_PAYMENT] as const;
+  const payableStatuses = [BookingGroupStatus.PENDING_PAYMENT, BookingGroupStatus.PENDING_PAYMENT] as const;
   const isPayable = payableStatuses.includes(bookingGroup.status as (typeof payableStatuses)[number]);
 
-  if (!isExpired && bookingGroup.status === BookingGroupStatus.PENDING) {
+  if (!isExpired && bookingGroup.status === BookingGroupStatus.PENDING_PAYMENT) {
     await prisma.bookingGroup.update({
       where: { id: groupId },
-      data: { status: BookingGroupStatus.AWAITING_PAYMENT },
+      data: { status: BookingGroupStatus.PENDING_PAYMENT },
     });
-    bookingGroup.status = BookingGroupStatus.AWAITING_PAYMENT;
+    bookingGroup.status = BookingGroupStatus.PENDING_PAYMENT;
   }
 
   if (isExpired && isPayable) {
@@ -94,16 +94,16 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
               </button>
             </Link>
           </div>
-        ) : (bookingGroup.status === BookingGroupStatus.PAYMENT_REVIEW || bookingGroup.status === BookingGroupStatus.PAID) ? (
+        ) : (bookingGroup.status === BookingGroupStatus.PAYMENT_REVIEW || bookingGroup.status === BookingGroupStatus.CONFIRMED) ? (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-green-500 mb-6 flex justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
             <h2 className="text-2xl font-bold mb-3">
-              {bookingGroup.status === BookingGroupStatus.PAID ? "ชำระเงินสำเร็จ" : "กำลังตรวจสอบการชำระเงิน"}
+              {bookingGroup.status === BookingGroupStatus.CONFIRMED ? "ชำระเงินสำเร็จ" : "กำลังตรวจสอบการชำระเงิน"}
             </h2>
             <p className="text-gray-600 mb-8">
-              {bookingGroup.status === BookingGroupStatus.PAID 
+              {bookingGroup.status === BookingGroupStatus.CONFIRMED 
                 ? "เราได้รับการชำระเงินของคุณแล้ว ขอบคุณที่จองคลาสกับเรา!" 
                 : "เราได้รับหลักฐานการโอนเงินของคุณแล้ว ทีมงานจะทำการตรวจสอบภายใน 24 ชั่วโมง"}
             </p>
