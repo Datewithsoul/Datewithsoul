@@ -3,6 +3,14 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+export const dynamic = "force-dynamic";
 
 export default async function AttendanceListPage() {
   const classes = await prisma.classEvent.findMany({
@@ -14,49 +22,82 @@ export default async function AttendanceListPage() {
     }
   });
 
+  // Group classes by name
+  const groupedClasses = classes.reduce((acc, c) => {
+    if (!acc[c.name]) {
+      acc[c.name] = [];
+    }
+    acc[c.name].push(c);
+    return acc;
+  }, {} as Record<string, typeof classes>);
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
         title="เช็คชื่อเข้าเรียน"
-        description="เลือกคอร์สเรียนเพื่อทำการเช็คชื่อผู้เข้าร่วมที่ชำระเงินแล้ว"
+        description="เลือกคอร์สเรียนเพื่อดูรอบเวลาและทำการเช็คชื่อผู้เข้าร่วม"
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {classes.map((c) => {
-          const totalPaid = c.bookings.reduce((sum, b) => sum + b.seats, 0);
-          const totalAttended = c.bookings.filter(b => b.attended).reduce((sum, b) => sum + b.seats, 0);
-          
-          return (
-            <div key={c.id} className="bg-white border border-[#ddd4c8] rounded-xl shadow-sm p-5 flex flex-col hover:border-[#8a6d1f] transition-colors">
-              <div className="flex justify-between items-start gap-2 mb-3">
-                <h3 className="font-bold text-[#3d3229] line-clamp-2 leading-tight">{c.name}</h3>
-                <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${c.status === "COMPLETED" ? "bg-gray-100 text-gray-600" : "bg-green-100 text-green-700"}`}>
-                  {c.status === "COMPLETED" ? "ปิดรับสมัคร" : c.status}
-                </span>
-              </div>
+      {classes.length === 0 ? (
+        <div className="py-10 text-center text-[#6a5d50] bg-white rounded-xl border border-[#ddd4c8]">
+          ยังไม่มีคอร์สเรียนในระบบ
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-[#ddd4c8] shadow-sm overflow-hidden p-2">
+          <Accordion type="single" collapsible className="w-full">
+            {Object.entries(groupedClasses).map(([courseName, events], index) => {
+              const totalPaidCourse = events.reduce((sum, e) => sum + e.bookings.reduce((s, b) => s + b.seats, 0), 0);
               
-              <div className="text-sm text-[#6a5d50] mb-4 space-y-1">
-                <div>📅 วันที่: {c.date.toLocaleDateString("th-TH")}</div>
-                <div>⏰ เวลา: {c.startTime} - {c.endTime}</div>
-                <div className="mt-2 pt-2 border-t border-[#eee8e0] font-medium text-[#3d3229]">
-                  มาแล้ว: <span className="text-green-600 font-bold">{totalAttended}</span> / {totalPaid} ที่นั่ง
-                </div>
-              </div>
+              return (
+                <AccordionItem key={index} value={`item-${index}`} className="border-b border-[#eee8e0] px-4 last:border-0">
+                  <AccordionTrigger className="hover:no-underline py-4 text-[#3d3229]">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between w-full pr-4 gap-2 text-left">
+                      <h3 className="font-bold text-lg">{courseName}</h3>
+                      <div className="text-sm font-normal text-[#6a5d50] bg-[#fbfaf8] px-3 py-1 rounded-full">
+                        {events.length} รอบเรียน • ผู้ลงทะเบียนทั้งหมด {totalPaidCourse} ที่นั่ง
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-5 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {events.map((c) => {
+                        const totalPaid = c.bookings.reduce((sum, b) => sum + b.seats, 0);
+                        const totalAttended = c.bookings.filter(b => b.attended).reduce((sum, b) => sum + b.seats, 0);
+                        
+                        return (
+                          <div key={c.id} className="bg-[#fbfaf8] border border-[#ddd4c8] rounded-lg p-4 flex flex-col hover:border-[#8a6d1f] hover:shadow-sm transition-all">
+                            <div className="flex justify-between items-start gap-2 mb-3">
+                              <div className="text-[#3d3229] font-medium">
+                                📅 {c.date.toLocaleDateString("th-TH")}
+                              </div>
+                              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${c.status === "COMPLETED" ? "bg-gray-200 text-gray-700" : "bg-green-100 text-green-700"}`}>
+                                {c.status === "COMPLETED" ? "ปิดรับสมัคร" : c.status}
+                              </span>
+                            </div>
+                            
+                            <div className="text-sm text-[#6a5d50] mb-4 space-y-1">
+                              <div>⏰ เวลา: {c.startTime} - {c.endTime}</div>
+                              <div className="mt-2 pt-2 border-t border-[#eee8e0] font-medium text-[#3d3229]">
+                                มาแล้ว: <span className="text-green-600 font-bold">{totalAttended}</span> / {totalPaid} ที่นั่ง
+                              </div>
+                            </div>
 
-              <div className="mt-auto pt-4 flex gap-2">
-                <Link href={`/admin/attendance/${c.id}`} className="flex-1">
-                  <Button className="w-full bg-[#8a6d1f] hover:bg-[#6c5518] text-white">เช็คชื่อ</Button>
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-        {classes.length === 0 && (
-          <div className="col-span-full py-10 text-center text-[#6a5d50] bg-white rounded-xl border border-[#ddd4c8]">
-            ยังไม่มีคอร์สเรียนในระบบ
-          </div>
-        )}
-      </div>
+                            <div className="mt-auto pt-2 flex gap-2">
+                              <Link href={`/admin/attendance/${c.id}`} className="flex-1">
+                                <Button size="sm" className="w-full bg-[#8a6d1f] hover:bg-[#6c5518] text-white">เปิดใบเช็คชื่อ</Button>
+                              </Link>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </div>
+      )}
     </div>
   );
 }
