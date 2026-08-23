@@ -75,7 +75,7 @@ model ClassMedia {
 model Booking {
   id             String            @id @default(uuid())
   userId         String
-  user           User              @relation(fields: [userId], references: [id])
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   classEventId   String
   classEvent     ClassEvent        @relation(fields: [classEventId], references: [id])
   status         BookingStatus     @default(BOOKING)
@@ -101,7 +101,7 @@ enum BookingStatus {
 model BookingGroup {
   id         String             @id @default(uuid())
   userId     String
-  user       User               @relation(fields: [userId], references: [id])
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookings   Booking[]
   payment    Payment?
   totalPrice Float
@@ -154,7 +154,7 @@ model PaymentReviewLog {
   paymentId      String
   payment        Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   reviewerId     String
-  reviewer       User          @relation(fields: [reviewerId], references: [id])
+  reviewer       User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
   previousStatus PaymentStatus
   newStatus      PaymentStatus
   reason         String?
