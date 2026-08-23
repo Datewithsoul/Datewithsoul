@@ -97,11 +97,24 @@ export async function GET(request: Request) {
           const existingUser = usersData?.users.find(u => u.email === dummyEmail);
           
           if (existingUser) {
-            authUserId = existingUser.id;
-            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, { password: oneTimePassword });
-            if (updateError) {
-              throw new Error("Failed to update user password: " + updateError.message);
+            console.log("Found orphaned user, renaming to free up email...");
+            const deletedEmail = `deleted-${Date.now()}@example.com`;
+            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { email: deletedEmail });
+            
+            // Try creating the new user again
+            const { data: retryData, error: retryError } = await supabaseAdmin.auth.admin.createUser({
+              email: dummyEmail,
+              password: oneTimePassword,
+              email_confirm: true,
+              user_metadata: {
+                name: profile.displayName,
+                avatar_url: profile.pictureUrl
+              }
+            });
+            if (retryError) {
+              throw new Error("Failed to create user after renaming orphan: " + retryError.message);
             }
+            authUserId = retryData!.user.id;
           } else {
             // It might be an orphaned identity blocking the creation
             console.log("Checking for orphaned identity for", dummyEmail);
