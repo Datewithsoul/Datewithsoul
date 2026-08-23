@@ -18,7 +18,7 @@ export default async function AdminDashboard() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [totalClasses, totalBookings, pendingPayments, recentBookingsList, upcomingClasses, bookingsForChart] = await Promise.all([
+  const [totalClasses, totalBookings, pendingPayments, recentBookingsList, upcomingClasses, bookingsForChart, newBookingsToday, awaitingPaymentBookings, almostFullClasses] = await Promise.all([
     prisma.classEvent.count(),
     prisma.booking.count({ where: { status: BookingStatus.PAID } }),
     prisma.booking.count({ where: { status: BookingStatus.PAYMENT_REVIEW } }),
@@ -36,6 +36,9 @@ export default async function AdminDashboard() {
       where: { createdAt: { gte: sixMonthsAgo } },
       select: { createdAt: true, totalPrice: true, status: true },
     }),
+    prisma.booking.count({ where: { createdAt: { gte: today } } }),
+    prisma.booking.count({ where: { status: BookingStatus.AWAITING_PAYMENT } }),
+    prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: 3, gt: 0 } } })
   ]);
 
   const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
@@ -83,6 +86,48 @@ export default async function AdminDashboard() {
           </AdminPrimaryLink>
         }
       />
+
+      {(newBookingsToday > 0 || pendingPayments > 0 || awaitingPaymentBookings > 0 || almostFullClasses > 0) && (
+        <section className="bg-red-50 border border-[#8f3b2c]/30 rounded-md p-5 flex flex-col gap-3">
+          <h2 className="text-base font-semibold text-[#8f3b2c] flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            สิ่งที่ต้องดำเนินการด่วน
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {pendingPayments > 0 && (
+              <div className="bg-white border border-[#8f3b2c]/20 p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-[#8f3b2c]">รอตรวจสอบสลิป</span>
+                <span className="text-2xl font-bold text-[#8f3b2c]">{pendingPayments}</span>
+                <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="text-xs text-[#8f3b2c] hover:underline mt-1">ดูรายการ</Link>
+              </div>
+            )}
+            {newBookingsToday > 0 && (
+              <div className="bg-white border border-[#ddd4c8] p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-[#3d3229]">การจองใหม่วันนี้</span>
+                <span className="text-2xl font-bold text-[#3d3229]">{newBookingsToday}</span>
+                <Link href="/admin/bookings" className="text-xs text-[#6a5d50] hover:underline mt-1">ดูรายการ</Link>
+              </div>
+            )}
+            {awaitingPaymentBookings > 0 && (
+              <div className="bg-white border border-[#ddd4c8] p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-[#3d3229]">รอชำระเงิน</span>
+                <span className="text-2xl font-bold text-[#3d3229]">{awaitingPaymentBookings}</span>
+                <Link href="/admin/bookings?status=AWAITING_PAYMENT" className="text-xs text-[#6a5d50] hover:underline mt-1">ดูรายการ</Link>
+              </div>
+            )}
+            {almostFullClasses > 0 && (
+              <div className="bg-white border border-[#ddd4c8] p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-[#3d3229]">คอร์สใกล้เต็ม</span>
+                <span className="text-2xl font-bold text-[#3d3229]">{almostFullClasses}</span>
+                <Link href="/admin/classes" className="text-xs text-[#6a5d50] hover:underline mt-1">ดูรายการ</Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <dl className="grid grid-cols-1 divide-y divide-[#ddd4c8] border border-[#ddd4c8] bg-white sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {stats.map((stat) => (
