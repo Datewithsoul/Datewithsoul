@@ -29,7 +29,7 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
   const expiryTime = new Date(bookingGroup.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  const payableStatuses = [BookingGroupStatus.PENDING_PAYMENT, BookingGroupStatus.PENDING_PAYMENT] as const;
+  const payableStatuses = [BookingGroupStatus.PENDING_PAYMENT] as const;
   const isPayable = payableStatuses.includes(bookingGroup.status as (typeof payableStatuses)[number]);
 
   if (!isExpired && bookingGroup.status === BookingGroupStatus.PENDING_PAYMENT) {

@@ -43,7 +43,7 @@ export async function uploadGroupSlip(formData: FormData) {
     throw new Error("Group not found");
   }
 
-  if (group.status !== BookingGroupStatus.PENDING_PAYMENT && group.status !== BookingGroupStatus.PENDING_PAYMENT) {
+  if (group.status !== BookingGroupStatus.PENDING_PAYMENT) {
     throw new Error("รายการจองนี้ไม่สามารถอัปโหลดสลิปได้");
   }
 
@@ -134,8 +134,8 @@ export async function cancelGroupBooking(groupId: string) {
     }
   });
 
-  if (!group || (group.status !== BookingGroupStatus.PENDING_PAYMENT && group.status !== BookingGroupStatus.PENDING_PAYMENT)) {
-    return { success: false, error: "Invalid group" };
+  if (group.status !== BookingGroupStatus.PENDING_PAYMENT) {
+    throw new Error("Invalid booking group status");
   }
 
   if (group.userId !== user.id) {
