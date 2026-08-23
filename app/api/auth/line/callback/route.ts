@@ -91,56 +91,44 @@ export async function GET(request: Request) {
       })
       let authUserId = "";
       if (createError) {
-        if (createError.message.includes("already") || createError.message.includes("registered") || createError.message.includes("Database error")) {
-          // Check if there is an orphaned user or identity using Supabase API
-          const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-          const existingUser = usersData?.users.find(u => u.email === dummyEmail);
-          
-          if (existingUser) {
-            console.log("Found orphaned user, renaming to free up email...");
-            const deletedEmail = `deleted-${Date.now()}@example.com`;
-            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { email: deletedEmail });
-            
-            // Try creating the new user again
-            const { data: retryData, error: retryError } = await supabaseAdmin.auth.admin.createUser({
-              email: dummyEmail,
-              password: oneTimePassword,
-              email_confirm: true,
-              user_metadata: {
-                name: profile.displayName,
-                avatar_url: profile.pictureUrl
-              }
-            });
-            if (retryError) {
-              throw new Error("Failed to create user after renaming orphan: " + retryError.message);
-            }
-            authUserId = retryData!.user.id;
-          } else {
-            // It might be an orphaned identity blocking the creation
-            console.log("Checking for orphaned identity for", dummyEmail);
-            await prisma.$executeRaw`DELETE FROM auth.identities WHERE provider = 'email' AND provider_id = ${dummyEmail}`;
-            
-            // Try creating the user again
-            const { data: retryData, error: retryError } = await supabaseAdmin.auth.admin.createUser({
-              email: dummyEmail,
-              password: oneTimePassword,
-              email_confirm: true,
-              user_metadata: {
-                name: profile.displayName,
-                avatar_url: profile.pictureUrl
-              }
-            });
-            
-            if (retryError) {
-              console.error("Retry Create User Error:", retryError);
-              throw new Error(retryError.message || "Failed to create auth profile after cleanup");
-            }
-            authUserId = retryData!.user.id;
-          }
-        } else {
-          console.error("Create User Error:", createError);
-          throw new Error(createError.message || "Failed to create auth profile");
+        // "Database error creating new user" = Supabase has orphaned auth.users or auth.identities record
+        console.log("Create user error:", createError.message, "- attempting cleanup and retry...");
+
+        // Find any orphaned auth user with this email and delete it completely
+        let page = 1;
+        let orphanId: string | null = null;
+        while (!orphanId) {
+          const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+          if (!usersData || usersData.users.length === 0) break;
+          const found = usersData.users.find(u => u.email === dummyEmail);
+          if (found) { orphanId = found.id; break; }
+          if (usersData.users.length < 1000) break;
+          page++;
         }
+
+        if (orphanId) {
+          console.log("Deleting orphaned auth user:", orphanId);
+          await supabaseAdmin.auth.admin.deleteUser(orphanId);
+          // Small delay to allow Supabase to process the deletion
+          await new Promise(r => setTimeout(r, 500));
+        }
+
+        // Retry creating the user fresh
+        const { data: retryData, error: retryError } = await supabaseAdmin.auth.admin.createUser({
+          email: dummyEmail,
+          password: oneTimePassword,
+          email_confirm: true,
+          user_metadata: {
+            name: profile.displayName,
+            avatar_url: profile.pictureUrl
+          }
+        });
+
+        if (retryError) {
+          console.error("Retry Create User Error:", retryError);
+          throw new Error("ไม่สามารถสร้างบัญชีได้ กรุณาลองใหม่อีกครั้ง: " + retryError.message);
+        }
+        authUserId = retryData!.user.id;
       } else {
         authUserId = newUserData!.user.id;
       }
@@ -149,9 +137,18 @@ export async function GET(request: Request) {
       const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
       const roleToAssign = adminCount === 0 ? 'ADMIN' : undefined;
 
-      dbUser = await prisma.user.create({
-        data: {
+      // Use upsert to handle cases where Supabase trigger may have already created the row
+      dbUser = await prisma.user.upsert({
+        where: { id: authUserId },
+        create: {
           id: authUserId,
+          lineId: profile.userId,
+          name: profile.displayName,
+          email: dummyEmail,
+          image: profile.pictureUrl,
+          ...(roleToAssign ? { role: roleToAssign } : {}),
+        },
+        update: {
           lineId: profile.userId,
           name: profile.displayName,
           email: dummyEmail,

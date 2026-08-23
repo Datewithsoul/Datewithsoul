@@ -8,21 +8,20 @@ const supabaseAdmin = createClient(
 );
 
 async function main() {
-  let page = 1;
+  // Check if there are orphaned users remaining after our cleanup
   let allUsers: any[] = [];
+  let page = 1;
   while (true) {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error) {
-      console.error(error);
-      break;
-    }
+    if (error || !data) break;
     allUsers.push(...data.users);
     if (data.users.length < 1000) break;
     page++;
   }
   
-  const orphaned = allUsers.filter(u => u.email && u.email.includes('@line.datewithsoul.local'));
-  console.log("Orphaned LINE users in Auth:", orphaned.map(u => ({ id: u.id, email: u.email })));
+  const lineUsers = allUsers.filter(u => u.email && u.email.includes('@line.datewithsoul.local'));
+  console.log("LINE auth users:", lineUsers.map(u => ({ id: u.id, email: u.email, created_at: u.created_at })));
+  console.log("Total auth users:", allUsers.length);
 }
 
 main();
