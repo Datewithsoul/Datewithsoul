@@ -13,18 +13,18 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  lineId        String?        @unique
-  name          String
-  email         String?        @unique
-  phone         String?
-  image         String?
-  role          Role           @default(CUSTOMER)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  bookings      Booking[]
-  bookingGroups BookingGroup[]
-  notifications NotificationLog[]
+  id             String             @id @default(uuid())
+  lineId         String?            @unique
+  name           String
+  email          String?            @unique
+  phone          String?
+  image          String?
+  role           Role               @default(CUSTOMER)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  bookings       Booking[]
+  bookingGroups  BookingGroup[]
+  notifications  NotificationLog[]
   paymentReviews PaymentReviewLog[]
 }
 
@@ -34,22 +34,22 @@ enum Role {
 }
 
 model ClassEvent {
-  id               String       @id @default(uuid())
+  id               String           @id @default(uuid())
   name             String
   description      String?
-  category         String?      @default("เวิร์กชอป")
-  instructor       String       @default("ไม่ระบุผู้สอน")
+  category         String?          @default("เวิร์กชอป")
+  instructor       String           @default("ไม่ระบุผู้สอน")
   date             DateTime
   endDate          DateTime?
   startTime        String
   endTime          String
   price            Float
   totalSeats       Int
-  learningOutcomes String[]     @default([])
-  requirements     String[]     @default([])
+  learningOutcomes String[]         @default([])
+  requirements     String[]         @default([])
   status           ClassEventStatus @default(PUBLISHED)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   bookings         Booking[]
   media            ClassMedia[]
 }
@@ -73,18 +73,19 @@ model ClassMedia {
 }
 
 model Booking {
-  id             String        @id @default(uuid())
+  id             String            @id @default(uuid())
   userId         String
-  user           User          @relation(fields: [userId], references: [id])
+  user           User              @relation(fields: [userId], references: [id])
   classEventId   String
-  classEvent     ClassEvent    @relation(fields: [classEventId], references: [id])
-  status         BookingStatus @default(BOOKING)
-  seats          Int           @default(1)
+  classEvent     ClassEvent        @relation(fields: [classEventId], references: [id])
+  status         BookingStatus     @default(BOOKING)
+  seats          Int               @default(1)
   totalPrice     Float
   bookingGroupId String?
-  bookingGroup   BookingGroup? @relation(fields: [bookingGroupId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  bookingGroup   BookingGroup?     @relation(fields: [bookingGroupId], references: [id])
+  changeCount    Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   payment        Payment?
   notifications  NotificationLog[]
 }
@@ -118,15 +119,15 @@ enum BookingGroupStatus {
 }
 
 model Payment {
-  id             String        @id @default(uuid())
-  bookingId      String?       @unique
-  booking        Booking?      @relation(fields: [bookingId], references: [id])
-  bookingGroupId String?       @unique
-  bookingGroup   BookingGroup? @relation(fields: [bookingGroupId], references: [id])
+  id             String             @id @default(uuid())
+  bookingId      String?            @unique
+  booking        Booking?           @relation(fields: [bookingId], references: [id])
+  bookingGroupId String?            @unique
+  bookingGroup   BookingGroup?      @relation(fields: [bookingGroupId], references: [id])
   slipUrl        String?
-  status         PaymentStatus @default(PENDING)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  status         PaymentStatus      @default(PENDING)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   reviewLogs     PaymentReviewLog[]
 }
 
@@ -138,14 +139,14 @@ enum PaymentStatus {
 }
 
 model NotificationLog {
-  id             String   @id @default(uuid())
-  bookingId      String?
-  booking        Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type           String   // e.g. "REMINDER_1_DAY", "REMINDER_SAME_DAY"
-  message        String?
-  sentAt         DateTime @default(now())
+  id        String   @id @default(uuid())
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // e.g. "REMINDER_1_DAY", "REMINDER_SAME_DAY"
+  message   String?
+  sentAt    DateTime @default(now())
 }
 
 model PaymentReviewLog {

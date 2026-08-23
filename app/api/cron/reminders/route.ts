@@ -21,6 +21,46 @@ export async function GET(request: Request) {
     const dayAfterTomorrow = new Date(tomorrow);
     dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
 
+    // 0. "แจ้งเตือนก่อนวันเรียนล่วงหน้า 2 วัน" (Reminder 2 days before)
+    const inTwoDaysClasses = await prisma.classEvent.findMany({
+      where: {
+        date: {
+          gte: dayAfterTomorrow,
+          lt: new Date(dayAfterTomorrow.getTime() + 24 * 60 * 60 * 1000), // less than 3 days from now
+        },
+      },
+      include: {
+        bookings: {
+          where: { 
+            status: 'PAID',
+            notifications: { none: { type: 'REMINDER_2_DAYS' } }
+          },
+          include: { user: true },
+        },
+      },
+    });
+
+    let countTwoDays = 0;
+    for (const cls of inTwoDaysClasses) {
+      for (const booking of cls.bookings) {
+        if (booking.user.lineId) {
+          const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
+          await sendLineMessage(
+            booking.user.lineId,
+            `แจ้งเตือนล่วงหน้า 2 วัน: คลาส "${cls.name}" ที่คุณจองไว้จะเริ่มในวันที่ ${dateStr} เวลา ${cls.startTime} - ${cls.endTime} ค่ะ`
+          );
+          await prisma.notificationLog.create({
+            data: {
+              bookingId: booking.id,
+              userId: booking.userId,
+              type: 'REMINDER_2_DAYS',
+            }
+          });
+          countTwoDays++;
+        }
+      }
+    }
+
     // 1. "ใกล้กำหนดการก่อน 1 วัน" (Reminder 1 day before)
     // Find classes happening tomorrow
     const tomorrowClasses = await prisma.classEvent.findMany({
@@ -105,7 +145,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Sent ${countTomorrow} tomorrow reminders and ${countToday} today reminders`,
+      message: `Sent ${countTwoDays} reminders for 2 days before, ${countTomorrow} tomorrow reminders and ${countToday} today reminders`,
     });
   } catch (error) {
     console.error('Error in cron job:', error);

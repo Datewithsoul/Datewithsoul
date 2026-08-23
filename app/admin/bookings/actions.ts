@@ -164,6 +164,10 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
     return { success: false, error: "รอบเรียนที่เลือกเป็นรอบเดิมอยู่แล้ว" };
   }
 
+  if (booking.changeCount >= 1) {
+    return { success: false, error: "สามารถเปลี่ยนรอบเรียนได้เพียง 1 ครั้งเท่านั้น" };
+  }
+
   const newClassEvent = await prisma.classEvent.findUnique({
     where: { id: newClassEventId },
   });
@@ -195,7 +199,10 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
     // อัปเดต booking ให้ชี้ไปรอบใหม่
     await tx.booking.update({
       where: { id: bookingId },
-      data: { classEventId: newClassEventId },
+      data: { 
+        classEventId: newClassEventId,
+        changeCount: { increment: 1 }
+      },
     });
   });
 
@@ -206,7 +213,7 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
       month: "long",
       year: "numeric",
     });
-    const message = `ทีมงานได้เปลี่ยนรอบเรียนของคุณเป็น "${newClassEvent.name}" วันที่ ${dateStr} เวลา ${newClassEvent.startTime}–${newClassEvent.endTime} น. หากมีข้อสงสัยกรุณาติดต่อเจ้าหน้าที่ค่ะ`;
+    const message = `ทีมงานได้ยืนยันการเปลี่ยนรอบเรียนของคุณเป็น "${newClassEvent.name}" วันที่ ${dateStr} เวลา ${newClassEvent.startTime}–${newClassEvent.endTime} น.\n(หมายเหตุ: สามารถเปลี่ยนวันเรียนได้เพียง 1 ครั้งเท่านั้น) หากมีข้อสงสัยกรุณาติดต่อเจ้าหน้าที่ค่ะ`;
     await sendLineMessage(booking.user.lineId, message);
   }
 

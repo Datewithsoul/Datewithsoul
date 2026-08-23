@@ -98,6 +98,29 @@ export default function SettingsForm({ initialName, initialPhone, initialEmail, 
           <p className="text-xs text-gray-500">อีเมลใช้สำหรับส่งข้อมูลยืนยันการจองคลาสและใบเสร็จ</p>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+            การเชื่อมต่อ LINE
+          </label>
+          <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-gray-800">LINE Official Account</p>
+              <p className="text-sm text-gray-500">รับการแจ้งเตือนการจองผ่าน LINE</p>
+            </div>
+            <a 
+              href="https://line.me/R/ti/p/@073wlzuq" 
+              target="_blank" 
+              rel="noreferrer"
+              className="bg-[#00C300] hover:bg-[#00B300] text-white text-sm font-bold py-2 px-4 rounded-full transition-colors flex items-center gap-1"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738S0 4.935 0 10.304c0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.122.303.079.778.038 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.573-3.843 2.573-5.992zm-14.15-2.091h1.378c.328 0 .592.264.592.592v3.743c0 .328-.264.592-.592.592h-1.378c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592zm5.727 0h1.378c.328 0 .592.264.592.592v3.743c0 .328-.264.592-.592.592h-1.378c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592zm-2.862 0h1.378c.328 0 .592.264.592.592v2.559h1.345c.328 0 .592.264.592.592v.592c0 .328-.264.592-.592.592h-2.715c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592zm-5.727 0h1.378c.328 0 .592.264.592.592v3.743c0 .328-.264.592-.592.592h-1.378c-.328 0-.592-.264-.592-.592V8.805c0-.328.264-.592.592-.592z"/>
+              </svg>
+              เพิ่มเพื่อน
+            </a>
+          </div>
+        </div>
+
         <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
           <button
             type="button"
@@ -107,7 +130,7 @@ export default function SettingsForm({ initialName, initialPhone, initialEmail, 
                 const { deleteAccount } = await import("./actions");
                 const res = await deleteAccount();
                 if (res.error) {
-                  setError(res.error);
+                  toast.error(res.error);
                 } else {
                   window.location.href = "/";
                 }
