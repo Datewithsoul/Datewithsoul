@@ -78,6 +78,21 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
                   defaultValue={classEvent.category || "เวิร์กชอป"}
                 />
               </div>
+
+              <div className="space-y-2 col-span-2">
+                <label htmlFor="status" className="text-sm font-medium leading-none">สถานะ</label>
+                <select 
+                  id="status" 
+                  name="status" 
+                  defaultValue={classEvent.status}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="DRAFT">ฉบับร่าง (ซ่อนไว้)</option>
+                  <option value="PUBLISHED">เปิดให้จอง (เผยแพร่)</option>
+                  <option value="COMPLETED">จบคอร์สแล้ว</option>
+                  <option value="CANCELLED">ยกเลิกคอร์ส</option>
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">

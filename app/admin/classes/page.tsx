@@ -42,7 +42,7 @@ export default async function AdminClasses() {
               <TableHead className="text-[#6a5d50]">วันที่</TableHead>
               <TableHead className="text-[#6a5d50]">เวลา</TableHead>
               <TableHead className="text-[#6a5d50]">ราคา (บาท)</TableHead>
-              <TableHead className="text-[#6a5d50]">ที่นั่ง</TableHead>
+              <TableHead className="text-[#6a5d50]">ที่นั่งว่าง</TableHead>
               <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
               <TableHead className="px-5 text-right text-[#6a5d50]">จัดการ</TableHead>
             </TableRow>
@@ -61,7 +61,11 @@ export default async function AdminClasses() {
                   <TableCell className="tabular-nums">{c.date.toLocaleDateString("th-TH")}</TableCell>
                   <TableCell className="tabular-nums">{c.startTime} – {c.endTime}</TableCell>
                   <TableCell className="tabular-nums">{c.price.toLocaleString("th-TH")}</TableCell>
-                  <TableCell className="tabular-nums">{c.totalSeats}</TableCell>
+                  <TableCell className="tabular-nums">
+                    <span className={c.totalSeats <= 3 && c.status === "PUBLISHED" ? "text-[#8f3b2c] font-bold" : ""}>
+                      {c.totalSeats}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
                       c.status === "PUBLISHED" ? "bg-green-100 text-green-800" :

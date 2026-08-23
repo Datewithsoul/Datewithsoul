@@ -12,6 +12,7 @@ export async function updateClass(formData: FormData) {
   const price = parseFloat(formData.get("price") as string);
   const category = (formData.get("category") as string) || "เวิร์กชอป";
   const endDate = null;
+  const status = formData.get("status") as any;
   
   const learningOutcomes = formData.getAll("learningOutcomes").map(s => String(s).trim()).filter(Boolean);
   const requirements = formData.getAll("requirements").map(s => String(s).trim()).filter(Boolean);
@@ -60,6 +61,7 @@ export async function updateClass(formData: FormData) {
         endTime: firstSchedule.endTime,
         price,
         totalSeats: parseInt(firstSchedule.totalSeats, 10),
+        status: status || undefined,
         learningOutcomes,
         requirements,
         media: {
@@ -114,6 +116,7 @@ export async function updateClass(formData: FormData) {
         category,
         instructor,
         price,
+        status: status || undefined,
         learningOutcomes,
         requirements,
         media: {
