@@ -10,12 +10,49 @@ import ClassCalendar from "@/components/class-calendar";
 function ClassCarousel({ classes }: { classes: any[] }) {
   if (!classes || classes.length === 0) return null;
 
+  // Group classes by name
+  const groupedMap = new Map<string, any>();
+  for (const c of classes) {
+    if (!groupedMap.has(c.name)) {
+      const booked = c.bookings.reduce((sum: number, b: any) => sum + b.seats, 0);
+      groupedMap.set(c.name, {
+        ...c,
+        allSchedules: [c],
+        totalBookedSeats: booked,
+        totalMaxSeats: c.totalSeats + booked,
+        anyAvailable: c.totalSeats > 0,
+        anyCompleted: c.status === "COMPLETED"
+      });
+    } else {
+      const existing = groupedMap.get(c.name);
+      existing.allSchedules.push(c);
+      const booked = c.bookings.reduce((sum: number, b: any) => sum + b.seats, 0);
+      existing.totalBookedSeats += booked;
+      existing.totalMaxSeats += (c.totalSeats + booked);
+      if (c.totalSeats > 0) existing.anyAvailable = true;
+      if (c.status !== "COMPLETED") existing.anyCompleted = false;
+    }
+  }
+
+  const groupedClasses = Array.from(groupedMap.values());
+
   return (
     <Carousel opts={{ align: "start" }} className="w-full">
       <CarouselContent className="-ml-4">
-        {classes.map((c) => {
-          const bookedSeats = c.bookings.reduce((sum: number, b: any) => sum + b.seats, 0);
-          const totalCapacity = c.totalSeats + bookedSeats;
+        {groupedClasses.map((c) => {
+          // Format combined dates
+          const dateStrs = Array.from(new Set(c.allSchedules.map((sch: any) => {
+            const d = new Date(sch.date);
+            let str = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            if (sch.endDate && new Date(sch.endDate).getTime() !== d.getTime()) {
+              const ed = new Date(sch.endDate);
+              str += `-${ed.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}`;
+            }
+            return str;
+          })));
+
+          // Format combined times
+          const timeStrs = Array.from(new Set(c.allSchedules.map((sch: any) => `${sch.startTime}-${sch.endTime}`)));
 
           return (
             <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
@@ -33,11 +70,11 @@ function ClassCarousel({ classes }: { classes: any[] }) {
 
                   <div className="flex flex-col flex-1 p-4">
                     <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-                      {c.status === "COMPLETED" ? (
+                      {c.anyCompleted ? (
                         <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
                           ปิดรับสมัคร
                         </span>
-                      ) : c.totalSeats > 0 ? (
+                      ) : c.anyAvailable ? (
                         <span className="bg-green-50 text-green-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-green-200">
                           เปิดรับสมัคร
                         </span>
@@ -63,23 +100,20 @@ function ClassCarousel({ classes }: { classes: any[] }) {
 
                     <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-2">
                       <div className="flex justify-between items-start text-xs">
-                        <div className="flex items-start gap-1">
+                        <div className="flex items-start gap-1 w-2/3 pr-2">
                           <Calendar className="w-3 h-3 shrink-0 mt-0.5 text-gray-400" />
                           <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">
-                              {c.date ? new Date(c.date).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : ''}
-                              {c.endDate && new Date(c.endDate).getTime() !== new Date(c.date).getTime() && (
-                                <> - {new Date(c.endDate).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</>
-                              )}
+                            <span className="font-medium text-gray-900 leading-tight">
+                              {dateStrs.join(', ')}
                             </span>
-                            <span className="text-[9px] text-gray-500 mt-0.5">
-                              {c.startTime} - {c.endTime}
+                            <span className="text-[9px] text-gray-500 mt-0.5 leading-tight">
+                              {timeStrs.join(', ')}
                             </span>
                           </div>
                         </div>
-                        <div className="text-right flex flex-col items-end">
-                          <span className={c.totalSeats > 0 ? "text-green-600 font-medium text-[9px] bg-green-50 px-1.5 py-0.5 rounded border border-green-100" : "text-gray-500 font-medium text-[9px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200"}>
-                            จองแล้ว {bookedSeats}/{totalCapacity}
+                        <div className="text-right flex flex-col items-end shrink-0">
+                          <span className={c.anyAvailable ? "text-green-600 font-medium text-[9px] bg-green-50 px-1.5 py-0.5 rounded border border-green-100" : "text-gray-500 font-medium text-[9px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200"}>
+                            จองแล้ว {c.totalBookedSeats}/{c.totalMaxSeats}
                           </span>
                         </div>
                       </div>
