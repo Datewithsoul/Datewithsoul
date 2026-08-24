@@ -37,7 +37,10 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
   const relatedClassEventsData = await prisma.classEvent.findMany({
     where: { 
       name: classEvent.name,
-      date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } // from today onwards
+      OR: [
+        { date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } },
+        { id: classEvent.id }
+      ]
     },
     include: {
       bookings: {

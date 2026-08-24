@@ -6,46 +6,160 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { logout } from "./login/actions";
 import Navbar from "@/components/navbar";
 import ClassCalendar from "@/components/class-calendar";
+
+function ClassCarousel({ classes }: { classes: any[] }) {
+  if (!classes || classes.length === 0) return null;
+
+  return (
+    <Carousel opts={{ align: "start" }} className="w-full">
+      <CarouselContent className="-ml-4">
+        {classes.map((c) => {
+          const bookedSeats = c.bookings.reduce((sum: number, b: any) => sum + b.seats, 0);
+          const totalCapacity = c.totalSeats + bookedSeats;
+
+          return (
+            <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+              <Link href={`/classes/${c.id}`} className="block h-full">
+                <div className="bg-white rounded-2xl overflow-hidden flex flex-col h-full shadow-sm border border-gray-100">
+                  <div className="relative aspect-video overflow-hidden bg-gray-100">
+                    {c.media && c.media.length > 0 ? (
+                      <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-xs">
+                        ไม่มีรูปภาพ
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col flex-1 p-4">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                      {c.status === "COMPLETED" ? (
+                        <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
+                          ปิดรับสมัคร
+                        </span>
+                      ) : c.totalSeats > 0 ? (
+                        <span className="bg-green-50 text-green-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-green-200">
+                          เปิดรับสมัคร
+                        </span>
+                      ) : (
+                        <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
+                          เต็มแล้ว
+                        </span>
+                      )}
+                      <span className="bg-blue-50 text-blue-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-blue-200">
+                        {c.category || "เวิร์กชอป"}
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-sm md:text-base text-gray-900 leading-snug mb-1 line-clamp-2">
+                      {c.name}
+                    </h3>
+                    
+                    {c.instructor && c.instructor !== "ไม่ระบุผู้สอน" && (
+                      <p className="text-gray-500 text-xs mb-3">
+                        ผู้สอน: {c.instructor}
+                      </p>
+                    )}
+
+                    <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-2">
+                      <div className="flex justify-between items-start text-xs">
+                        <div className="flex items-start gap-1">
+                          <Calendar className="w-3 h-3 shrink-0 mt-0.5 text-gray-400" />
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900">
+                              {c.date ? new Date(c.date).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : ''}
+                              {c.endDate && new Date(c.endDate).getTime() !== new Date(c.date).getTime() && (
+                                <> - {new Date(c.endDate).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</>
+                              )}
+                            </span>
+                            <span className="text-[9px] text-gray-500 mt-0.5">
+                              {c.startTime} - {c.endTime}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <span className={c.totalSeats > 0 ? "text-green-600 font-medium text-[9px] bg-green-50 px-1.5 py-0.5 rounded border border-green-100" : "text-gray-500 font-medium text-[9px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200"}>
+                            จองแล้ว {bookedSeats}/{totalCapacity}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="font-bold text-lg text-gray-900">
+                        ฿{c.price.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+      <CarouselPrevious className="hidden md:flex" />
+      <CarouselNext className="hidden md:flex" />
+    </Carousel>
+  );
+}
 import { getClassesForMonth } from "@/app/actions/calendar";
 import { BookingStatus } from "@/app/generated/prisma";
 export default async function Home() {
+  // Calculate dates
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const rawUpcomingClasses = await prisma.classEvent.findMany({
-    where: { date: { gte: today } },
-    orderBy: { date: "asc" },
-    include: {
-      media: {
-        where: { type: 'IMAGE' },
-        orderBy: { order: 'asc' },
-        take: 1
+  const endOfWeek = new Date(today);
+  const day = endOfWeek.getDay(); // 0 is Sunday
+  const diff = endOfWeek.getDate() - day + (day === 0 ? 0 : 7); // end of week is next Sunday or today if Sunday
+  endOfWeek.setDate(diff);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  const baseInclude = {
+    media: {
+      where: { type: 'IMAGE' },
+      orderBy: { order: 'asc' },
+      take: 1
+    },
+    bookings: {
+      where: {
+        status: { notIn: [BookingStatus.CANCELLED] }
       },
-      bookings: {
-        where: {
-          status: { notIn: [BookingStatus.CANCELLED] }
-        },
-        select: { seats: true }
-      }
+      select: { seats: true }
     }
+  } as const;
+
+  // Fetch This Week Classes
+  const thisWeekClasses = await prisma.classEvent.findMany({
+    where: { 
+      date: { gte: today, lte: endOfWeek },
+      status: { not: "CANCELLED" }
+    },
+    orderBy: { date: "asc" },
+    include: baseInclude
   });
 
-  const seenNames = new Set();
-  const upcomingClasses = [];
-  for (const c of rawUpcomingClasses) {
-    if (!seenNames.has(c.name)) {
-      seenNames.add(c.name);
-      upcomingClasses.push(c);
-      if (upcomingClasses.length >= 8) break; // keep the take 8 limit
-    }
-  }
-
-  const categoryRecords = await prisma.classEvent.findMany({
-    select: { category: true },
-    distinct: ['category'],
-    where: { category: { not: null } }
+  // Fetch This Month Classes
+  const thisMonthClasses = await prisma.classEvent.findMany({
+    where: { 
+      date: { gte: today, lte: endOfMonth },
+      status: { not: "CANCELLED" }
+    },
+    orderBy: { date: "asc" },
+    include: baseInclude
   });
-  const categories = categoryRecords.map(c => c.category).filter(Boolean) as string[];
+
+  // Fetch Popular (Almost Full)
+  const popularClasses = await prisma.classEvent.findMany({
+    where: { 
+      date: { gte: today },
+      status: { not: "CANCELLED" },
+      totalSeats: { lte: 3, gt: 0 } // Only 1-3 seats remaining
+    },
+    orderBy: { totalSeats: "asc" },
+    take: 8,
+    include: baseInclude
+  });
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -189,122 +303,42 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Course Carousel Section grouped by category */}
+      {/* Course Carousel Sections */}
       <section className="max-w-[1340px] mx-auto px-6 py-8 flex flex-col gap-12">
-        {upcomingClasses.length === 0 ? (
+        
+        {/* Popular / Almost Full */}
+        {popularClasses.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">คอร์สเรียนแนะนำสำหรับคุณ</h2>
-            <div className="text-center p-12 border border-gray-200 bg-gray-50 rounded-2xl">
-              <p className="text-lg text-gray-600">ยังไม่มีคลาสเรียนแนะนำในขณะนี้</p>
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-2xl font-bold text-[#F44336]">🔥 รายการยอดนิยม (ใกล้เต็มแล้ว รีบจองเลย!)</h2>
+            </div>
+            <div className="relative px-12">
+              <ClassCarousel classes={popularClasses} />
             </div>
           </div>
-        ) : (
-          Object.entries(
-            upcomingClasses.reduce((acc, c) => {
-              const cat = c.category || "เวิร์กชอป";
-              if (!acc[cat]) acc[cat] = [];
-              acc[cat].push(c);
-              return acc;
-            }, {} as Record<string, typeof upcomingClasses>)
-          ).map(([category, classes]) => (
-            <div key={category}>
-              <h2 className="text-2xl font-bold mb-6">{category}</h2>
-              <div className="relative px-12">
-                <Carousel opts={{ align: "start" }} className="w-full">
-                  <CarouselContent className="-ml-4">
-                    {classes.map((c) => {
-                      const bookedSeats = c.bookings.reduce((sum, b) => sum + b.seats, 0);
-                      const totalCapacity = c.totalSeats + bookedSeats;
-
-                      return (
-                        <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                          <Link href={`/classes/${c.id}`} className="block h-full">
-                            <div className="bg-white rounded-2xl overflow-hidden flex flex-col h-full shadow-sm border border-gray-100">
-                              <div className="relative aspect-video overflow-hidden bg-gray-100">
-                                {c.media && c.media.length > 0 ? (
-                                  <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-xs">
-                                    ไม่มีรูปภาพ
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="flex flex-col flex-1 p-4">
-                                <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-                                  {c.status === "COMPLETED" ? (
-                                    <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
-                                      ปิดรับสมัคร
-                                    </span>
-                                  ) : c.totalSeats > 0 ? (
-                                    <span className="bg-green-50 text-green-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-green-200">
-                                      เปิดรับสมัคร
-                                    </span>
-                                  ) : (
-                                    <span className="bg-gray-100 text-gray-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-gray-200">
-                                      เต็มแล้ว
-                                    </span>
-                                  )}
-                                  <span className="bg-blue-50 text-blue-700 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-blue-200">
-                                    {c.category || "เวิร์กชอป"}
-                                  </span>
-                                </div>
-
-                                <h3 className="font-bold text-sm md:text-base text-gray-900 leading-snug mb-1 line-clamp-2">
-                                  {c.name}
-                                </h3>
-                                
-                                {c.instructor && c.instructor !== "ไม่ระบุผู้สอน" && (
-                                  <p className="text-gray-500 text-xs mb-3">
-                                    ผู้สอน: {c.instructor}
-                                  </p>
-                                )}
-
-                                <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-2">
-                                  <div className="flex justify-between items-start text-xs">
-                                    <div className="flex items-start gap-1">
-                                      <Calendar className="w-3 h-3 shrink-0 mt-0.5 text-gray-400" />
-                                      <div className="flex flex-col">
-                                        <span className="font-medium text-gray-900">
-                                          {c.date ? new Date(c.date).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' }) : ''}
-                                          {c.endDate && new Date(c.endDate).getTime() !== new Date(c.date).getTime() && (
-                                            <> - {new Date(c.endDate).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</>
-                                          )}
-                                        </span>
-                                        <span className="text-[9px] text-gray-500 mt-0.5">
-                                          {c.startTime} - {c.endTime}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="text-right flex flex-col items-end">
-                                      <span className={c.totalSeats > 0 ? "text-green-600 font-medium text-[9px] bg-green-50 px-1.5 py-0.5 rounded border border-green-100" : "text-gray-500 font-medium text-[9px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200"}>
-                                        จองแล้ว {bookedSeats}/{totalCapacity}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="font-bold text-lg text-gray-900">
-                                    ฿{c.price.toLocaleString()}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </Link>
-                        </CarouselItem>
-                      );
-                    })}
-                  </CarouselContent>
-                  <CarouselPrevious className="hidden md:flex" />
-                  <CarouselNext className="hidden md:flex" />
-                </Carousel>
-              </div>
-            </div>
-          ))
         )}
+
+        {/* This Week */}
+        {thisWeekClasses.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">📅 รายการสอนสัปดาห์นี้</h2>
+            <div className="relative px-12">
+              <ClassCarousel classes={thisWeekClasses} />
+            </div>
+          </div>
+        )}
+
+        {/* This Month */}
+        {thisMonthClasses.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">🗓️ รายการสอนเดือนนี้</h2>
+            <div className="relative px-12">
+              <ClassCarousel classes={thisMonthClasses} />
+            </div>
+          </div>
+        )}
+
       </section>
-
-
-
     </div>
   );
 }
