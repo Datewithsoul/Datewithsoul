@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Heart } from "lucide-react";
+import { ArrowLeft, Heart, AlertCircle } from "lucide-react";
 import { submitBooking } from "./actions";
 import { createClient } from "@/utils/supabase/server";
 
@@ -10,8 +10,17 @@ import BookingForm from "@/components/booking-form";
 
 import ScheduleSelector from "@/app/classes/[id]/schedule-selector";
 
-export default async function BookClassPage({ params }: { params: Promise<{ classId: string }> }) {
+export default async function BookClassPage({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ classId: string }>,
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const { classId } = await params;
+  const resolvedSearchParams = await searchParams;
+  const errorMessage = typeof resolvedSearchParams?.error === "string" ? resolvedSearchParams.error : null;
+
   const classEvent = await prisma.classEvent.findUnique({
     where: { id: classId },
   });
@@ -109,6 +118,13 @@ export default async function BookClassPage({ params }: { params: Promise<{ clas
           {/* Booking Form */}
           <div>
             <h2 className="text-xl font-semibold mb-6">ข้อมูลผู้จอง</h2>
+            
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 font-semibold flex items-center gap-2 text-sm">
+                <AlertCircle size={18} />
+                {errorMessage}
+              </div>
+            )}
             <BookingForm 
               classEventId={classEvent.id}
               pricePerSeat={classEvent.price}

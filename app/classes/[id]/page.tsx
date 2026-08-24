@@ -220,6 +220,10 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                   <button disabled className="w-full bg-gray-300 text-gray-500 font-bold py-3.5 rounded-lg text-lg cursor-not-allowed">
                     คอร์สนี้ปิดรับสมัครแล้ว
                   </button>
+                ) : classEvent.totalSeats <= 0 ? (
+                  <button disabled className="w-full bg-gray-300 text-gray-500 font-bold py-3.5 rounded-lg text-lg cursor-not-allowed">
+                    ที่นั่งเต็มแล้ว
+                  </button>
                 ) : (
                   <>
                     <Link href={`/book/${classEvent.id}`} className="block w-full">

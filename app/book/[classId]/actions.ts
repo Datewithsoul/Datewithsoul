@@ -22,7 +22,7 @@ export async function submitBooking(formData: FormData) {
   }
 
   if (classEvent.totalSeats < seats) {
-    throw new Error(`ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
+    redirect(`/book/${classEventId}?error=ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
   }
 
   const totalPrice = classEvent.price * seats;
@@ -39,7 +39,7 @@ export async function submitBooking(formData: FormData) {
     where: {
       userId: authUser.id,
       classEventId: classEventId,
-      status: { in: ['BOOKING', 'AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PAID'] }
+      status: { in: ['PENDING_PAYMENT', 'PAYMENT_REVIEW', 'CONFIRMED'] }
     }
   });
 
@@ -88,7 +88,7 @@ export async function submitBooking(formData: FormData) {
       await tx.payment.create({
         data: {
           bookingId: b.id,
-          status: "PENDING",
+          status: "UNPAID",
         },
       });
 

@@ -23,16 +23,22 @@ export default function BookingForm({
   
   const totalPrice = seats * pricePerSeat;
 
+  const isFull = totalAvailableSeats <= 0;
+
   return (
     <>
-      {/* We can teleport the total price display if we want, but simpler is to show it inside the form area or just rely on the parent static layout. Actually, if we put the form here, we can show a summary above the button. */}
-      
       <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-6">
         <div className="flex justify-between items-center text-lg">
-          <span className="font-semibold">ราคารวม ({seats} ที่นั่ง)</span>
+          <span className="font-semibold">ราคารวม ({seats || 1} ที่นั่ง)</span>
           <span className="text-2xl font-bold text-[#F44336]">฿{totalPrice.toLocaleString()}</span>
         </div>
       </div>
+
+      {isFull && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 font-semibold flex items-center gap-2">
+          ขออภัย คลาสเรียนนี้ที่นั่งเต็มแล้ว
+        </div>
+      )}
 
       <form action={submitBooking} className="flex flex-col gap-5">
         <input type="hidden" name="classEventId" value={classEventId} />
@@ -45,7 +51,8 @@ export default function BookingForm({
             name="name" 
             required
             defaultValue={defaultName}
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+            disabled={isFull}
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400"
             placeholder="ชื่อ-นามสกุล"
           />
         </div>
@@ -64,36 +71,39 @@ export default function BookingForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="seats" className="font-semibold text-sm text-gray-700">จำนวนที่นั่งที่ต้องการ</label>
+          <label htmlFor="seats" className="font-semibold text-sm text-gray-700 flex justify-between">
+            <span>จำนวนที่นั่งที่ต้องการ</span>
+            <span className="text-red-500 font-normal">เหลือ {Math.max(0, totalAvailableSeats)} ที่นั่ง</span>
+          </label>
           <input 
             type="number" 
             id="seats" 
             name="seats" 
             min="1"
-            max={totalAvailableSeats}
+            max={Math.max(1, totalAvailableSeats)}
             value={seats}
+            disabled={isFull}
             onChange={(e) => {
               const val = parseInt(e.target.value);
-              if (!isNaN(val) && val >= 1 && val <= totalAvailableSeats) {
-                setSeats(val);
-              } else if (e.target.value === "") {
-                // allow typing
-                setSeats(e.target.value as unknown as number);
-              }
+              setSeats(isNaN(val) ? (e.target.value as any) : val);
             }}
             onBlur={() => {
               if (!seats || seats < 1) setSeats(1);
-              if (seats > totalAvailableSeats) setSeats(totalAvailableSeats);
+              else if (seats > totalAvailableSeats) setSeats(totalAvailableSeats);
             }}
             required
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400"
           />
+          {seats > totalAvailableSeats && !isFull && (
+            <span className="text-sm text-red-500">ที่นั่งไม่เพียงพอ (เลือกได้สูงสุด {totalAvailableSeats} ที่)</span>
+          )}
         </div>
 
         <SubmitButton 
-          className="mt-6 pop-btn-red text-white font-bold py-3.5 rounded-xl text-lg transition-colors w-full"
+          disabled={isFull || seats > totalAvailableSeats || !seats || seats < 1}
+          className="mt-6 pop-btn-red text-white font-bold py-3.5 rounded-xl text-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ยืนยันการจอง
+          {isFull ? "ที่นั่งเต็มแล้ว" : "ยืนยันการจอง"}
         </SubmitButton>
       </form>
     </>

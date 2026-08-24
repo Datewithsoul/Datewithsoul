@@ -161,6 +161,23 @@ export default async function Home() {
     include: baseInclude
   });
 
+  // Fetch upcoming classes for category grouping
+  const rawUpcomingClasses = await prisma.classEvent.findMany({
+    where: { date: { gte: today }, status: { not: "CANCELLED" } },
+    orderBy: { date: "asc" },
+    include: baseInclude
+  });
+
+  const seenNames = new Set();
+  const upcomingClasses = [];
+  for (const c of rawUpcomingClasses) {
+    if (!seenNames.has(c.name)) {
+      seenNames.add(c.name);
+      upcomingClasses.push(c);
+      if (upcomingClasses.length >= 12) break; // Increase limit to 12 for categories
+    }
+  }
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -335,6 +352,27 @@ export default async function Home() {
             <div className="relative px-12">
               <ClassCarousel classes={thisMonthClasses} />
             </div>
+          </div>
+        )}
+
+        {/* Grouped by Category */}
+        {upcomingClasses.length > 0 && (
+          <div className="pt-8 border-t border-gray-100 mt-4 flex flex-col gap-12">
+            {Object.entries(
+              upcomingClasses.reduce((acc, c) => {
+                const cat = c.category || "เวิร์กชอป";
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(c);
+                return acc;
+              }, {} as Record<string, typeof upcomingClasses>)
+            ).map(([category, classes]) => (
+              <div key={category}>
+                <h2 className="text-2xl font-bold mb-6">🏷️ หมวดหมู่: {category}</h2>
+                <div className="relative px-12">
+                  <ClassCarousel classes={classes} />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
