@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Calendar, Clock } from "lucide-react";
 import { BookingStatus } from "@/app/generated/prisma";
 import CancelBookingButton from "@/components/cancel-booking-button";
+import PaymentCountdown from "@/components/payment-countdown";
 
 export default async function BookingsPage() {
   const supabase = await createClient();
@@ -111,15 +112,18 @@ export default async function BookingsPage() {
                         <span className="font-semibold">{booking.seats} ที่นั่ง · ฿{booking.totalPrice.toLocaleString()}</span>
                       </div>
                       
-                        {booking.status === BookingStatus.PENDING_PAYMENT && (
-                          <div className="flex items-center gap-2">
-                            <CancelBookingButton bookingId={booking.id} />
-                            <Link 
-                              href={`/payment/${booking.id}`}
-                              className="bg-[#222222] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors"
-                            >
-                              ชำระเงิน
-                            </Link>
+                      {booking.status === BookingStatus.PENDING_PAYMENT && (
+                          <div className="flex items-center gap-3">
+                            <PaymentCountdown createdAt={booking.createdAt} />
+                            <div className="flex items-center gap-2">
+                              <CancelBookingButton bookingId={booking.id} />
+                              <Link 
+                                href={`/payment/${booking.id}`}
+                                className="bg-[#222222] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors"
+                              >
+                                ชำระเงิน
+                              </Link>
+                            </div>
                           </div>
                         )}
                     </div>

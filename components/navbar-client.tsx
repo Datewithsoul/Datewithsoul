@@ -9,6 +9,10 @@ import CartButton from "./cart-button";
 
 const navLinks = [
   { href: "/classes", label: "คลาสเรียน" },
+  { href: "/schedule", label: "ตารางเรียน" },
+  { href: "/how-it-works", label: "วิธีการจอง" },
+  { href: "/bookings", label: "ตรวจสอบสถานะการจอง" },
+  { href: "/contact", label: "ติดต่อเรา" },
 ];
 
 export default function NavbarClient({
@@ -74,6 +78,12 @@ export default function NavbarClient({
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/classes"
+              className="text-sm font-bold bg-[#F44336] text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors shadow-sm"
+            >
+              จองคลาส
+            </Link>
           </nav>
 
           {/* Right side */}
@@ -222,7 +232,18 @@ export default function NavbarClient({
                 </>
               )}
             </nav>
+            {/* Mobile: จองคลาส CTA */}
+            <div className="px-4 py-3 border-t border-gray-100">
+              <Link
+                href="/classes"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-center w-full py-3 rounded-full bg-[#F44336] text-white text-sm font-bold hover:bg-red-600 transition-colors"
+              >
+                จองคลาส
+              </Link>
+            </div>
           </div>
+
         )}
       </header>
     </>

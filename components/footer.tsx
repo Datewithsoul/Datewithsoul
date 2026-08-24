@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 
 const links = [
-  { href: "#classes", label: "คลาสทั้งหมด" },
-  { href: "#schedule", label: "ตารางคลาส" },
-  { href: "#how-to-book", label: "วิธีจองคลาส" },
-  { href: "#contact", label: "ติดต่อเรา" },
+  { href: "/classes", label: "คลาสทั้งหมด" },
+  { href: "/schedule", label: "ตารางคลาส" },
+  { href: "/how-it-works", label: "วิธีจองคลาส" },
+  { href: "/contact", label: "ติดต่อเรา" },
+  { href: "/faq", label: "คำถามที่พบบ่อย" },
+  { href: "/terms", label: "เงื่อนไขการจอง" },
+  { href: "/privacy", label: "นโยบายความเป็นส่วนตัว" },
 ];
 
 export function Footer() {
