@@ -20,7 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="th" className={`${sarabun.variable} h-full antialiased`}>
+    <html lang="th" className={`${sarabun.variable} h-full antialiased`} data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">
         <CartProvider>
           <TooltipProvider>
