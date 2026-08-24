@@ -64,8 +64,8 @@ export default function ScheduleSelector({
           </div>
         </div>
         <div className="p-3 bg-gray-50">
-          <div className="text-[10px] font-bold uppercase mb-1 text-gray-500">ที่นั่งเหลือ</div>
-          <div className="text-sm font-semibold">{currentSchedule.totalSeats}/{currentSchedule.maxSeats} คน</div>
+          <div className="text-[10px] font-bold uppercase mb-1 text-gray-500">สถานะที่นั่ง</div>
+          <div className="text-sm font-semibold">จองแล้ว {currentSchedule.maxSeats - currentSchedule.totalSeats}/{currentSchedule.maxSeats} คน {currentSchedule.totalSeats === 0 && <span className="text-red-500 ml-2">(เต็มแล้ว)</span>}</div>
         </div>
       </div>
 
@@ -91,8 +91,8 @@ export default function ScheduleSelector({
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${schedule.totalSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                    เหลือ {schedule.totalSeats}/{schedule.maxSeats} คน
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${schedule.totalSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {schedule.totalSeats > 0 ? `ว่าง ${schedule.totalSeats} ที่` : 'เต็มแล้ว'}
                   </span>
                 </div>
               </div>
