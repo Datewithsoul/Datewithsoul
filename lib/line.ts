@@ -77,15 +77,9 @@ export async function notifyAdmins(text: string) {
     select: { lineId: true },
   });
 
-  const extraIds = (process.env.LINE_STAFF_USER_IDS ?? "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-
-  const ids = new Set([
-    ...admins.map((admin) => admin.lineId).filter((id): id is string => Boolean(id)),
-    ...extraIds,
-  ]);
+  const ids = new Set(
+    admins.map((admin) => admin.lineId).filter((id): id is string => Boolean(id))
+  );
 
   await Promise.all([...ids].map((id) => sendLineMessage(id, text)));
 }
