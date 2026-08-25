@@ -146,3 +146,115 @@ export async function sendTestMessageAction(
 
   return { success: true, message: `ส่งข้อความทดสอบไปยัง LINE เรียบร้อยแล้ว` };
 }
+
+export async function sendCustomTestBroadcastAction({
+  targetType,
+  message,
+  targetLineId,
+}: {
+  targetType: "USER" | "ADMIN" | "ALL";
+  message: string;
+  targetLineId?: string;
+}) {
+  if (!message || !message.trim()) {
+    return { success: false, error: "กรุณาระบุข้อความที่ต้องการส่ง" };
+  }
+
+  const textToSend = `🧪 [ข้อความทดสอบ]\n${message.trim()}`;
+  const sentTargets: string[] = [];
+
+  // Fetch admin line IDs
+  const adminUsers = await prisma.user.findMany({
+    where: { role: "ADMIN", lineId: { not: null } },
+    select: { id: true, name: true, lineId: true },
+  });
+  const adminLineIds = Array.from(
+    new Set(adminUsers.map((a) => a.lineId).filter((id): id is string => Boolean(id)))
+  );
+
+  if (targetType === "ADMIN" || targetType === "ALL") {
+    if (adminLineIds.length === 0 && targetType === "ADMIN") {
+      return {
+        success: false,
+        error: "ไม่พบบัญชี Admin ที่เชื่อมต่อ LINE ID ในระบบ กรุณาตรวจสอบว่ามีผู้ใช้ที่มีสิทธิ์ Admin และมี LINE ID",
+      };
+    }
+    for (const admin of adminUsers) {
+      if (admin.lineId) {
+        const ok = await sendLineMessage(admin.lineId, textToSend);
+        if (ok) {
+          sentTargets.push(`Admin (${admin.name || admin.lineId})`);
+          try {
+            await prisma.notificationLog.create({
+              data: {
+                userId: admin.id,
+                type: "TEST_MESSAGE",
+                message: textToSend,
+              },
+            });
+          } catch (e) {
+            console.warn("Could not log test notification:", e);
+          }
+        }
+      }
+    }
+  }
+
+  if (targetType === "USER" || targetType === "ALL") {
+    const userLineId = targetLineId?.trim();
+    if (!userLineId && targetType === "USER") {
+      return {
+        success: false,
+        error: "กรุณาระบุ LINE User ID ของผู้ใช้ที่ต้องการส่งทดสอบ",
+      };
+    }
+    if (userLineId) {
+      const ok = await sendLineMessage(userLineId, textToSend);
+      if (ok) {
+        sentTargets.push(`User (${userLineId})`);
+        try {
+          const recipientUser = await prisma.user.findFirst({
+            where: { lineId: userLineId },
+            select: { id: true },
+          });
+          if (recipientUser) {
+            await prisma.notificationLog.create({
+              data: {
+                userId: recipientUser.id,
+                type: "TEST_MESSAGE",
+                message: textToSend,
+              },
+            });
+          }
+        } catch (e) {
+          console.warn("Could not log test notification for user:", e);
+        }
+      } else if (targetType === "USER") {
+        return {
+          success: false,
+          error: `ส่งข้อความไปยัง LINE ID "${userLineId}" ไม่สำเร็จ กรุณาตรวจสอบว่าบอท LINE OA เชื่อมต่อได้และผู้ใช้เพิ่มเพื่อนบอทแล้ว`,
+        };
+      }
+    }
+  }
+
+  if (sentTargets.length === 0) {
+    return {
+      success: false,
+      error: "ส่งข้อความไม่สำเร็จ กรุณาตรวจสอบว่า LINE Channel Access Token ถูกต้องและมีปลายทางผู้รับ",
+    };
+  }
+
+  revalidatePath("/admin/notifications");
+
+  return {
+    success: true,
+    message: `ส่งข้อความทดสอบสำเร็จ (${sentTargets.length} ปลายทาง: ${
+      targetType === "ADMIN"
+        ? "เฉพาะแอดมิน"
+        : targetType === "USER"
+        ? "เฉพาะผู้ใช้"
+        : "ทั้งหมด (แอดมิน + ผู้ใช้)"
+    })`,
+  };
+}

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export async function createClass(formData: FormData) {
   const name = formData.get("name") as string;
@@ -67,5 +68,9 @@ export async function createClass(formData: FormData) {
     });
   }
 
+  revalidatePath("/");
+  revalidatePath("/schedule");
+  revalidatePath("/classes");
+  revalidatePath("/admin/classes");
   redirect("/admin/classes");
 }

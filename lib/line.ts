@@ -70,11 +70,11 @@ export async function sendLineMessage(userId: string, text: string) {
   }
 }
 
-export async function notifyAdmins(text: string) {
+export async function notifyAdmins(text: string, type: string = "ADMIN_ALERT") {
   const { prisma } = await import("@/lib/prisma");
   const admins = await prisma.user.findMany({
     where: { role: "ADMIN", lineId: { not: null } },
-    select: { lineId: true },
+    select: { id: true, lineId: true, name: true },
   });
 
   const ids = new Set(
@@ -82,6 +82,23 @@ export async function notifyAdmins(text: string) {
   );
 
   await Promise.all([...ids].map((id) => sendLineMessage(id, text)));
+
+  // Log notifications for admins in DB
+  try {
+    for (const admin of admins) {
+      if (admin.lineId) {
+        await prisma.notificationLog.create({
+          data: {
+            userId: admin.id,
+            type,
+            message: text,
+          },
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Could not log admin notification:", err);
+  }
 }
 
 /**
@@ -108,21 +125,31 @@ export async function sendTemplatedLineMessage(
 
   const success = await sendLineMessage(lineUserId, text);
 
-  // Optional DB Logging
-  if (logOptions?.userId) {
-    try {
-      const { prisma } = await import("@/lib/prisma");
+  // DB Logging
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    let targetUserId = logOptions?.userId;
+
+    if (!targetUserId) {
+      const user = await prisma.user.findFirst({
+        where: { lineId: lineUserId },
+        select: { id: true },
+      });
+      targetUserId = user?.id;
+    }
+
+    if (targetUserId) {
       await prisma.notificationLog.create({
         data: {
-          userId: logOptions.userId,
-          bookingId: logOptions.bookingId,
-          type: logOptions.type || templateKey,
+          userId: targetUserId,
+          bookingId: logOptions?.bookingId || null,
+          type: logOptions?.type || templateKey,
           message: text,
         },
       });
-    } catch (err) {
-      console.warn("Could not log notification:", err);
     }
+  } catch (err) {
+    console.warn("Could not log notification:", err);
   }
 
   return success;
@@ -142,5 +169,5 @@ export async function notifyAdminsTemplated(
     return;
   }
 
-  await notifyAdmins(text);
+  await notifyAdmins(text, templateKey);
 }

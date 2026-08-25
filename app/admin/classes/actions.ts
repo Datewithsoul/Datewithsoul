@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { uploadMedia } from "@/utils/supabase/storage";
 
 export async function updateClass(formData: FormData) {
@@ -138,6 +139,10 @@ export async function updateClass(formData: FormData) {
     });
   }
 
+  revalidatePath("/");
+  revalidatePath("/schedule");
+  revalidatePath("/classes");
+  revalidatePath("/admin/classes");
   redirect("/admin/classes");
 }
 
@@ -188,6 +193,10 @@ export async function deleteClass(formData: FormData) {
     }
   });
 
+  revalidatePath("/");
+  revalidatePath("/schedule");
+  revalidatePath("/classes");
+  revalidatePath("/admin/classes");
   redirect("/admin/classes");
 }
 
@@ -199,5 +208,9 @@ export async function closeClass(formData: FormData) {
     data: { status: "COMPLETED" }
   });
 
+  revalidatePath("/");
+  revalidatePath("/schedule");
+  revalidatePath("/classes");
+  revalidatePath("/admin/classes");
   redirect("/admin/classes");
 }

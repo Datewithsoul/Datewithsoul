@@ -14,6 +14,7 @@ export async function getClassesForMonth(year: number, month: number) {
           gte: startDate,
           lte: endDate,
         },
+        status: { notIn: ["CANCELLED", "DRAFT"] },
       },
       include: {
         media: {
