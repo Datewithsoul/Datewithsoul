@@ -7,6 +7,7 @@ import { Calendar, Clock } from "lucide-react";
 import { BookingStatus } from "@/app/generated/prisma";
 import CancelBookingButton from "@/components/cancel-booking-button";
 import PaymentCountdown from "@/components/payment-countdown";
+import { ChangeRequestButtons } from "@/components/change-request-buttons";
 
 export default async function BookingsPage() {
   const supabase = await createClient();
@@ -38,6 +39,16 @@ export default async function BookingsPage() {
       payment: true,
     },
     orderBy: { createdAt: 'desc' }
+  });
+
+  const availableClasses = await prisma.classEvent.findMany({
+    where: {
+      status: "PUBLISHED",
+      date: { gt: new Date() },
+      totalSeats: { gt: 0 }
+    },
+    select: { id: true, name: true, date: true, startTime: true },
+    orderBy: { date: 'asc' }
   });
 
   return (
@@ -125,7 +136,11 @@ export default async function BookingsPage() {
                               </Link>
                             </div>
                           </div>
-                        )}
+                      )}
+                      
+                      {booking.status === BookingStatus.CONFIRMED && (
+                        <ChangeRequestButtons bookingId={booking.id} classDate={c.date} availableClasses={availableClasses} />
+                      )}
                     </div>
                   </div>
                 </div>

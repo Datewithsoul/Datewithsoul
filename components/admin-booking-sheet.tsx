@@ -88,6 +88,9 @@ export function AdminBookingSheet({ booking, triggerLabel = "รายละเ�
               
               <div className="text-[#6a5d50]">จำนวนที่นั่ง:</div>
               <div className="text-[#3d3229]">{booking.seats} ที่นั่ง</div>
+              
+              <div className="text-[#6a5d50]">หมายเหตุ:</div>
+              <div className="text-[#3d3229] whitespace-pre-wrap">{booking.note || "-"}</div>
             </div>
           </section>
 

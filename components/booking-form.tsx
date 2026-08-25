@@ -99,6 +99,17 @@ export default function BookingForm({
           )}
         </div>
 
+        <div className="flex flex-col gap-2">
+          <label htmlFor="note" className="font-semibold text-sm text-gray-700">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
+          <textarea 
+            id="note" 
+            name="note" 
+            disabled={isFull}
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400 min-h-[100px] resize-y"
+            placeholder="เช่น แพ้อาหาร, ความต้องการพิเศษ..."
+          />
+        </div>
+
         <SubmitButton 
           disabled={isFull || seats > totalAvailableSeats || !seats || seats < 1}
           className="mt-6 pop-btn-red text-white font-bold py-3.5 rounded-xl text-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"

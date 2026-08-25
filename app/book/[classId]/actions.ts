@@ -81,6 +81,7 @@ export async function submitBooking(formData: FormData) {
           classEventId,
           seats,
           totalPrice,
+          note: formData.get("note") as string || null,
           status: "PENDING_PAYMENT",
         },
       });

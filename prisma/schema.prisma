@@ -91,6 +91,7 @@ model Booking {
   bookingGroup   BookingGroup?     @relation(fields: [bookingGroupId], references: [id])
   changeCount    Int               @default(0)
   attended       Boolean           @default(false)
+  note           String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   payment        Payment?

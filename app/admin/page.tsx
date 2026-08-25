@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, Plus, Calendar, CheckCircle, Clock, XCircle, AlertCircle, Megaphone, Banknote, FileText } from "lucide-react";
 import Link from "next/link";
 import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
@@ -18,7 +18,19 @@ export default async function AdminDashboard() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [totalClasses, totalBookings, pendingPayments, recentBookingsList, upcomingClasses, bookingsForChart, newBookingsToday, awaitingPaymentBookings, almostFullClasses] = await Promise.all([
+  const [
+    totalClasses,
+    totalBookings,
+    pendingPayments,
+    recentBookingsList,
+    upcomingClasses,
+    bookingsForChart,
+    newBookingsToday,
+    awaitingPaymentBookings,
+    almostFullClasses,
+    bookingStatusGroups,
+    bookingTotalSums
+  ] = await Promise.all([
     prisma.classEvent.count(),
     prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
     prisma.booking.count({ where: { status: BookingStatus.PAYMENT_REVIEW } }),
@@ -38,8 +50,13 @@ export default async function AdminDashboard() {
     }),
     prisma.booking.count({ where: { createdAt: { gte: today } } }),
     prisma.booking.count({ where: { status: BookingStatus.PENDING_PAYMENT } }),
-    prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: 3, gt: 0 } } })
+    prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: 3, gt: 0 } } }),
+    prisma.booking.groupBy({ by: ['status'], _count: { id: true } }),
+    prisma.booking.groupBy({ by: ['status'], _sum: { totalPrice: true } })
   ]);
+
+  const getBookingCount = (status: BookingStatus) => bookingStatusGroups.find(g => g.status === status)?._count.id || 0;
+  const getPaymentSum = (status: BookingStatus) => bookingTotalSums.find(g => g.status === status)?._sum.totalPrice || 0;
 
   const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
   const chartDataMap = new Map();
@@ -144,6 +161,84 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </dl>
+
+      <section>
+        <h2 className="text-base font-semibold text-[#3d3229] mb-4">Quick Actions</h2>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/admin/classes/new" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+            <Plus className="h-4 w-4" /> เพิ่มคลาสใหม่
+          </Link>
+          <Link href="/admin/bookings" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+            <FileText className="h-4 w-4" /> ดู Booking ทั้งหมด
+          </Link>
+          <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+            <Banknote className="h-4 w-4" /> ตรวจสอบสลิป
+          </Link>
+          <Link href="/admin/classes" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+            <Calendar className="h-4 w-4" /> จัดการตารางเรียน
+          </Link>
+          <button disabled className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 px-4 py-2 rounded-md text-sm font-medium text-gray-400 cursor-not-allowed">
+            <Megaphone className="h-4 w-4" /> ส่งประกาศถึงลูกค้า
+          </button>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <section className="border border-[#ddd4c8] bg-white flex flex-col">
+          <div className="border-b border-[#ddd4c8] px-5 py-4">
+            <h2 className="text-base font-semibold text-[#3d3229]">Booking Overview</h2>
+            <p className="mt-1 text-sm text-[#6a5d50]">สรุปสถานะการจองทั้งหมด</p>
+          </div>
+          <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">ยืนยันแล้ว</span>
+               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
+             </div>
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">รอชำระเงิน</span>
+               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.PENDING_PAYMENT).toLocaleString("th-TH")}</span>
+             </div>
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">รอตรวจสอบ</span>
+               <span className="text-2xl font-semibold text-[#8f3b2c]">{getBookingCount(BookingStatus.PAYMENT_REVIEW).toLocaleString("th-TH")}</span>
+             </div>
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">ยกเลิก</span>
+               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.CANCELLED).toLocaleString("th-TH")}</span>
+             </div>
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">หมดอายุ</span>
+               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.EXPIRED).toLocaleString("th-TH")}</span>
+             </div>
+          </div>
+        </section>
+
+        <section className="border border-[#ddd4c8] bg-white flex flex-col">
+          <div className="border-b border-[#ddd4c8] px-5 py-4">
+            <h2 className="text-base font-semibold text-[#3d3229]">Payment Overview</h2>
+            <p className="mt-1 text-sm text-[#6a5d50]">สรุปยอดเงินตามสถานะ</p>
+          </div>
+          <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">ชำระแล้ว</span>
+               <span className="text-2xl font-semibold text-[#3d3229]">฿{getPaymentSum(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
+             </div>
+             <div className="flex flex-col">
+               <span className="text-sm text-[#6a5d50]">รอตรวจสอบ</span>
+               <span className="text-2xl font-semibold text-[#8f3b2c]">฿{getPaymentSum(BookingStatus.PAYMENT_REVIEW).toLocaleString("th-TH")}</span>
+             </div>
+             <div className="flex flex-col col-span-2">
+               <span className="text-sm text-[#6a5d50]">ถูกปฏิเสธ/ยกเลิก/หมดอายุ</span>
+               <span className="text-2xl font-semibold text-[#6a5d50]">฿{(getPaymentSum(BookingStatus.CANCELLED) + getPaymentSum(BookingStatus.EXPIRED)).toLocaleString("th-TH")}</span>
+             </div>
+          </div>
+          <div className="border-t border-[#ddd4c8] p-4 bg-[#f7f4ef]">
+            <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="w-full flex justify-center items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-gray-50 transition-colors">
+               <Banknote className="h-4 w-4" /> ดูหน้าตรวจสอบ Payment
+            </Link>
+          </div>
+        </section>
+      </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.9fr)]">
         <div className="flex flex-col gap-8">

@@ -7,6 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 
+const STATUS_LABELS: Record<string, string> = {
+  ALL: "สถานะทั้งหมด",
+  PENDING_PAYMENT: "กำลังจอง/ชำระเงิน",
+  PAYMENT_REVIEW: "รอตรวจสอบชำระเงิน",
+  CONFIRMED: "ยืนยันแล้ว",
+  CHANGE_REQUESTED: "ขอเปลี่ยนรอบ",
+  CANCELLATION_REQUESTED: "ขอยกเลิก",
+  CANCELLED: "ยกเลิกแล้ว",
+  EXPIRED: "หมดอายุ",
+  COMPLETED: "เรียนแล้ว",
+};
+
 export function AdminBookingFilters() {
   const router = useRouter();
   const pathname = usePathname();
@@ -67,7 +79,9 @@ export function AdminBookingFilters() {
       <div className="w-full sm:w-[200px]">
         <Select value={currentStatus} onValueChange={handleStatusChange}>
           <SelectTrigger className="bg-[#fcfbf9] border-[#ddd4c8] focus:ring-[#8f3b2c]">
-            <SelectValue placeholder="สถานะทั้งหมด" />
+            <SelectValue placeholder="สถานะทั้งหมด">
+              {STATUS_LABELS[currentStatus]}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">สถานะทั้งหมด</SelectItem>
