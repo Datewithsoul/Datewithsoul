@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus, PaymentStatus, RequestStatus, RequestType } from "@/app/generated/prisma";
 import { requireAdmin } from "@/lib/require-admin";
-import { sendLineMessage } from "@/lib/line";
+import { sendLineMessage, sendTemplatedLineMessage } from "@/lib/line";
 import { isBookingStatus, paymentStatusForBooking } from "@/lib/booking-status";
 
 export async function approveRequest(requestId: string) {
@@ -78,9 +78,34 @@ export async function approveRequest(requestId: string) {
   // Notify customer
   if (request.booking.user.lineId) {
     if (request.type === RequestType.CANCELLATION) {
-      await sendLineMessage(request.booking.user.lineId, `คำขอยกเลิกการจองของคุณได้รับการอนุมัติแล้ว ขณะนี้อยู่ระหว่างการคืนเงิน (Refund Pending)`);
+      await sendTemplatedLineMessage(
+        request.booking.user.lineId,
+        "REQUEST_CANCEL_APPROVED_USER",
+        {
+          userName: request.booking.user.name,
+          className: request.booking.classEventId || "",
+        },
+        {
+          userId: request.booking.userId,
+          bookingId: request.bookingId,
+          type: "REQUEST_CANCEL_APPROVED",
+        }
+      );
     } else {
-      await sendLineMessage(request.booking.user.lineId, `คำขอเปลี่ยนรอบเรียนเป็น "${request.requestedEvent?.name}" ได้รับการอนุมัติเรียบร้อยแล้ว`);
+      await sendTemplatedLineMessage(
+        request.booking.user.lineId,
+        "REQUEST_CHANGE_APPROVED_USER",
+        {
+          userName: request.booking.user.name,
+          className: request.booking.classEventId || "",
+          newClassName: request.requestedEvent?.name || "",
+        },
+        {
+          userId: request.booking.userId,
+          bookingId: request.bookingId,
+          type: "REQUEST_CHANGE_APPROVED",
+        }
+      );
     }
   }
 
@@ -121,7 +146,20 @@ export async function rejectRequest(requestId: string, reason: string) {
 
   // Notify customer
   if (request.booking.user.lineId) {
-    await sendLineMessage(request.booking.user.lineId, `คำขอ${request.type === RequestType.CANCELLATION ? "ยกเลิกการจอง" : "เปลี่ยนรอบเรียน"}ของคุณถูกปฏิเสธ\nเหตุผล: ${reason}`);
+    await sendTemplatedLineMessage(
+      request.booking.user.lineId,
+      "REQUEST_REJECTED_USER",
+      {
+        userName: request.booking.user.name,
+        requestType: request.type === RequestType.CANCELLATION ? "ยกเลิกการจอง" : "เปลี่ยนรอบเรียน",
+        reason: reason,
+      },
+      {
+        userId: request.booking.userId,
+        bookingId: request.bookingId,
+        type: "REQUEST_REJECTED",
+      }
+    );
   }
 
   revalidatePath("/admin/bookings");
@@ -142,7 +180,18 @@ export async function markRefunded(bookingId: string) {
     data: { status: PaymentStatus.REFUNDED }
   });
   if (booking.user.lineId) {
-    await sendLineMessage(booking.user.lineId, `ระบบได้ทำการคืนเงินสำหรับการจองของคุณเรียบร้อยแล้ว`);
+    await sendTemplatedLineMessage(
+      booking.user.lineId,
+      "REFUND_COMPLETED_USER",
+      {
+        userName: booking.user.name,
+      },
+      {
+        userId: booking.userId,
+        bookingId: booking.id,
+        type: "REFUND_COMPLETED",
+      }
+    );
   }
   revalidatePath("/admin/bookings");
   revalidatePath("/admin/payments");

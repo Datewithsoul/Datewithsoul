@@ -120,14 +120,29 @@ export async function createCartBookings(items: BookingItemInput[], name: string
     // Notify Line asynchronously (don't block return)
     try {
       const classNames = classEvents.map(c => `• ${c.name} (${c.requestedSeats} ที่นั่ง)`).join('\n');
+      const { sendTemplatedLineMessage, notifyAdminsTemplated } = await import('@/lib/line');
+      
       if (user.lineId) {
-        const { sendLineMessage, notifyAdmins } = await import('@/lib/line');
-        await sendLineMessage(user.lineId, `ระบบได้รับคำสั่งจองคลาสแบบกลุ่มของคุณแล้ว:\n${classNames}\n\nยอดรวม: ฿${totalPrice.toLocaleString("th-TH")}\n(สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ`);
-        await notifyAdmins(`มีการจองใหม่ (กลุ่ม): ${user.name}\n${classNames}\nยอดรวม ฿${totalPrice.toLocaleString("th-TH")}`);
-      } else {
-        const { notifyAdmins } = await import('@/lib/line');
-        await notifyAdmins(`มีการจองใหม่ (กลุ่ม): ${user.name}\n${classNames}\nยอดรวม ฿${totalPrice.toLocaleString("th-TH")}`);
+        await sendTemplatedLineMessage(
+          user.lineId,
+          "BOOKING_GROUP_CREATED_USER",
+          {
+            userName: user.name,
+            classNames,
+            totalPrice: totalPrice.toLocaleString("th-TH"),
+          },
+          {
+            userId: user.id,
+            type: "BOOKING_GROUP_CREATED",
+          }
+        );
       }
+
+      await notifyAdminsTemplated("ADMIN_BOOKING_GROUP_CREATED", {
+        userName: user.name,
+        classNames,
+        totalPrice: totalPrice.toLocaleString("th-TH"),
+      });
     } catch (e) {
       console.error("Failed to send LINE notification for cart checkout", e);
     }

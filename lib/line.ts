@@ -83,3 +83,64 @@ export async function notifyAdmins(text: string) {
 
   await Promise.all([...ids].map((id) => sendLineMessage(id, text)));
 }
+
+/**
+ * Send a templated LINE message to a customer, logging the notification if requested.
+ */
+export async function sendTemplatedLineMessage(
+  lineUserId: string | null | undefined,
+  templateKey: string,
+  variables: Record<string, string | number | undefined | null>,
+  logOptions?: {
+    userId?: string;
+    bookingId?: string;
+    type?: string;
+  }
+): Promise<boolean> {
+  if (!lineUserId) return false;
+
+  const { getRenderedMessage } = await import("@/lib/message-templates");
+  const { text, enabled } = await getRenderedMessage(templateKey, variables);
+
+  if (!enabled || !text.trim()) {
+    return false;
+  }
+
+  const success = await sendLineMessage(lineUserId, text);
+
+  // Optional DB Logging
+  if (logOptions?.userId) {
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.notificationLog.create({
+        data: {
+          userId: logOptions.userId,
+          bookingId: logOptions.bookingId,
+          type: logOptions.type || templateKey,
+          message: text,
+        },
+      });
+    } catch (err) {
+      console.warn("Could not log notification:", err);
+    }
+  }
+
+  return success;
+}
+
+/**
+ * Send a templated LINE notification to all administrators.
+ */
+export async function notifyAdminsTemplated(
+  templateKey: string,
+  variables: Record<string, string | number | undefined | null>
+): Promise<void> {
+  const { getRenderedMessage } = await import("@/lib/message-templates");
+  const { text, enabled } = await getRenderedMessage(templateKey, variables);
+
+  if (!enabled || !text.trim()) {
+    return;
+  }
+
+  await notifyAdmins(text);
+}

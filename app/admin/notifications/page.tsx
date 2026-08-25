@@ -9,8 +9,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, MessageSquare, History } from "lucide-react";
 import { RetryNotificationButton } from "@/components/retry-notification-button";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -30,10 +31,39 @@ export default async function AdminNotifications() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <AdminPageHeader
-        title="ประวัติการแจ้งเตือน LINE"
-        description="ตรวจสอบประวัติการส่งข้อความแจ้งเตือนลูกค้าทาง LINE Official Account"
-      />
+      <div className="flex items-center justify-between">
+        <AdminPageHeader
+          title="การแจ้งเตือน LINE Official Account"
+          description="ตรวจสอบประวัติการส่งข้อความและจัดการรูปแบบข้อความแจ้งเตือนทาง LINE"
+        />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/notifications/templates"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#3d3229] rounded-md hover:bg-[#3d3229]/90 transition-all shadow-sm"
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
+            จัดการเทมเพลตข้อความ
+          </Link>
+        </div>
+      </div>
+
+      {/* Navigation Sub-Tabs */}
+      <div className="flex border-b border-[#ddd4c8] gap-4 text-sm">
+        <Link
+          href="/admin/notifications"
+          className="pb-2.5 border-b-2 border-[#3d3229] font-bold text-[#3d3229] flex items-center gap-1.5"
+        >
+          <History className="h-4 w-4 text-[#8a6d1f]" />
+          ประวัติการแจ้งเตือน (Logs)
+        </Link>
+        <Link
+          href="/admin/notifications/templates"
+          className="pb-2.5 text-[#6a5d50] hover:text-[#3d3229] flex items-center gap-1.5 transition-colors"
+        >
+          <MessageSquare className="h-4 w-4" />
+          เทมเพลตข้อความ LINE (Message Templates)
+        </Link>
+      </div>
 
       <section className="border border-[#ddd4c8] bg-white">
         <div className="border-b border-[#ddd4c8] px-5 py-4 flex justify-between items-center">

@@ -86,23 +86,60 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
   });
 
   if (booking.user.lineId) {
-    let message = "";
-    if (status === BookingStatus.CONFIRMED) {
-      message = `ยืนยันการชำระเงินสำหรับคลาส "${booking.classEvent.name}" เรียบร้อยแล้ว (สถานะ: ชำระเงินแล้ว) ขอบคุณที่ใช้บริการค่ะ`;
-    } else if (status === BookingStatus.PAYMENT_REVIEW) {
-      message = `สลิปการชำระเงินของคลาส "${booking.classEvent.name}" อยู่ระหว่างการตรวจสอบค่ะ`;
-    } else if (status === BookingStatus.PENDING_PAYMENT) {
-      message = `กรุณาชำระเงินสำหรับคลาส "${booking.classEvent.name}" เพื่อยืนยันที่นั่งค่ะ (สถานะ: กำลังชำระเงิน)`;
-      if (reason) message += `\nหมายเหตุ: ${reason}`;
-    } else if (status === BookingStatus.PENDING_PAYMENT) {
-      message = `การจองคลาส "${booking.classEvent.name}" ของคุณอยู่ในสถานะกำลังจองค่ะ`;
-    } else if (status === BookingStatus.CANCELLED) {
-      message = `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้วค่ะ`;
-      if (reason) message += `\nเหตุผล: ${reason}`;
-    }
+    const formattedDate = booking.classEvent.date.toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
 
-    if (message) {
-      await sendLineMessage(booking.user.lineId, message);
+    if (status === BookingStatus.CONFIRMED) {
+      await sendTemplatedLineMessage(
+        booking.user.lineId,
+        "PAYMENT_VERIFIED_USER",
+        {
+          userName: booking.user.name,
+          className: booking.classEvent.name,
+          date: formattedDate,
+          time: `${booking.classEvent.startTime} - ${booking.classEvent.endTime}`,
+          location: booking.classEvent.locationName || "Date with Soul Love",
+          mapUrl: booking.classEvent.googleMapUrl ? `แผนที่: ${booking.classEvent.googleMapUrl}` : "",
+          seats: booking.seats,
+        },
+        {
+          userId: booking.userId,
+          bookingId: booking.id,
+          type: "PAYMENT_VERIFIED",
+        }
+      );
+    } else if (status === BookingStatus.PENDING_PAYMENT && reason) {
+      await sendTemplatedLineMessage(
+        booking.user.lineId,
+        "PAYMENT_REJECTED_USER",
+        {
+          userName: booking.user.name,
+          className: booking.classEvent.name,
+          reason: reason,
+        },
+        {
+          userId: booking.userId,
+          bookingId: booking.id,
+          type: "PAYMENT_REJECTED",
+        }
+      );
+    } else if (status === BookingStatus.CANCELLED) {
+      await sendTemplatedLineMessage(
+        booking.user.lineId,
+        "BOOKING_CANCELLED_USER",
+        {
+          userName: booking.user.name,
+          className: booking.classEvent.name,
+        },
+        {
+          userId: booking.userId,
+          bookingId: booking.id,
+          type: "BOOKING_CANCELLED",
+        }
+      );
     }
   }
 

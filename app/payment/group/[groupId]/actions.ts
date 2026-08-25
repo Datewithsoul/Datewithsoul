@@ -98,17 +98,29 @@ export async function uploadGroupSlip(formData: FormData) {
 
   try {
     const classNames = bookingGroup.bookings.map(b => `• ${b.classEvent.name}`).join('\n');
+    const { sendTemplatedLineMessage, notifyAdminsTemplated } = await import('@/lib/line');
     
     // Notify admin
-    const { notifyAdmins } = await import('@/lib/line');
-    await notifyAdmins(`มีการแจ้งชำระเงินใหม่ (กลุ่ม): ${bookingGroup.user.name}\n${classNames}\nยอด: ฿${bookingGroup.totalPrice.toLocaleString("th-TH")}\nตรวจสอบสลิปได้ที่ระบบหลังบ้าน`);
+    await notifyAdminsTemplated("ADMIN_PAYMENT_GROUP_UPLOADED", {
+      userName: bookingGroup.user.name,
+      classNames,
+      totalPrice: bookingGroup.totalPrice.toLocaleString("th-TH"),
+    });
 
     // Notify user
     if (bookingGroup.user.lineId) {
-      const { sendLineMessage } = await import('@/lib/line');
-      await sendLineMessage(
+      await sendTemplatedLineMessage(
         bookingGroup.user.lineId,
-        `เราได้รับสลิปแจ้งชำระเงินของคุณแล้ว (รายการกลุ่ม)\nทีมงานจะทำการตรวจสอบภายใน 24 ชั่วโมงค่ะ`
+        "PAYMENT_GROUP_SLIP_UPLOADED_USER",
+        {
+          userName: bookingGroup.user.name,
+          classNames,
+          totalPrice: bookingGroup.totalPrice.toLocaleString("th-TH"),
+        },
+        {
+          userId: bookingGroup.userId,
+          type: "PAYMENT_GROUP_SLIP_UPLOADED",
+        }
       );
     }
   } catch (error) {
@@ -169,8 +181,23 @@ export async function cancelGroupBooking(groupId: string) {
   });
 
   if (group.user.lineId) {
-    const { sendLineMessage } = await import('@/lib/line');
-    await sendLineMessage(group.user.lineId, `การจองกลุ่มของคุณถูกยกเลิกแล้ว (สถานะ: ยกเลิก)`);
+    const { sendTemplatedLineMessage, notifyAdminsTemplated } = await import('@/lib/line');
+    await sendTemplatedLineMessage(
+      group.user.lineId,
+      "BOOKING_CANCELLED_USER",
+      {
+        userName: group.user.name,
+        className: group.bookings.map(b => b.classEvent.name).join(", "),
+      },
+      {
+        userId: group.userId,
+        type: "BOOKING_CANCELLED",
+      }
+    );
+    await notifyAdminsTemplated("ADMIN_BOOKING_CANCELLED", {
+      userName: group.user.name,
+      className: group.bookings.map(b => b.classEvent.name).join(", "),
+    });
   }
 
   return { success: true };

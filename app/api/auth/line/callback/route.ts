@@ -174,8 +174,18 @@ export async function GET(request: Request) {
       });
 
       // Send Welcome Notification
-      const { sendLineMessage } = await import('@/lib/line')
-      await sendLineMessage(profile.userId, `สวัสดีคุณ ${profile.displayName} เข้าสู่ระบบ Date with Soul เรียบร้อยแล้วค่ะ`)
+      const { sendTemplatedLineMessage } = await import('@/lib/line')
+      await sendTemplatedLineMessage(
+        profile.userId,
+        "LINE_LOGIN_WELCOME",
+        {
+          userName: profile.displayName,
+        },
+        {
+          userId: dbUser.id,
+          type: "LINE_LOGIN_WELCOME",
+        }
+      );
     }
 
     // 4. Sign the user in (creates session cookies via our normal SSR client)

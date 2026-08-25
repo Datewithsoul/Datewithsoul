@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendLineMessage, notifyAdmins } from "@/lib/line";
+import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 import { BookingStatus, PaymentStatus, BookingGroupStatus } from "@/app/generated/prisma";
 import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
 
@@ -56,8 +56,26 @@ export async function GET(request: Request) {
       });
 
       if (booking.user.lineId) {
-        await sendLineMessage(booking.user.lineId, `คำสั่งจองคลาส "${booking.classEvent.name}" ของคุณหมดเวลาทำการแล้ว (สถานะ: ยกเลิก) กรุณาทำรายการใหม่อีกครั้งค่ะ`);
+        await sendTemplatedLineMessage(
+          booking.user.lineId,
+          "BOOKING_EXPIRED_USER",
+          {
+            userName: booking.user.name,
+            className: booking.classEvent.name,
+          },
+          {
+            userId: booking.userId,
+            bookingId: booking.id,
+            type: "BOOKING_EXPIRED",
+          }
+        );
       }
+
+      await notifyAdminsTemplated("ADMIN_BOOKING_EXPIRED", {
+        userName: booking.user.name,
+        className: booking.classEvent.name,
+      });
+
       expiredCount++;
     }
 
@@ -104,8 +122,25 @@ export async function GET(request: Request) {
       });
 
       if (group.user.lineId) {
-        await sendLineMessage(group.user.lineId, `การจองคลาสแบบกลุ่มของคุณหมดเวลาทำการแล้ว (สถานะ: ยกเลิก) กรุณาทำรายการใหม่อีกครั้งค่ะ`);
+        await sendTemplatedLineMessage(
+          group.user.lineId,
+          "BOOKING_EXPIRED_USER",
+          {
+            userName: group.user.name,
+            className: group.bookings.map(b => b.classEvent.name).join(", "),
+          },
+          {
+            userId: group.userId,
+            type: "BOOKING_EXPIRED",
+          }
+        );
       }
+
+      await notifyAdminsTemplated("ADMIN_BOOKING_EXPIRED", {
+        userName: group.user.name,
+        className: group.bookings.map(b => b.classEvent.name).join(", "),
+      });
+
       expiredGroupCount++;
     }
 

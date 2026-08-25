@@ -101,14 +101,32 @@ export async function submitBooking(formData: FormData) {
     throw error;
   }
 
+  const { sendTemplatedLineMessage, notifyAdminsTemplated } = await import('@/lib/line');
+  
   if (user.lineId) {
-    const { sendLineMessage, notifyAdmins } = await import('@/lib/line');
-    await sendLineMessage(user.lineId, `ระบบได้รับคำสั่งจองคลาส "${classEvent.name}" ของคุณแล้ว (สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ`);
-    await notifyAdmins(`มีการจองใหม่: ${user.name} จองคลาส "${classEvent.name}" ${seats} ที่นั่ง ยอด ฿${totalPrice.toLocaleString("th-TH")}`);
-  } else {
-    const { notifyAdmins } = await import('@/lib/line');
-    await notifyAdmins(`มีการจองใหม่: ${user.name} จองคลาส "${classEvent.name}" ${seats} ที่นั่ง ยอด ฿${totalPrice.toLocaleString("th-TH")}`);
+    await sendTemplatedLineMessage(
+      user.lineId,
+      "BOOKING_CREATED_USER",
+      {
+        userName: user.name,
+        className: classEvent.name,
+        seats,
+        totalPrice: totalPrice.toLocaleString("th-TH"),
+      },
+      {
+        userId: user.id,
+        bookingId: booking.id,
+        type: "BOOKING_CREATED",
+      }
+    );
   }
+
+  await notifyAdminsTemplated("ADMIN_BOOKING_CREATED", {
+    userName: user.name,
+    className: classEvent.name,
+    seats,
+    totalPrice: totalPrice.toLocaleString("th-TH"),
+  });
 
   // Redirect to payment page instead of classes
   redirect(`/payment/${booking.id}`);

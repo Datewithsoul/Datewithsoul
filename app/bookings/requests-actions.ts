@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { BookingStatus, RequestStatus, RequestType } from "@/app/generated/prisma";
-import { notifyAdmins, sendLineMessage } from "@/lib/line";
+import { notifyAdmins, sendLineMessage, sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
 export async function createCancellationRequest(bookingId: string, reason: string) {
   const supabase = await createClient();
@@ -15,13 +15,12 @@ export async function createCancellationRequest(bookingId: string, reason: strin
   });
 
   if (!booking || booking.userId !== user.id) return { success: false, error: "Invalid booking" };
-
   if (booking.status !== BookingStatus.CONFIRMED) {
     return { success: false, error: "สามารถขอยกเลิกได้เฉพาะการจองที่ยืนยันแล้วเท่านั้น" };
   }
 
   await prisma.$transaction(async (tx) => {
-    // 1. Create a cancellation request
+    // 1. Create cancellation request
     await tx.changeRequest.create({
       data: {
         bookingId,
@@ -42,14 +41,26 @@ export async function createCancellationRequest(bookingId: string, reason: strin
 
   // Notify customer
   if (booking.user.lineId) {
-    await sendLineMessage(
+    await sendTemplatedLineMessage(
       booking.user.lineId,
-      `คำขอยกเลิกการจองคลาส "${booking.classEvent.name}" ของคุณถูกส่งไปยังผู้ดูแลแล้ว กรุณารอการติดต่อกลับเรื่องการคืนเงินค่ะ`
+      "REQUEST_CANCEL_SUBMITTED_USER",
+      {
+        userName: booking.user.name,
+        className: booking.classEvent.name,
+      },
+      {
+        userId: booking.userId,
+        bookingId: booking.id,
+        type: "REQUEST_CANCEL_SUBMITTED",
+      }
     );
   }
 
   // Notify admin
-  await notifyAdmins(`มีคำขอยกเลิกการจองจากคุณ ${booking.user.name} สำหรับคลาส "${booking.classEvent.name}"`);
+  await notifyAdminsTemplated("ADMIN_REQUEST_CANCEL", {
+    userName: booking.user.name,
+    className: booking.classEvent.name,
+  });
 
   return { success: true };
 }
@@ -100,14 +111,28 @@ export async function createCourseChangeRequest(bookingId: string, newEventId: s
 
   // Notify customer
   if (booking.user.lineId) {
-    await sendLineMessage(
+    await sendTemplatedLineMessage(
       booking.user.lineId,
-      `คำขอเปลี่ยนรอบเรียนเป็น "${newEvent.name}" ของคุณถูกส่งไปยังผู้ดูแลแล้ว กรุณารอการยืนยันค่ะ`
+      "REQUEST_CHANGE_SUBMITTED_USER",
+      {
+        userName: booking.user.name,
+        className: booking.classEvent.name,
+        newClassName: newEvent.name,
+      },
+      {
+        userId: booking.userId,
+        bookingId: booking.id,
+        type: "REQUEST_CHANGE_SUBMITTED",
+      }
     );
   }
 
   // Notify admin
-  await notifyAdmins(`มีคำขอเปลี่ยนรอบเรียนจากคุณ ${booking.user.name} เป็นคลาส "${newEvent.name}"`);
+  await notifyAdminsTemplated("ADMIN_REQUEST_CHANGE", {
+    userName: booking.user.name,
+    className: booking.classEvent.name,
+    newClassName: newEvent.name,
+  });
 
   return { success: true };
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendLineMessage } from '@/lib/line';
+import { sendTemplatedLineMessage } from '@/lib/line';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,17 +45,23 @@ export async function GET(request: Request) {
       for (const booking of cls.bookings) {
         if (booking.user.lineId) {
           const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
-          await sendLineMessage(
+          await sendTemplatedLineMessage(
             booking.user.lineId,
-            `แจ้งเตือนล่วงหน้า 2 วัน: คลาส "${cls.name}" ที่คุณจองไว้จะเริ่มในวันที่ ${dateStr} เวลา ${cls.startTime} - ${cls.endTime} ค่ะ`
-          );
-          await prisma.notificationLog.create({
-            data: {
+            "REMINDER_1_DAY",
+            {
+              userName: booking.user.name,
+              className: cls.name,
+              date: dateStr,
+              time: `${cls.startTime} - ${cls.endTime}`,
+              location: cls.locationName || "Date with Soul Love",
+              mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
+            },
+            {
               bookingId: booking.id,
               userId: booking.userId,
               type: 'REMINDER_2_DAYS',
             }
-          });
+          );
           countTwoDays++;
         }
       }
@@ -86,17 +92,23 @@ export async function GET(request: Request) {
       for (const booking of cls.bookings) {
         if (booking.user.lineId) {
           const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
-          await sendLineMessage(
+          await sendTemplatedLineMessage(
             booking.user.lineId,
-            `แจ้งเตือน: คลาส "${cls.name}" ที่คุณจองไว้จะเริ่มในวันพรุ่งนี้ (${dateStr}) เวลา ${cls.startTime} - ${cls.endTime} ค่ะ`
-          );
-          await prisma.notificationLog.create({
-            data: {
+            "REMINDER_1_DAY",
+            {
+              userName: booking.user.name,
+              className: cls.name,
+              date: dateStr,
+              time: `${cls.startTime} - ${cls.endTime}`,
+              location: cls.locationName || "Date with Soul Love",
+              mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
+            },
+            {
               bookingId: booking.id,
               userId: booking.userId,
               type: 'REMINDER_1_DAY',
             }
-          });
+          );
           countTomorrow++;
         }
       }
@@ -127,17 +139,23 @@ export async function GET(request: Request) {
       for (const booking of cls.bookings) {
         if (booking.user.lineId) {
           const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
-          await sendLineMessage(
+          await sendTemplatedLineMessage(
             booking.user.lineId,
-            `แจ้งเตือน: กำหนดเรียนวันนี้! คลาส "${cls.name}" วันนี้ (${dateStr}) เวลา ${cls.startTime} - ${cls.endTime} อย่าลืมมาเรียนกันนะคะ`
-          );
-          await prisma.notificationLog.create({
-            data: {
+            "REMINDER_SAME_DAY",
+            {
+              userName: booking.user.name,
+              className: cls.name,
+              date: dateStr,
+              time: `${cls.startTime} - ${cls.endTime}`,
+              location: cls.locationName || "Date with Soul Love",
+              mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
+            },
+            {
               bookingId: booking.id,
               userId: booking.userId,
               type: 'REMINDER_SAME_DAY',
             }
-          });
+          );
           countToday++;
         }
       }

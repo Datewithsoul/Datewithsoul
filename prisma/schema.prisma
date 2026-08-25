@@ -216,3 +216,16 @@ enum RequestStatus {
   COMPLETED
   CANCELLED
 }
+
+model MessageTemplate {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  title       String
+  description String?
+  category    String   // "CUSTOMER" or "ADMIN"
+  content     String
+  variables   String[] @default([])
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

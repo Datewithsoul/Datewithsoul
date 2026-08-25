@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
-import { notifyAdmins, sendLineMessage } from "@/lib/line";
+import { notifyAdmins, sendLineMessage, sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 
 function isPayable(status: string) {
@@ -71,7 +71,19 @@ export async function uploadSlip(formData: FormData) {
     });
 
     if (booking.user.lineId) {
-      await sendLineMessage(booking.user.lineId, `คำสั่งจองคลาส "${booking.classEvent.name}" ของคุณหมดเวลาทำการแล้ว (สถานะ: ยกเลิก) กรุณาทำรายการใหม่อีกครั้งค่ะ`);
+      await sendTemplatedLineMessage(
+        booking.user.lineId,
+        "BOOKING_EXPIRED_USER",
+        {
+          userName: booking.user.name,
+          className: booking.classEvent.name,
+        },
+        {
+          userId: booking.userId,
+          bookingId: booking.id,
+          type: "BOOKING_EXPIRED",
+        }
+      );
     }
 
     redirect(`/payment/${bookingId}?error=expired`);
@@ -123,12 +135,27 @@ export async function uploadSlip(formData: FormData) {
   });
 
   if (booking.user.lineId) {
-    await sendLineMessage(booking.user.lineId, `เราได้รับสลิปการชำระเงินสำหรับคลาส "${booking.classEvent.name}" แล้ว กำลังรอแอดมินตรวจสอบ (สถานะ: การตรวจสอบชำระเงิน)`);
+    await sendTemplatedLineMessage(
+      booking.user.lineId,
+      "PAYMENT_SLIP_UPLOADED_USER",
+      {
+        userName: booking.user.name,
+        className: booking.classEvent.name,
+        totalPrice: booking.totalPrice.toLocaleString("th-TH"),
+      },
+      {
+        userId: booking.userId,
+        bookingId: booking.id,
+        type: "PAYMENT_SLIP_UPLOADED",
+      }
+    );
   }
 
-  await notifyAdmins(
-    `ลูกค้าส่งสลิปแล้ว: ${booking.user.name} คลาส "${booking.classEvent.name}" ยอด ฿${booking.totalPrice.toLocaleString("th-TH")} กรุณาตรวจสอบการชำระเงิน`
-  );
+  await notifyAdminsTemplated("ADMIN_PAYMENT_UPLOADED", {
+    userName: booking.user.name,
+    className: booking.classEvent.name,
+    totalPrice: booking.totalPrice.toLocaleString("th-TH"),
+  });
 
   redirect(`/payment/${bookingId}`);
 }
@@ -185,10 +212,25 @@ export async function cancelBooking(bookingId: string) {
   });
 
   if (booking.user.lineId) {
-    await sendLineMessage(booking.user.lineId, `การจองคลาส "${booking.classEvent.name}" ของคุณถูกยกเลิกแล้ว (สถานะ: ยกเลิก)`);
+    await sendTemplatedLineMessage(
+      booking.user.lineId,
+      "BOOKING_CANCELLED_USER",
+      {
+        userName: booking.user.name,
+        className: booking.classEvent.name,
+      },
+      {
+        userId: booking.userId,
+        bookingId: booking.id,
+        type: "BOOKING_CANCELLED",
+      }
+    );
   }
 
-  await notifyAdmins(`การจองถูกยกเลิก: ${booking.user.name} คลาส "${booking.classEvent.name}"`);
+  await notifyAdminsTemplated("ADMIN_BOOKING_CANCELLED", {
+    userName: booking.user.name,
+    className: booking.classEvent.name,
+  });
 
   return { success: true };
 }

@@ -48,6 +48,21 @@ export default function AdminSettings() {
           </Button>
         </div>
       </section>
+
+      <section className="border border-[#ddd4c8] bg-white p-6">
+        <div className="flex items-center justify-between border-b border-[#ddd4c8] pb-2 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[#3d3229]">เทมเพลตข้อความแจ้งเตือน (LINE Message Templates)</h2>
+            <p className="text-xs text-[#6a5d50] mt-0.5">กำหนดรูปแบบข้อความแจ้งเตือนอัตโนมัติสำหรับการจอง การชำระเงิน และการเตือนก่อนเรียน</p>
+          </div>
+          <a
+            href="/admin/notifications/templates"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#3d3229] rounded-md hover:bg-[#3d3229]/90 transition-all"
+          >
+            จัดการเทมเพลตข้อความ
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
