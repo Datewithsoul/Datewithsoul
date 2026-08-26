@@ -8,6 +8,65 @@ import ScheduleSelector from "./schedule-selector";
 import Navbar from "@/components/navbar";
 import AddToCartButton from "@/components/add-to-cart-button";
 import { ClassEvent } from "@/app/generated/prisma";
+import type { Metadata } from "next";
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
+
+function cleanDescription(value: string | null, fallback: string) {
+  const description = value?.replace(/\s+/g, " ").trim();
+  if (!description) return fallback;
+  return description.length > 160 ? `${description.slice(0, 157)}...` : description;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const classEvent = await prisma.classEvent.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      description: true,
+      media: {
+        where: { type: "IMAGE" },
+        orderBy: { order: "asc" },
+        take: 1,
+        select: { url: true },
+      },
+    },
+  });
+
+  if (!classEvent) return {};
+
+  const description = cleanDescription(
+    classEvent.description,
+    "ดูรายละเอียดและจองคลาสกับ Date with Soul Love"
+  );
+  const imageUrl = classEvent.media[0]?.url || `${siteUrl}/logo.jpg`;
+  const pageUrl = `${siteUrl}/classes/${id}`;
+
+  return {
+    title: `${classEvent.name} | Date with Soul Love`,
+    description,
+    openGraph: {
+      type: "website",
+      locale: "th_TH",
+      url: pageUrl,
+      siteName: "Date with Soul Love",
+      title: classEvent.name,
+      description,
+      images: [{ url: imageUrl, alt: classEvent.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: classEvent.name,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: classId } = await params;
