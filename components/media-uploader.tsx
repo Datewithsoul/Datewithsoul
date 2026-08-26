@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "./ui/button";
+import { uploadMediaAction } from "@/app/admin/classes/actions";
 
 export type MediaItem = {
   id: string;
@@ -115,10 +116,6 @@ export default function MediaUploader({ initialMedia = [] }: MediaUploaderProps)
     try {
       const newItems: MediaItem[] = [];
       const timestamp = Date.now();
-
-      // We need to import the action dynamically or pass it as a prop if we were in a pure client component, 
-      // but Server Actions can be imported directly into Client Components in Next.js 14+
-      const { uploadMediaAction } = await import("@/app/admin/classes/actions");
 
       for (let i = 0; i < acceptedFiles.length; i++) {
         const file = acceptedFiles[i];

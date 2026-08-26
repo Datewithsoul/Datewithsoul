@@ -6,10 +6,13 @@ export async function uploadMedia(file: File, path: string): Promise<string | nu
     process.env.SUPABASE_SECRET_KEY!
   );
 
+  const buffer = Buffer.from(await file.arrayBuffer());
+
   const { data, error } = await supabase.storage
     .from("class-media")
-    .upload(path, file, {
+    .upload(path, buffer, {
       upsert: true,
+      contentType: file.type,
     });
 
   if (error) {

@@ -19,6 +19,12 @@ export default async function AdminClasses() {
     orderBy: { date: "desc" },
   });
 
+  const groupedClasses = classes.reduce((acc: Record<string, typeof classes>, c) => {
+    if (!acc[c.name]) acc[c.name] = [];
+    acc[c.name].push(c);
+    return acc;
+  }, {});
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
@@ -57,58 +63,40 @@ export default async function AdminClasses() {
                   </TableCell>
                 </TableRow>
               ) : (
-                classes.map((c) => (
-                  <TableRow key={c.id} className="border-[#eee8e0]">
-                    <TableCell className="px-5 font-medium text-[#3d3229]">{c.name}</TableCell>
-                    <TableCell className="tabular-nums">{c.date.toLocaleDateString("th-TH")}</TableCell>
-                    <TableCell className="tabular-nums">{c.startTime} – {c.endTime}</TableCell>
-                    <TableCell className="tabular-nums">{c.price.toLocaleString("th-TH")}</TableCell>
+                Object.values(groupedClasses).map((group: any) => {
+                  const firstClass = group[0];
+                  return (
+                  <TableRow key={firstClass.id} className="border-[#eee8e0]">
+                    <TableCell className="px-5 font-medium text-[#3d3229]">{firstClass.name}</TableCell>
                     <TableCell className="tabular-nums">
-                      <span className={c.totalSeats <= 3 && c.status === "PUBLISHED" ? "text-[#8f3b2c] font-bold" : ""}>
-                        {c.totalSeats}
-                      </span>
+                      {group.length === 1 ? firstClass.date.toLocaleDateString("th-TH") : `มี ${group.length} รอบ (ดูด้านใน)`}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {group.length === 1 ? `${firstClass.startTime} – ${firstClass.endTime}` : "-"}
+                    </TableCell>
+                    <TableCell className="tabular-nums">{firstClass.price.toLocaleString("th-TH")}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {group.reduce((acc: number, c: any) => acc + c.totalSeats, 0)}
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
-                        c.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
-                        c.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                        c.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
+                        firstClass.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
+                        firstClass.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                        firstClass.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
                         "bg-blue-100 text-blue-800"
                       }`}>
-                        {c.status}
+                        {firstClass.status}
                       </span>
                     </TableCell>
                     <TableCell className="px-5 text-right">
                       <div className="flex justify-end gap-2">
-                        <Link href={`/admin/classes/${c.id}/edit`}>
-                          <Button variant="outline" size="sm">แก้ไข</Button>
+                        <Link href={`/admin/classes/group-edit/${encodeURIComponent(firstClass.name)}`}>
+                          <Button variant="outline" size="sm">แก้ไขกลุ่มนี้</Button>
                         </Link>
-                        {c.status === "PUBLISHED" && (
-                          <form action={async () => {
-                            "use server";
-                            const { closeClass } = await import("./actions");
-                            const formData = new FormData();
-                            formData.append("id", c.id);
-                            await closeClass(formData);
-                          }}>
-                            <CloseClassButton />
-                          </form>
-                        )}
-                        {c.status !== "CANCELLED" && (
-                          <form action={async () => {
-                            "use server";
-                            const { deleteClass } = await import("./actions");
-                            const formData = new FormData();
-                            formData.append("id", c.id);
-                            await deleteClass(formData);
-                          }}>
-                            <CancelClassButton />
-                          </form>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                )})
               )}
             </TableBody>
           </Table>
@@ -121,71 +109,44 @@ export default async function AdminClasses() {
               ยังไม่มีคอร์สเรียน ใช้ปุ่มเพิ่มคอร์สเรียนเพื่อเปิดรอบแรก
             </div>
           ) : (
-            classes.map((c) => (
-              <div key={c.id} className="bg-white p-4 rounded-md border border-[#ddd4c8] shadow-sm flex flex-col gap-3">
+            Object.values(groupedClasses).map((group: any) => {
+              const firstClass = group[0];
+              return (
+              <div key={firstClass.id} className="bg-white p-4 rounded-md border border-[#ddd4c8] shadow-sm flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-2 border-b border-[#ddd4c8] pb-3">
-                  <div className="font-medium text-[#3d3229] text-base">{c.name}</div>
+                  <div className="font-medium text-[#3d3229] text-base">{firstClass.name}</div>
                   <span className={`px-2 py-1 text-xs rounded-full font-semibold shrink-0 ${
-                    c.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
-                    c.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                    c.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
+                    firstClass.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
+                    firstClass.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                    firstClass.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
                     "bg-blue-100 text-blue-800"
                   }`}>
-                    {c.status}
+                    {firstClass.status}
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-[#6a5d50]">วันที่:</div>
-                  <div className="text-[#3d3229] text-right">{c.date.toLocaleDateString("th-TH")}</div>
-                  
-                  <div className="text-[#6a5d50]">เวลา:</div>
-                  <div className="text-[#3d3229] text-right">{c.startTime} – {c.endTime}</div>
+                  <div className="text-[#6a5d50]">จำนวนรอบ:</div>
+                  <div className="text-[#3d3229] text-right">{group.length} รอบ</div>
                   
                   <div className="text-[#6a5d50]">ราคา:</div>
-                  <div className="font-medium text-[#3d3229] text-right">{c.price.toLocaleString("th-TH")} บาท</div>
+                  <div className="font-medium text-[#3d3229] text-right">{firstClass.price.toLocaleString("th-TH")} บาท</div>
 
-                  <div className="text-[#6a5d50]">ที่นั่งว่าง:</div>
+                  <div className="text-[#6a5d50]">ที่นั่งว่างรวม:</div>
                   <div className="text-right">
-                    <span className={c.totalSeats <= 3 && c.status === "PUBLISHED" ? "text-[#8f3b2c] font-bold" : "text-[#3d3229]"}>
-                      {c.totalSeats}
+                    <span className="text-[#3d3229]">
+                      {group.reduce((acc: number, c: any) => acc + c.totalSeats, 0)}
                     </span>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-[#ddd4c8] flex flex-wrap justify-end gap-2">
-                  <Link href={`/admin/classes/${c.id}/edit`} className="flex-1 min-w-[30%]">
-                    <Button variant="outline" size="sm" className="w-full">แก้ไข</Button>
+                  <Link href={`/admin/classes/group-edit/${encodeURIComponent(firstClass.name)}`} className="flex-1 min-w-[30%]">
+                    <Button variant="outline" size="sm" className="w-full">แก้ไขกลุ่มนี้</Button>
                   </Link>
-                  {c.status === "PUBLISHED" && (
-                    <form className="flex-1 min-w-[30%]" action={async () => {
-                      "use server";
-                      const { closeClass } = await import("./actions");
-                      const formData = new FormData();
-                      formData.append("id", c.id);
-                      await closeClass(formData);
-                    }}>
-                      <div className="w-full">
-                        <CloseClassButton className="w-full" />
-                      </div>
-                    </form>
-                  )}
-                  {c.status !== "CANCELLED" && (
-                    <form className="flex-1 min-w-[30%]" action={async () => {
-                      "use server";
-                      const { deleteClass } = await import("./actions");
-                      const formData = new FormData();
-                      formData.append("id", c.id);
-                      await deleteClass(formData);
-                    }}>
-                      <div className="w-full">
-                        <CancelClassButton className="w-full" />
-                      </div>
-                    </form>
-                  )}
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
       </section>

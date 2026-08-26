@@ -1,0 +1,188 @@
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { notFound } from "next/navigation";
+import { updateGroupClass } from "../../actions";
+import MediaUploader, { MediaItem } from "@/components/media-uploader";
+import { AdminPageHeader } from "@/components/admin-page-header";
+import ListRepeater from "../../new/list-repeater";
+import ScheduleRepeater from "../../new/schedule-repeater";
+import { SubmitButton } from "@/components/submit-button";
+
+export default async function EditClassGroupPage({ params }: { params: Promise<{ name: string }> }) {
+  const { name } = await params;
+  const decodedName = decodeURIComponent(name);
+  
+  const classEvents = await prisma.classEvent.findMany({
+    where: { name: decodedName },
+    include: { media: true },
+    orderBy: { date: "asc" }
+  });
+
+  if (classEvents.length === 0) {
+    notFound();
+  }
+
+  const firstClass = classEvents[0];
+
+  // Group schedules by date for ScheduleRepeater
+  const groupedSchedules = classEvents.reduce((acc: any, curr) => {
+    const formattedDate = curr.date.toISOString().split('T')[0];
+    if (!acc[formattedDate]) {
+      acc[formattedDate] = {
+        date: formattedDate,
+        endDate: curr.endDate ? curr.endDate.toISOString().split('T')[0] : "",
+        timeslots: []
+      };
+    }
+    acc[formattedDate].timeslots.push({
+      id: curr.id, // Store id to update existing ones if needed
+      startTime: curr.startTime,
+      endTime: curr.endTime,
+      totalSeats: curr.totalSeats.toString(),
+      status: curr.status
+    });
+    return acc;
+  }, {});
+
+  const initialData = Object.values(groupedSchedules);
+
+  // cast media to MediaItem[]
+  const initialMedia: MediaItem[] = firstClass.media.map(m => ({
+    id: m.id,
+    url: m.url,
+    type: m.type as "IMAGE" | "VIDEO",
+    order: m.order,
+  }));
+
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div className="flex items-start gap-3">
+        <Link href="/admin/classes">
+          <Button variant="outline" size="icon" aria-label="กลับไปรายการคอร์ส">
+            <ArrowLeft size={16} />
+          </Button>
+        </Link>
+        <AdminPageHeader
+          className="flex-1"
+          title="แก้ไขคอร์สเรียนแบบกลุ่ม"
+          description={`ปรับปรุงรายละเอียดของ ${firstClass.name} (ทั้งหมด ${classEvents.length} รอบ)`}
+        />
+      </div>
+
+      <section className="border border-[#ddd4c8] bg-white">
+        <div className="border-b border-[#ddd4c8] px-5 py-4">
+          <h2 className="text-base font-semibold text-[#3d3229]">ข้อมูลคอร์ส</h2>
+          <p className="mt-1 text-sm text-[#6a5d50]">บันทึกเมื่อแก้ไขครบแล้ว</p>
+        </div>
+        <div className="px-5 py-5">
+          <form action={updateGroupClass} className="flex flex-col gap-6">
+            <input type="hidden" name="originalName" value={firstClass.name} />
+            <input type="hidden" name="classEventIds" value={classEvents.map((c: any) => c.id).join(",")} />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium leading-none">ชื่อคอร์ส</label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  required
+                  defaultValue={firstClass.name}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="category" className="text-sm font-medium leading-none">หมวดหมู่</label>
+                <Input 
+                  type="text" 
+                  id="category" 
+                  name="category" 
+                  defaultValue={firstClass.category || "เวิร์กชอป"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="locationName" className="text-sm font-medium leading-none">สถานที่</label>
+                <Input 
+                  type="text" 
+                  id="locationName" 
+                  name="locationName" 
+                  defaultValue={firstClass.locationName || "Date with Soul Love"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="googleMapUrl" className="text-sm font-medium leading-none">Google Map URL (ถ้ามี)</label>
+                <Input 
+                  type="url" 
+                  id="googleMapUrl" 
+                  name="googleMapUrl" 
+                  defaultValue={firstClass.googleMapUrl || ""}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="description" className="text-sm font-medium leading-none">รายละเอียด</label>
+              <textarea 
+                id="description" 
+                name="description" 
+                rows={3}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                defaultValue={firstClass.description || ""}
+              ></textarea>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">รูปภาพและวิดีโอแนะนำ</label>
+              <MediaUploader initialMedia={initialMedia} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">รอบเวลาเรียน (วัน/เวลา)</label>
+              <ScheduleRepeater 
+                initialData={initialData as any}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="price" className="text-sm font-medium leading-none">ราคา (บาท)</label>
+                <Input 
+                  type="number" 
+                  id="price" 
+                  name="price" 
+                  min="0"
+                  step="0.01"
+                  required
+                  defaultValue={firstClass.price}
+                />
+              </div>
+            </div>
+
+            <ListRepeater 
+              name="learningOutcomes"
+              label="สิ่งที่คุณจะได้เรียนรู้"
+              placeholder="เช่น พื้นฐานการเตรียมดินและการนวดดิน"
+              defaultItems={firstClass.learningOutcomes.length > 0 ? firstClass.learningOutcomes : ["", "", ""]}
+            />
+
+            <ListRepeater 
+              name="requirements"
+              label="ข้อกำหนดและสิ่งที่ต้องเตรียม"
+              placeholder="เช่น ไม่ต้องมีพื้นฐานมาก่อน เหมาะสำหรับมือใหม่"
+              defaultItems={firstClass.requirements.length > 0 ? firstClass.requirements : ["", ""]}
+            />
+
+            <SubmitButton className="admin-btn-primary mt-2 inline-flex h-9 w-full items-center justify-center text-sm">
+              บันทึกการแก้ไขทั้งหมด
+            </SubmitButton>
+          </form>
+        </div>
+      </section>
+    </div>
+  );
+}

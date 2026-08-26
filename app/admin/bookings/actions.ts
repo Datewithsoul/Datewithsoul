@@ -9,7 +9,7 @@ import {
   type AppBookingStatus,
 } from "@/lib/booking-status";
 import { requireAdmin } from "@/lib/require-admin";
-import { sendLineMessage } from "@/lib/line";
+import { sendLineMessage, sendTemplatedLineMessage } from "@/lib/line";
 
 async function applyBookingStatus(bookingId: string, status: AppBookingStatus, reviewerId?: string, reason?: string) {
   const booking = await prisma.booking.findUnique({

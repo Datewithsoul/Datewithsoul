@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../app/generated/prisma"
@@ -17,17 +12,159 @@ model User {
   lineId           String?            @unique
   name             String
   email            String?            @unique
-  phone            String?
-  image            String?
   role             Role               @default(CUSTOMER)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+  image            String?
+  phone            String?
   bookings         Booking[]
   bookingGroups    BookingGroup[]
+  approvedRequests ChangeRequest[]    @relation("ApprovedRequests")
+  changeRequests   ChangeRequest[]
   notifications    NotificationLog[]
   paymentReviews   PaymentReviewLog[]
-  changeRequests   ChangeRequest[]
-  approvedRequests ChangeRequest[]    @relation("ApprovedRequests")
+}
+
+model ClassEvent {
+  id                String           @id @default(uuid())
+  name              String
+  description       String?
+  date              DateTime
+  startTime         String
+  endTime           String
+  price             Float
+  totalSeats        Int
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  instructor        String           @default("ไม่ระบุผู้สอน")
+  category          String?          @default("เวิร์กชอป")
+  endDate           DateTime?
+  learningOutcomes  String[]         @default([])
+  requirements      String[]         @default([])
+  status            ClassEventStatus @default(PUBLISHED)
+  googleMapUrl      String?
+  locationName      String?          @default("Date with Soul Love")
+  bookings          Booking[]
+  originalRequests  ChangeRequest[]  @relation("OriginalEvent")
+  requestedRequests ChangeRequest[]  @relation("RequestedEvent")
+  media             ClassMedia[]
+}
+
+model ClassMedia {
+  id           String     @id @default(uuid())
+  classEventId String
+  url          String
+  type         String
+  order        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  classEvent   ClassEvent @relation(fields: [classEventId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id             String            @id @default(uuid())
+  userId         String
+  classEventId   String
+  status         BookingStatus     @default(PENDING_PAYMENT)
+  seats          Int               @default(1)
+  totalPrice     Float
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  bookingGroupId String?
+  changeCount    Int               @default(0)
+  attended       Boolean           @default(false)
+  note           String?
+  bookingGroup   BookingGroup?     @relation(fields: [bookingGroupId], references: [id])
+  classEvent     ClassEvent        @relation(fields: [classEventId], references: [id])
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  changeRequests ChangeRequest[]
+  notifications  NotificationLog[]
+  payment        Payment?
+}
+
+model BookingGroup {
+  id         String             @id @default(uuid())
+  userId     String
+  totalPrice Float
+  status     BookingGroupStatus @default(PENDING_PAYMENT)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  bookings   Booking[]
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment    Payment?
+}
+
+model Payment {
+  id             String             @id @default(uuid())
+  bookingId      String?            @unique
+  slipUrl        String?
+  status         PaymentStatus      @default(UNPAID)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  bookingGroupId String?            @unique
+  bookingGroup   BookingGroup?      @relation(fields: [bookingGroupId], references: [id])
+  booking        Booking?           @relation(fields: [bookingId], references: [id])
+  reviewLogs     PaymentReviewLog[]
+}
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  bookingId String?
+  userId    String
+  type      String
+  message   String?
+  sentAt    DateTime @default(now())
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PaymentReviewLog {
+  id             String        @id @default(uuid())
+  paymentId      String
+  reviewerId     String
+  previousStatus PaymentStatus
+  newStatus      PaymentStatus
+  reason         String?
+  createdAt      DateTime      @default(now())
+  payment        Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  reviewer       User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+}
+
+model ChangeRequest {
+  id               String        @id @default(uuid())
+  bookingId        String
+  userId           String
+  type             RequestType
+  originalEventId  String?
+  requestedEventId String?
+  originalPrice    Float?
+  newPrice         Float?
+  priceDifference  Float?
+  customerReason   String?
+  status           RequestStatus @default(PENDING)
+  adminDecision    String?
+  adminReason      String?
+  approvedById     String?
+  createdAt        DateTime      @default(now())
+  completedAt      DateTime?
+  approvedBy       User?         @relation("ApprovedRequests", fields: [approvedById], references: [id])
+  booking          Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  originalEvent    ClassEvent?   @relation("OriginalEvent", fields: [originalEventId], references: [id])
+  requestedEvent   ClassEvent?   @relation("RequestedEvent", fields: [requestedEventId], references: [id])
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MessageTemplate {
+  id          String   @id @default(uuid())
+  content     String
+  updatedAt   DateTime @updatedAt
+  category    String
+  createdAt   DateTime @default(now())
+  description String?
+  enabled     Boolean  @default(true)
+  key         String   @unique
+  title       String
+  variables   String[] @default([])
 }
 
 enum Role {
@@ -35,68 +172,11 @@ enum Role {
   ADMIN
 }
 
-model ClassEvent {
-  id                String           @id @default(uuid())
-  name              String
-  description       String?
-  category          String?          @default("เวิร์กชอป")
-  instructor        String           @default("ไม่ระบุผู้สอน")
-  date              DateTime
-  endDate           DateTime?
-  startTime         String
-  endTime           String
-  locationName      String?          @default("Date with Soul Love")
-  googleMapUrl      String?
-  price             Float
-  totalSeats        Int
-  learningOutcomes  String[]         @default([])
-  requirements      String[]         @default([])
-  status            ClassEventStatus @default(PUBLISHED)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  bookings          Booking[]
-  media             ClassMedia[]
-  originalRequests  ChangeRequest[]  @relation("OriginalEvent")
-  requestedRequests ChangeRequest[]  @relation("RequestedEvent")
-}
-
 enum ClassEventStatus {
   DRAFT
   PUBLISHED
   CANCELLED
   COMPLETED
-}
-
-model ClassMedia {
-  id           String     @id @default(uuid())
-  classEventId String
-  classEvent   ClassEvent @relation(fields: [classEventId], references: [id], onDelete: Cascade)
-  url          String
-  type         String // "IMAGE" or "VIDEO"
-  order        Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-}
-
-model Booking {
-  id             String            @id @default(uuid())
-  userId         String
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  classEventId   String
-  classEvent     ClassEvent        @relation(fields: [classEventId], references: [id])
-  status         BookingStatus     @default(PENDING_PAYMENT)
-  seats          Int               @default(1)
-  totalPrice     Float
-  bookingGroupId String?
-  bookingGroup   BookingGroup?     @relation(fields: [bookingGroupId], references: [id])
-  changeCount    Int               @default(0)
-  attended       Boolean           @default(false)
-  note           String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  payment        Payment?
-  notifications  NotificationLog[]
-  changeRequests ChangeRequest[]
 }
 
 enum BookingStatus {
@@ -110,18 +190,6 @@ enum BookingStatus {
   COMPLETED
 }
 
-model BookingGroup {
-  id         String             @id @default(uuid())
-  userId     String
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings   Booking[]
-  payment    Payment?
-  totalPrice Float
-  status     BookingGroupStatus @default(PENDING_PAYMENT)
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-}
-
 enum BookingGroupStatus {
   PENDING_PAYMENT
   PAYMENT_REVIEW
@@ -129,19 +197,6 @@ enum BookingGroupStatus {
   CANCELLED
   EXPIRED
   COMPLETED
-}
-
-model Payment {
-  id             String             @id @default(uuid())
-  bookingId      String?            @unique
-  booking        Booking?           @relation(fields: [bookingId], references: [id])
-  bookingGroupId String?            @unique
-  bookingGroup   BookingGroup?      @relation(fields: [bookingGroupId], references: [id])
-  slipUrl        String?
-  status         PaymentStatus      @default(UNPAID)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  reviewLogs     PaymentReviewLog[]
 }
 
 enum PaymentStatus {
@@ -152,57 +207,6 @@ enum PaymentStatus {
   REFUND_PENDING
   REFUNDED
   REJECTED
-}
-
-model NotificationLog {
-  id        String   @id @default(uuid())
-  bookingId String?
-  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String // e.g. "REMINDER_1_DAY", "REMINDER_SAME_DAY"
-  message   String?
-  sentAt    DateTime @default(now())
-}
-
-model PaymentReviewLog {
-  id             String        @id @default(uuid())
-  paymentId      String
-  payment        Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  reviewerId     String
-  reviewer       User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
-  previousStatus PaymentStatus
-  newStatus      PaymentStatus
-  reason         String?
-  createdAt      DateTime      @default(now())
-}
-
-model ChangeRequest {
-  id        String      @id @default(uuid())
-  bookingId String
-  booking   Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      RequestType
-
-  originalEventId  String?
-  originalEvent    ClassEvent? @relation("OriginalEvent", fields: [originalEventId], references: [id])
-  requestedEventId String?
-  requestedEvent   ClassEvent? @relation("RequestedEvent", fields: [requestedEventId], references: [id])
-
-  originalPrice   Float?
-  newPrice        Float?
-  priceDifference Float?
-
-  customerReason String?
-  status         RequestStatus @default(PENDING)
-  adminDecision  String?
-  adminReason    String?
-  approvedById   String?
-  approvedBy     User?         @relation("ApprovedRequests", fields: [approvedById], references: [id])
-
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
 }
 
 enum RequestType {
@@ -216,17 +220,4 @@ enum RequestStatus {
   REJECTED
   COMPLETED
   CANCELLED
-}
-
-model MessageTemplate {
-  id          String   @id @default(uuid())
-  key         String   @unique
-  title       String
-  description String?
-  category    String   // "CUSTOMER" or "ADMIN"
-  content     String
-  variables   String[] @default([])
-  enabled     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

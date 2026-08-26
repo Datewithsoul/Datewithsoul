@@ -135,7 +135,7 @@ function ClassCarousel({ classes }: { classes: any[] }) {
   );
 }
 import { getClassesForMonth } from "@/app/actions/calendar";
-import { BookingStatus } from "@/app/generated/prisma";
+
 export default async function Home() {
   // Calculate dates
   const today = new Date();
@@ -157,21 +157,27 @@ export default async function Home() {
     },
     bookings: {
       where: {
-        status: { notIn: [BookingStatus.CANCELLED] }
+        status: { notIn: ["CANCELLED"] }
       },
       select: { seats: true }
     }
   } as const;
 
   // Fetch This Week Classes
-  const thisWeekClasses = await prisma.classEvent.findMany({
-    where: { 
-      date: { gte: today, lte: endOfWeek },
-      status: { not: "CANCELLED" }
-    },
-    orderBy: { date: "asc" },
-    include: baseInclude
-  });
+  let thisWeekClasses: any[] = [];
+  try {
+    thisWeekClasses = await prisma.classEvent.findMany({
+      where: { 
+        date: { gte: today, lte: endOfWeek },
+        status: { not: "CANCELLED" }
+      },
+      orderBy: { date: "asc" },
+      include: baseInclude
+    });
+  } catch (err: any) {
+    console.error("DEBUG PRISMA ERROR:", err.message);
+    throw err;
+  }
 
   // Fetch This Month Classes
   const thisMonthClasses = await prisma.classEvent.findMany({
@@ -242,7 +248,7 @@ export default async function Home() {
         where: { 
           userId: dbUser.id,
           classEvent: { date: { gte: today } },
-          status: { in: [BookingStatus.PENDING_PAYMENT, BookingStatus.PENDING_PAYMENT, BookingStatus.PAYMENT_REVIEW, BookingStatus.CONFIRMED] }
+          status: { in: ["PENDING_PAYMENT", "PAYMENT_REVIEW", "CONFIRMED"] }
         },
         orderBy: { classEvent: { date: 'asc' } },
         take: 4,
@@ -339,11 +345,11 @@ export default async function Home() {
                         <span className="text-xs text-gray-500">{new Date(booking.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })} • {booking.seats} ที่นั่ง</span>
                       </div>
                       <div className="shrink-0">
-                        {booking.status === BookingStatus.PENDING_PAYMENT && <span className="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">กำลังจอง</span>}
-                        {booking.status === BookingStatus.PENDING_PAYMENT && <span className="bg-yellow-100 border border-yellow-200 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">กำลังชำระเงิน</span>}
-                        {booking.status === BookingStatus.PAYMENT_REVIEW && <span className="bg-orange-100 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">การตรวจสอบชำระเงิน</span>}
-                        {booking.status === BookingStatus.CONFIRMED && <span className="bg-green-100 border border-green-200 text-green-700 px-3 py-1 rounded-full text-xs font-bold">ชำระเงินแล้ว</span>}
-                        {booking.status === BookingStatus.CANCELLED && <span className="bg-gray-200 border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">ยกเลิก</span>}
+                        {booking.status === "PENDING_PAYMENT" && <span className="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">กำลังจอง</span>}
+                        {booking.status === "PENDING_PAYMENT" && <span className="bg-yellow-100 border border-yellow-200 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">กำลังชำระเงิน</span>}
+                        {booking.status === "PAYMENT_REVIEW" && <span className="bg-orange-100 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">การตรวจสอบชำระเงิน</span>}
+                        {booking.status === "CONFIRMED" && <span className="bg-green-100 border border-green-200 text-green-700 px-3 py-1 rounded-full text-xs font-bold">ชำระเงินแล้ว</span>}
+                        {booking.status === "CANCELLED" && <span className="bg-gray-200 border border-gray-300 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">ยกเลิก</span>}
                       </div>
                     </div>
                   ))}
