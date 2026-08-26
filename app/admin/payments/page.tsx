@@ -10,11 +10,14 @@ import {
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { AdminBookingControls } from "@/components/admin-booking-controls";
-import { AdminBookingSheet } from "@/components/admin-booking-sheet";
-import { BookingStatus } from "@/app/generated/prisma";
+import { AdminBookingDialog } from "@/components/admin-booking-dialog";
+import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminPayments(props: {
   searchParams: Promise<{ q?: string }>;
@@ -23,15 +26,22 @@ export default async function AdminPayments(props: {
   const query = searchParams?.q ?? "";
 
   const whereCondition: any = {
-    status: BookingStatus.PAYMENT_REVIEW,
+    AND: [
+      {
+        OR: [
+          { status: BookingStatus.PAYMENT_REVIEW },
+          { payment: { status: PaymentStatus.UNDER_REVIEW } },
+        ],
+      },
+    ],
   };
 
   if (query) {
-    whereCondition.OR = [
+    whereCondition.AND.push({ OR: [
       { user: { name: { contains: query, mode: "insensitive" } } },
       { user: { phone: { contains: query, mode: "insensitive" } } },
       { id: { contains: query, mode: "insensitive" } },
-    ];
+    ] });
   }
 
   const bookings = await prisma.booking.findMany({
@@ -123,7 +133,7 @@ export default async function AdminPayments(props: {
                       <BookingStatusBadge status={b.status} />
                     </TableCell>
                     <TableCell className="px-5 py-4 flex items-start gap-2">
-                      <AdminBookingSheet booking={b} triggerLabel="ตรวจสลิป" />
+                      <AdminBookingDialog booking={b} triggerLabel="ตรวจสลิป" />
                     </TableCell>
                   </TableRow>
                 ))
@@ -168,7 +178,7 @@ export default async function AdminPayments(props: {
                 </div>
 
                 <div className="pt-3 border-t border-[#ddd4c8] flex justify-end">
-                  <AdminBookingSheet booking={b} triggerLabel="ตรวจสลิป" />
+                  <AdminBookingDialog booking={b} triggerLabel="ตรวจสลิป" />
                 </div>
               </div>
             ))

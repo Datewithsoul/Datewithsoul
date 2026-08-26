@@ -1,9 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus, PaymentStatus, RequestStatus, RequestType } from "@/app/generated/prisma";
+import { BookingStatus, RequestStatus, RequestType } from "@/app/generated/prisma";
 import { requireAdmin } from "@/lib/require-admin";
-import { sendLineMessage, sendTemplatedLineMessage } from "@/lib/line";
-import { isBookingStatus, paymentStatusForBooking } from "@/lib/booking-status";
+import { sendTemplatedLineMessage } from "@/lib/line";
 
 export async function approveRequest(requestId: string) {
   const admin = await requireAdmin();
@@ -16,26 +15,12 @@ export async function approveRequest(requestId: string) {
     return { success: false, error: "ไม่พบคำขอ หรือคำขอนี้ไม่ได้อยู่ในสถานะรออนุมัติ" };
   }
 
+  if (request.type !== RequestType.COURSE_CHANGE) {
+    return { success: false, error: "ไม่รองรับคำขอประเภทนี้" };
+  }
+
   await prisma.$transaction(async (tx) => {
-    if (request.type === RequestType.CANCELLATION) {
-      // 1. Change the booking status to CANCELLED
-      await tx.booking.update({
-        where: { id: request.bookingId },
-        data: { status: BookingStatus.CANCELLED }
-      });
-      // 2. Change the payment status to REFUND_PENDING
-      if (request.booking.payment) {
-        await tx.payment.update({
-          where: { id: request.booking.payment.id },
-          data: { status: PaymentStatus.REFUND_PENDING }
-        });
-      }
-      // 3. Release the original seat
-      await tx.classEvent.update({
-        where: { id: request.booking.classEventId },
-        data: { totalSeats: { increment: request.booking.seats } }
-      });
-    } else if (request.type === RequestType.COURSE_CHANGE) {
+    if (request.type === RequestType.COURSE_CHANGE) {
       if (!request.requestedEventId) throw new Error("Missing requested event ID");
       // Check availability
       const requestedEvent = await tx.classEvent.findUnique({ where: { id: request.requestedEventId } });
@@ -77,22 +62,7 @@ export async function approveRequest(requestId: string) {
 
   // Notify customer
   if (request.booking.user.lineId) {
-    if (request.type === RequestType.CANCELLATION) {
-      await sendTemplatedLineMessage(
-        request.booking.user.lineId,
-        "REQUEST_CANCEL_APPROVED_USER",
-        {
-          userName: request.booking.user.name,
-          className: request.booking.classEventId || "",
-        },
-        {
-          userId: request.booking.userId,
-          bookingId: request.bookingId,
-          type: "REQUEST_CANCEL_APPROVED",
-        }
-      );
-    } else {
-      await sendTemplatedLineMessage(
+    await sendTemplatedLineMessage(
         request.booking.user.lineId,
         "REQUEST_CHANGE_APPROVED_USER",
         {
@@ -105,8 +75,7 @@ export async function approveRequest(requestId: string) {
           bookingId: request.bookingId,
           type: "REQUEST_CHANGE_APPROVED",
         }
-      );
-    }
+    );
   }
 
   revalidatePath("/admin/bookings");
@@ -151,7 +120,7 @@ export async function rejectRequest(requestId: string, reason: string) {
       "REQUEST_REJECTED_USER",
       {
         userName: request.booking.user.name,
-        requestType: request.type === RequestType.CANCELLATION ? "ยกเลิกการจอง" : "เปลี่ยนรอบเรียน",
+        requestType: "เปลี่ยนรอบเรียน",
         reason: reason,
       },
       {
@@ -165,36 +134,3 @@ export async function rejectRequest(requestId: string, reason: string) {
   revalidatePath("/admin/bookings");
   return { success: true };
 }
-
-export async function markRefunded(bookingId: string) {
-  const admin = await requireAdmin();
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { payment: true, user: true }
-  });
-  if (!booking || !booking.payment || booking.payment.status !== PaymentStatus.REFUND_PENDING) {
-    return { success: false, error: "ไม่พบการจองที่รอการคืนเงิน" };
-  }
-  await prisma.payment.update({
-    where: { id: booking.payment.id },
-    data: { status: PaymentStatus.REFUNDED }
-  });
-  if (booking.user.lineId) {
-    await sendTemplatedLineMessage(
-      booking.user.lineId,
-      "REFUND_COMPLETED_USER",
-      {
-        userName: booking.user.name,
-      },
-      {
-        userId: booking.userId,
-        bookingId: booking.id,
-        type: "REFUND_COMPLETED",
-      }
-    );
-  }
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/payments");
-  return { success: true };
-}
-

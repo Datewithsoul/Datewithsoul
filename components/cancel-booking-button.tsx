@@ -58,18 +58,13 @@ export default function CancelBookingButton({ bookingId }: { bookingId: string }
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>ยืนยันการยกเลิกการจอง?</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="space-y-2 mt-2">
-              <p>การดำเนินการนี้ไม่สามารถยกเลิกได้ เมื่อคุณยกเลิกการจอง ระบบจะคืนที่นั่งกลับสู่คลาสเรียนทันที</p>
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md text-sm mt-3">
-                <p className="font-semibold mb-1">นโยบายการขอเงินคืนและเปลี่ยนรอบเรียน</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>หากท่านชำระเงินแล้วและต้องการขอเงินคืน หรือต้องการเปลี่ยนรอบเรียน กรุณาติดต่อทีมงานผ่าน LINE Official Account โดยตรง</li>
-                  <li>การขอเงินคืนจะเป็นไปตามเงื่อนไขที่ทางสตูดิโอกำหนด (เช่น แจ้งล่วงหน้าอย่างน้อย 24 ชั่วโมง)</li>
-                </ul>
+          <AlertDialogDescription
+            render={
+              <div className="space-y-2 mt-2">
+                <p>การดำเนินการนี้ไม่สามารถยกเลิกได้ เมื่อคุณยกเลิกการจอง ระบบจะคืนที่นั่งกลับสู่คลาสเรียนทันที</p>
               </div>
-            </div>
-          </AlertDialogDescription>
+            }
+          />
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isCanceling}>ปิด</AlertDialogCancel>

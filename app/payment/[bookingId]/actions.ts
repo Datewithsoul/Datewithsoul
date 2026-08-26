@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
 import { notifyAdmins, sendLineMessage, sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
-import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 
 function isPayable(status: string) {
   return (PAYABLE_BOOKING_STATUSES as readonly string[]).includes(status);
@@ -57,7 +56,7 @@ export async function uploadSlip(formData: FormData) {
   if (now > expiryTime && isPayable(booking.status)) {
     await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: BookingStatus.CANCELLED },
+      data: { status: "CANCELLED" },
     });
 
     await prisma.classEvent.update({
@@ -67,7 +66,7 @@ export async function uploadSlip(formData: FormData) {
 
     await prisma.payment.update({
       where: { bookingId },
-      data: { status: PaymentStatus.REJECTED },
+      data: { status: "REJECTED" },
     });
 
     if (booking.user.lineId) {
@@ -123,14 +122,14 @@ export async function uploadSlip(formData: FormData) {
     where: { bookingId: bookingId },
     data: {
       slipUrl: slipUrl,
-      status: PaymentStatus.UNDER_REVIEW,
+      status: "UNDER_REVIEW",
     },
   });
 
   await prisma.booking.update({
     where: { id: bookingId },
     data: {
-      status: BookingStatus.PAYMENT_REVIEW,
+      status: "PAYMENT_REVIEW",
     },
   });
 
@@ -187,7 +186,7 @@ export async function cancelBooking(bookingId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.booking.update({
       where: { id: bookingId },
-      data: { status: BookingStatus.CANCELLED },
+      data: { status: "CANCELLED" },
     });
 
     await tx.classEvent.update({
@@ -195,18 +194,18 @@ export async function cancelBooking(bookingId: string) {
       data: { totalSeats: { increment: booking.seats } },
     });
 
-    const paymentStatus = PaymentStatus.REJECTED;
+    const paymentStatus = "REJECTED";
     const existingPayment = await tx.payment.findUnique({
       where: { bookingId },
     });
     if (existingPayment) {
       await tx.payment.update({
         where: { bookingId },
-        data: { status: paymentStatus },
+        data: { status: paymentStatus as any },
       });
     } else {
       await tx.payment.create({
-        data: { bookingId, status: paymentStatus },
+        data: { bookingId, status: paymentStatus as any },
       });
     }
   });

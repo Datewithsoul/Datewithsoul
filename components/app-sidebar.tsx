@@ -9,7 +9,7 @@ const navItems = [
   { title: "ภาพรวม", url: "/admin", icon: LayoutDashboard },
   { title: "รายการจอง", url: "/admin/bookings", icon: BookOpen },
   { title: "ตรวจสอบการชำระเงิน", url: "/admin/payments", icon: CreditCard },
-  { title: "คำขอเปลี่ยนรอบ/ยกเลิก", url: "/admin/requests", icon: MessageSquare },
+  { title: "คำขอเปลี่ยนรอบ", url: "/admin/requests", icon: MessageSquare },
   { title: "คอร์สและตารางเรียน", url: "/admin/classes", icon: Calendar },
   { title: "เช็คชื่อเข้าเรียน", url: "/admin/attendance", icon: CheckSquare },
   { title: "ลูกค้า", url: "/admin/users", icon: Users },

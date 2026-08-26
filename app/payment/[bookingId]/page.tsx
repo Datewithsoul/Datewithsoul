@@ -1,17 +1,23 @@
 import { prisma } from "@/lib/prisma";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { Heart, Upload, ArrowLeft } from "lucide-react";
-import PaymentTimer from "@/components/payment-timer";
-import { uploadSlip } from "./actions";
-import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
-
+import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
+import SlipUploader from "./slip-uploader";
+import { createClient } from "@/utils/supabase/server";
 import Navbar from "@/components/navbar";
+import PaymentTimer from "@/components/payment-timer";
 import { SubmitButton } from "@/components/submit-button";
+import { uploadSlip } from "./actions";
 
-export default async function PaymentPage({ params }: { params: Promise<{ bookingId: string }> }) {
+export default async function PaymentPage({ params, searchParams }: { params: Promise<{ bookingId: string }>, searchParams: Promise<{ error?: string }> }) {
   const { bookingId } = await params;
-  
+  const { error } = await searchParams;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
@@ -21,46 +27,49 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
   });
 
   if (!booking) {
-    return notFound();
+    notFound();
   }
 
-  // Check server-side expiration
+  const isOwner = user?.id === booking.userId;
+  const payableStatuses = ["PENDING_PAYMENT"] as const;
+
   const now = new Date();
   const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  const payableStatuses = [BookingStatus.PENDING_PAYMENT] as const;
-  const isPayable = payableStatuses.includes(booking.status as (typeof payableStatuses)[number]);
-
-  if (!isExpired && booking.status === BookingStatus.PENDING_PAYMENT) {
-    await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: BookingStatus.PENDING_PAYMENT },
-    });
-    booking.status = BookingStatus.PENDING_PAYMENT;
+  if (!isExpired && booking.status === "PENDING_PAYMENT") {
+    const timeRemaining = Math.max(0, expiryTime.getTime() - now.getTime());
+    if (timeRemaining === 0) {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: "PENDING_PAYMENT" },
+      });
+      booking.status = "PENDING_PAYMENT" as any;
+    }
   }
 
-  if (isExpired && isPayable) {
-    await prisma.$transaction(async (tx) => {
-      await tx.booking.update({
-        where: { id: bookingId },
-        data: { status: BookingStatus.CANCELLED },
-      });
-
-      await tx.classEvent.update({
-        where: { id: booking.classEventId },
-        data: { totalSeats: { increment: booking.seats } },
-      });
-
-      if (booking.payment) {
-        await tx.payment.update({
-          where: { bookingId },
-          data: { status: PaymentStatus.REJECTED },
-        });
-      }
+  // Handle expired status
+  if (isExpired && booking.status === "PENDING_PAYMENT") {
+    // We do a quiet update here, though cron/actions also handle this
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELLED" },
+    });
+    
+    // Also update class seats
+    await prisma.classEvent.update({
+      where: { id: booking.classEventId },
+      data: { totalSeats: { increment: booking.seats } },
     });
 
-    booking.status = BookingStatus.CANCELLED;
+    if (booking.payment) {
+      await prisma.payment.update({
+        where: { id: booking.payment.id },
+        data: { status: "REJECTED" },
+      });
+    }
+
+    booking.status = "CANCELLED" as any;
   }
 
   return (
@@ -73,7 +82,13 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
           <p className="text-gray-500">รหัสการจอง: {booking.id.split('-')[0].toUpperCase()}</p>
         </div>
 
-        {booking.status === BookingStatus.CANCELLED ? (
+        {error === 'expired' && (
+          <div className="mb-6 p-4 bg-red-50 text-red-800 rounded-xl border border-red-200">
+            รายการจองนี้หมดเวลาชำระเงินและถูกยกเลิกแล้ว กรุณาทำรายการจองใหม่
+          </div>
+        )}
+
+        {booking.status === "CANCELLED" ? (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-red-500 mb-6 flex justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
@@ -87,7 +102,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
               กลับไปดูคลาสเรียนทั้งหมด
             </Link>
           </div>
-        ) : booking.status === BookingStatus.CONFIRMED ? (
+        ) : booking.status === "CONFIRMED" ? (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-green-600 mb-6 flex justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -101,7 +116,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ bookin
               ดูประวัติการจอง
             </Link>
           </div>
-        ) : booking.status === BookingStatus.PAYMENT_REVIEW ? (
+        ) : booking.status === "PAYMENT_REVIEW" ? (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-3 text-yellow-900">การตรวจสอบชำระเงิน</h2>
             <p className="text-yellow-800 mb-8">เราได้รับสลิปของคุณแล้ว กำลังรอแอดมินตรวจสอบว่าชำระเงินจริง เมื่อยืนยันแล้วสถานะจะเป็นชำระเงินแล้ว</p>

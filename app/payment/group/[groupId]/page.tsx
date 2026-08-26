@@ -1,74 +1,80 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { Upload } from "lucide-react";
-import PaymentTimer from "@/components/payment-timer";
-import { uploadGroupSlip } from "./actions";
-import { BookingStatus, BookingGroupStatus, PaymentStatus } from "@/app/generated/prisma";
+import { Button } from "@/components/ui/button";
 import Navbar from "@/components/navbar";
+import PaymentTimer from "@/components/payment-timer";
+import GroupSlipUploader from "./group-slip-uploader";
+import { createClient } from "@/utils/supabase/server";
+import { Upload } from "lucide-react";
+import { uploadGroupSlip } from "./actions";
 
 export default async function GroupPaymentPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = await params;
   
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const bookingGroup = await prisma.bookingGroup.findUnique({
     where: { id: groupId },
     include: {
       bookings: {
-        include: { classEvent: true }
+        include: {
+          classEvent: true
+        }
       },
-      payment: true,
+      payment: true
     }
   });
 
   if (!bookingGroup) {
-    return notFound();
+    notFound();
   }
 
-  // Check server-side expiration (10 minutes)
   const now = new Date();
   const expiryTime = new Date(bookingGroup.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  const payableStatuses = [BookingGroupStatus.PENDING_PAYMENT] as const;
-  const isPayable = payableStatuses.includes(bookingGroup.status as (typeof payableStatuses)[number]);
-
-  if (!isExpired && bookingGroup.status === BookingGroupStatus.PENDING_PAYMENT) {
-    await prisma.bookingGroup.update({
-      where: { id: groupId },
-      data: { status: BookingGroupStatus.PENDING_PAYMENT },
-    });
-    bookingGroup.status = BookingGroupStatus.PENDING_PAYMENT;
+  if (!isExpired && bookingGroup.status === "PENDING_PAYMENT") {
+    const timeRemaining = Math.max(0, expiryTime.getTime() - now.getTime());
+    if (timeRemaining === 0) {
+      await prisma.bookingGroup.update({
+        where: { id: groupId },
+        data: { status: "PENDING_PAYMENT" },
+      });
+      bookingGroup.status = "PENDING_PAYMENT" as any;
+    }
   }
 
-  if (isExpired && isPayable) {
+  // Handle expired status
+  if (isExpired && bookingGroup.status === "PENDING_PAYMENT") {
     await prisma.$transaction(async (tx) => {
-      // Cancel Group
       await tx.bookingGroup.update({
         where: { id: groupId },
-        data: { status: BookingGroupStatus.CANCELLED },
+        data: { status: "CANCELLED" },
       });
-
-      // Cancel individual bookings and refund seats
-      for (const b of bookingGroup.bookings) {
+      
+      for (const booking of bookingGroup.bookings) {
         await tx.booking.update({
-          where: { id: b.id },
-          data: { status: BookingStatus.CANCELLED },
+          where: { id: booking.id },
+          data: { status: "CANCELLED" }
         });
         await tx.classEvent.update({
-          where: { id: b.classEventId },
-          data: { totalSeats: { increment: b.seats } },
+          where: { id: booking.classEventId },
+          data: { totalSeats: { increment: booking.seats } }
         });
       }
 
       if (bookingGroup.payment) {
         await tx.payment.update({
-          where: { bookingGroupId: groupId },
-          data: { status: PaymentStatus.REJECTED },
+          where: { id: bookingGroup.payment.id },
+          data: { status: "REJECTED" },
         });
       }
     });
 
-    bookingGroup.status = BookingGroupStatus.CANCELLED;
+    bookingGroup.status = "CANCELLED" as any;
   }
 
   return (

@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { BookingStatus, BookingGroupStatus, PaymentStatus } from "@/app/generated/prisma";
 import { createClient } from "@/utils/supabase/server";
 
 export async function uploadGroupSlip(formData: FormData) {
@@ -76,21 +75,21 @@ export async function uploadGroupSlip(formData: FormData) {
       where: { bookingGroupId: groupId },
       data: {
         slipUrl: publicUrl,
-        status: PaymentStatus.UNDER_REVIEW,
+        status: "UNDER_REVIEW",
       },
     });
 
     // 2. Update Group status
     const group = await tx.bookingGroup.update({
       where: { id: groupId },
-      data: { status: BookingGroupStatus.PAYMENT_REVIEW },
+      data: { status: "PAYMENT_REVIEW" },
       include: { user: true, bookings: { include: { classEvent: true } } },
     });
 
     // 3. Update individual bookings status
     await tx.booking.updateMany({
       where: { bookingGroupId: groupId },
-      data: { status: BookingStatus.PAYMENT_REVIEW },
+      data: { status: "PAYMENT_REVIEW" },
     });
 
     return group;
@@ -146,7 +145,7 @@ export async function cancelGroupBooking(groupId: string) {
     }
   });
 
-  if (group.status !== BookingGroupStatus.PENDING_PAYMENT) {
+  if (!group || group.status !== "PENDING_PAYMENT") {
     throw new Error("Invalid booking group status");
   }
 
@@ -157,13 +156,13 @@ export async function cancelGroupBooking(groupId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.bookingGroup.update({
       where: { id: groupId },
-      data: { status: BookingGroupStatus.CANCELLED },
+      data: { status: "CANCELLED" },
     });
 
     for (const b of group.bookings) {
       await tx.booking.update({
         where: { id: b.id },
-        data: { status: BookingStatus.CANCELLED }
+        data: { status: "CANCELLED" }
       });
       await tx.classEvent.update({
         where: { id: b.classEventId },
@@ -175,7 +174,7 @@ export async function cancelGroupBooking(groupId: string) {
     if (p) {
       await tx.payment.update({
         where: { id: p.id },
-        data: { status: PaymentStatus.REJECTED }
+        data: { status: "REJECTED" }
       });
     }
   });

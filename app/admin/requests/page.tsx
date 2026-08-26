@@ -7,7 +7,7 @@ export default async function AdminRequestsPage() {
   await requireAdmin();
 
   const requests = await prisma.changeRequest.findMany({
-    where: { status: RequestStatus.PENDING },
+    where: { status: RequestStatus.PENDING, type: RequestType.COURSE_CHANGE },
     include: {
       user: true,
       booking: { include: { classEvent: true } },
@@ -18,7 +18,7 @@ export default async function AdminRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-[#4A3B32]">คำขอยกเลิกและเปลี่ยนรอบเรียน (Requests)</h1>
+      <h1 className="text-3xl font-bold text-[#4A3B32]">คำขอเปลี่ยนรอบเรียน</h1>
       
       {requests.length === 0 ? (
         <div className="bg-white border border-[#4A3B32]/20 rounded-2xl p-12 text-center">
@@ -31,7 +31,7 @@ export default async function AdminRequestsPage() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-bold text-lg text-[#4A3B32]">
-                    {req.type === RequestType.CANCELLATION ? "ขอยกเลิกการจอง" : "ขอเปลี่ยนรอบเรียน"}
+                    ขอเปลี่ยนรอบเรียน
                   </h3>
                   <p className="text-sm text-[#4A3B32]/70">โดย: {req.user.name}</p>
                   <p className="text-sm text-[#4A3B32]/70">วันที่สร้างคำขอ: {format(req.createdAt, "dd/MM/yyyy HH:mm")}</p>
@@ -41,7 +41,7 @@ export default async function AdminRequestsPage() {
 
               <div className="mb-4 text-sm bg-gray-50 border border-gray-100 p-4 rounded-lg">
                 <p><strong>รอบเดิม:</strong> {req.booking.classEvent.name}</p>
-                {req.type === RequestType.COURSE_CHANGE && req.requestedEvent && (
+                {req.requestedEvent && (
                   <p><strong>รอบใหม่ที่ต้องการ:</strong> {req.requestedEvent.name}</p>
                 )}
                 {req.customerReason && <p><strong>เหตุผล:</strong> {req.customerReason}</p>}

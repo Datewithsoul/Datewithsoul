@@ -137,17 +137,6 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     ],
   },
   {
-    key: "REQUEST_CANCEL_SUBMITTED_USER",
-    title: "ได้รับคำขอยกเลิกการจอง (ส่งให้ลูกค้า)",
-    description: "ส่งหาลูกค้าเมื่อส่งคำขอยกเลิกการจองเพื่อขอคืนเงิน",
-    category: "CUSTOMER",
-    defaultContent: `ระบบได้รับคำขอยกเลิกการจองสำหรับคลาส "{{className}}" เรียบร้อยแล้ว ขณะนี้อยู่ระหว่างรอแอดมินตรวจสอบค่ะ`,
-    variables: [
-      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
-      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
-    ],
-  },
-  {
     key: "REQUEST_CHANGE_APPROVED_USER",
     title: "อนุมัติคำขอเปลี่ยนรอบเรียน (ส่งให้ลูกค้า)",
     description: "ส่งหาลูกค้าเมื่อแอดมินกดอนุมัติการเปลี่ยนรอบเรียน",
@@ -160,39 +149,17 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     ],
   },
   {
-    key: "REQUEST_CANCEL_APPROVED_USER",
-    title: "อนุมัติคำขอยกเลิกการจอง (ส่งให้ลูกค้า)",
-    description: "ส่งหาลูกค้าเมื่อแอดมินกดอนุมัติการยกเลิกการจองและรอคืนเงิน",
-    category: "CUSTOMER",
-    defaultContent: `คำขอยกเลิกการจองของคุณได้รับการอนุมัติแล้ว ขณะนี้อยู่ระหว่างการคืนเงิน (Refund Pending)`,
-    variables: [
-      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
-      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
-    ],
-  },
-  {
     key: "REQUEST_REJECTED_USER",
-    title: "ปฏิเสธคำขอเปลี่ยนรอบ/ยกเลิก (ส่งให้ลูกค้า)",
-    description: "ส่งหาลูกค้าเมื่อแอดมินปฏิเสธคำขอเปลี่ยนรอบเรียนหรือยกเลิกการจอง",
+    title: "ปฏิเสธคำขอเปลี่ยนรอบ (ส่งให้ลูกค้า)",
+    description: "ส่งหาลูกค้าเมื่อแอดมินปฏิเสธคำขอเปลี่ยนรอบเรียน",
     category: "CUSTOMER",
     defaultContent: `คำขอ{{requestType}}ของคุณถูกปฏิเสธ
 เหตุผล: {{reason}}`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
       { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
-      { name: "requestType", label: "ประเภทคำขอ", example: "เปลี่ยนรอบเรียน / ยกเลิกการจอง" },
+      { name: "requestType", label: "ประเภทคำขอ", example: "เปลี่ยนรอบเรียน" },
       { name: "reason", label: "เหตุผลจากแอดมิน", example: "คลาสใหม่เต็มแล้ว" },
-    ],
-  },
-  {
-    key: "REFUND_COMPLETED_USER",
-    title: "คืนเงินเรียบร้อยแล้ว (ส่งให้ลูกค้า)",
-    description: "ส่งหาลูกค้าเมื่อแอดมินโอนเงินคืนและทำรายการเสร็จสิ้น",
-    category: "CUSTOMER",
-    defaultContent: `ระบบได้ทำการคืนเงินสำหรับการจองของคุณเรียบร้อยแล้ว`,
-    variables: [
-      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
-      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
     ],
   },
   {
@@ -351,17 +318,6 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
       { name: "className", label: "ชื่อคลาสเดิม", example: "Ceramic Workshop (รอบเช้า)" },
       { name: "newClassName", label: "ชื่อคลาสใหม่", example: "Ceramic Workshop (รอบบ่าย)" },
-    ],
-  },
-  {
-    key: "ADMIN_REQUEST_CANCEL",
-    title: "แจ้งเตือนแอดมิน: มีคำขอยกเลิกการจอง",
-    description: "ส่งหาแอดมินเมื่อลูกค้ายื่นคำขอยกเลิกการจองเพื่อขอคืนเงิน",
-    category: "ADMIN",
-    defaultContent: `มีคำขอยกเลิกการจองจากคุณ {{userName}} สำหรับคลาส "{{className}}"`,
-    variables: [
-      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
-      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
     ],
   },
 ];

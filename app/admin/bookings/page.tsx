@@ -12,7 +12,7 @@ import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
 import { AdminBookingFilters } from "@/components/admin-booking-filters";
-import { AdminBookingSheet } from "@/components/admin-booking-sheet";
+import { AdminBookingDialog } from "@/components/admin-booking-dialog";
 import { BookingStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
 
@@ -137,7 +137,7 @@ export default async function AdminBookings(props: {
                       />
                     </TableCell>
                     <TableCell className="px-5 py-4 flex flex-col items-start gap-2">
-                      <AdminBookingSheet booking={b} />
+                      <AdminBookingDialog booking={b} />
                       {b.status !== "CANCELLED" ? (
                         <AdminChangeClassDialog
                           bookingId={b.id}
@@ -194,7 +194,7 @@ export default async function AdminBookings(props: {
                   />
                   <div className="flex gap-2 w-full mt-2">
                     <div className="flex-1">
-                      <AdminBookingSheet booking={b} />
+                      <AdminBookingDialog booking={b} />
                     </div>
                     {b.status !== "CANCELLED" ? (
                       <div className="flex-1">

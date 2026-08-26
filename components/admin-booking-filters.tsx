@@ -13,7 +13,6 @@ const STATUS_LABELS: Record<string, string> = {
   PAYMENT_REVIEW: "รอตรวจสอบชำระเงิน",
   CONFIRMED: "ยืนยันแล้ว",
   CHANGE_REQUESTED: "ขอเปลี่ยนรอบ",
-  CANCELLATION_REQUESTED: "ขอยกเลิก",
   CANCELLED: "ยกเลิกแล้ว",
   EXPIRED: "หมดอายุ",
   COMPLETED: "เรียนแล้ว",
@@ -89,7 +88,6 @@ export function AdminBookingFilters() {
             <SelectItem value="PAYMENT_REVIEW">รอตรวจสอบชำระเงิน</SelectItem>
             <SelectItem value="CONFIRMED">ยืนยันแล้ว</SelectItem>
             <SelectItem value="CHANGE_REQUESTED">ขอเปลี่ยนรอบ</SelectItem>
-            <SelectItem value="CANCELLATION_REQUESTED">ขอยกเลิก</SelectItem>
             <SelectItem value="CANCELLED">ยกเลิกแล้ว</SelectItem>
             <SelectItem value="EXPIRED">หมดอายุ</SelectItem>
             <SelectItem value="COMPLETED">เรียนแล้ว</SelectItem>

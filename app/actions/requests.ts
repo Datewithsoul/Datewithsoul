@@ -39,16 +39,18 @@ export async function createChangeRequest(
     }
 
     if (booking.status !== BookingStatus.CONFIRMED) {
-      return { success: false, error: "เฉพาะการจองที่ยืนยันแล้วเท่านั้นที่สามารถขอคืนเงินหรือเปลี่ยนรอบได้" };
+      return { success: false, error: "เฉพาะการจองที่ยืนยันแล้วเท่านั้นที่สามารถขอเปลี่ยนรอบได้" };
+    }
+
+    if (type !== RequestType.COURSE_CHANGE) {
+      return { success: false, error: "ไม่รองรับคำขอประเภทนี้" };
     }
 
     // Determine new status based on request type
-    const newBookingStatus = type === RequestType.CANCELLATION
-      ? BookingStatus.CANCELLATION_REQUESTED
-      : BookingStatus.CHANGE_REQUESTED;
+    const newBookingStatus = BookingStatus.CHANGE_REQUESTED;
 
     // Create the request and update booking
-    const [changeRequest, updatedBooking] = await prisma.$transaction([
+    await prisma.$transaction([
       prisma.changeRequest.create({
         data: {
           bookingId: booking.id,
@@ -68,7 +70,7 @@ export async function createChangeRequest(
     ]);
 
     // Send LINE Notification to Admin
-    const typeText = type === RequestType.CANCELLATION ? "ขอยกเลิกและคืนเงิน" : "ขอเปลี่ยนรอบเรียน";
+    const typeText = "ขอเปลี่ยนรอบเรียน";
     const adminMessage = `🔔 มีคำ${typeText}ใหม่\nจากคุณ: ${dbUser.name}\nคอร์ส: ${booking.classEvent.name}\nเหตุผล: ${reason}\n\nกรุณาตรวจสอบในระบบ Admin`;
     await notifyAdmins(adminMessage);
 

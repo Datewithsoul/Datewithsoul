@@ -12,7 +12,6 @@ const bookingMap = {
   PAYMENT_REVIEW: { label: "ตรวจสอบชำระเงิน", tone: "attention" },
   CONFIRMED: { label: "ยืนยันแล้ว", tone: "neutral" },
   CHANGE_REQUESTED: { label: "ขอเปลี่ยนรอบ", tone: "attention" },
-  CANCELLATION_REQUESTED: { label: "ขอยกเลิก", tone: "attention" },
   CANCELLED: { label: "ยกเลิก", tone: "danger" },
   EXPIRED: { label: "หมดอายุ", tone: "danger" },
   COMPLETED: { label: "เรียนแล้ว", tone: "outline" },
@@ -23,8 +22,6 @@ const paymentMap = {
   UPLOADED: { label: "ส่งสลิปแล้ว", tone: "attention" },
   UNDER_REVIEW: { label: "รอตรวจสอบสลิป", tone: "attention" },
   VERIFIED: { label: "ชำระเงินแล้ว", tone: "neutral" },
-  REFUND_PENDING: { label: "รอคืนเงิน", tone: "attention" },
-  REFUNDED: { label: "คืนเงินแล้ว", tone: "neutral" },
   REJECTED: { label: "ไม่ผ่าน", tone: "danger" },
 } as const;
 
