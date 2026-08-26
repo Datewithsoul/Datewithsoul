@@ -2,8 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function updateUserRole(userId: string, role: "ADMIN" | "CUSTOMER") {
+  await requireAdmin();
   try {
     await prisma.user.update({
       where: { id: userId },
@@ -17,6 +19,7 @@ export async function updateUserRole(userId: string, role: "ADMIN" | "CUSTOMER")
 }
 
 export async function deleteUser(userId: string) {
+  await requireAdmin();
   try {
     await prisma.user.delete({
       where: { id: userId },
@@ -31,6 +34,7 @@ export async function deleteUser(userId: string) {
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export async function addUser(data: { name: string; role: "ADMIN" | "CUSTOMER"; phone?: string; username?: string; password?: string }) {
+  await requireAdmin();
   try {
     let newUserId = undefined;
 
@@ -105,6 +109,7 @@ export async function addUser(data: { name: string; role: "ADMIN" | "CUSTOMER"; 
 }
 
 export async function editUser(userId: string, data: { name: string; role: "ADMIN" | "CUSTOMER"; phone?: string }) {
+  await requireAdmin();
   try {
     await prisma.user.update({
       where: { id: userId },

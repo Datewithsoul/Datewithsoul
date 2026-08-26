@@ -9,8 +9,10 @@ import {
 } from "@/lib/message-templates";
 import { sendLineMessage } from "@/lib/line";
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function saveTemplateAction(formData: FormData) {
+  await requireAdmin();
   const key = formData.get("key") as string;
   const content = formData.get("content") as string;
   const enabled = formData.get("enabled") === "true";
@@ -55,6 +57,7 @@ export async function saveTemplateAction(formData: FormData) {
 }
 
 export async function resetTemplateAction(key: string) {
+  await requireAdmin();
   if (!key) {
     return { success: false, error: "ไม่พบ Key ของเทมเพลต" };
   }
@@ -98,6 +101,7 @@ export async function sendTestMessageAction(
   content: string,
   targetLineId?: string
 ) {
+  await requireAdmin();
   const def = TEMPLATE_DEFINITIONS.find((t) => t.key === key);
   if (!def) {
     return { success: false, error: "ไม่พบเทมเพลต" };
@@ -156,6 +160,7 @@ export async function sendCustomTestBroadcastAction({
   message: string;
   targetLineId?: string;
 }) {
+  await requireAdmin();
   if (!message || !message.trim()) {
     return { success: false, error: "กรุณาระบุข้อความที่ต้องการส่ง" };
   }

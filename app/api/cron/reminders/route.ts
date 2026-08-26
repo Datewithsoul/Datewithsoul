@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendTemplatedLineMessage } from '@/lib/line';
+import { BookingStatus } from '@/app/generated/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
       include: {
         bookings: {
           where: { 
-            status: 'PAID',
+             status: BookingStatus.CONFIRMED,
             notifications: { none: { type: 'REMINDER_2_DAYS' } }
           },
           include: { user: true },
@@ -79,7 +80,7 @@ export async function GET(request: Request) {
       include: {
         bookings: {
           where: { 
-            status: 'PAID',
+             status: BookingStatus.CONFIRMED,
             notifications: { none: { type: 'REMINDER_1_DAY' } }
           },
           include: { user: true },
@@ -126,7 +127,7 @@ export async function GET(request: Request) {
       include: {
         bookings: {
           where: { 
-            status: 'PAID',
+             status: BookingStatus.CONFIRMED,
             notifications: { none: { type: 'REMINDER_SAME_DAY' } }
           },
           include: { user: true },

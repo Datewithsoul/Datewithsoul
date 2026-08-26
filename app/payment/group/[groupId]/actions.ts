@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { BookingGroupStatus } from "@/app/generated/prisma";
 
 export async function uploadGroupSlip(formData: FormData) {
   const groupId = formData.get("groupId") as string;
@@ -42,7 +43,7 @@ export async function uploadGroupSlip(formData: FormData) {
     throw new Error("Group not found");
   }
 
-  if (group.status !== BookingGroupStatus.PENDING_PAYMENT) {
+   if (group.status !== BookingGroupStatus.PENDING_PAYMENT) {
     throw new Error("รายการจองนี้ไม่สามารถอัปโหลดสลิปได้");
   }
 
@@ -154,10 +155,11 @@ export async function cancelGroupBooking(groupId: string) {
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.bookingGroup.update({
-      where: { id: groupId },
+    const updatedGroup = await tx.bookingGroup.updateMany({
+      where: { id: groupId, status: "PENDING_PAYMENT" },
       data: { status: "CANCELLED" },
     });
+    if (updatedGroup.count === 0) return;
 
     for (const b of group.bookings) {
       await tx.booking.update({

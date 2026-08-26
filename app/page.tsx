@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search, Heart, LogOut, User as UserIcon, Calendar, Inbox } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
+import { BookingStatus } from "@/app/generated/prisma";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { logout } from "./login/actions";
 import Navbar from "@/components/navbar";
@@ -151,17 +152,17 @@ export default async function Home() {
 
   const baseInclude = {
     media: {
-      where: { type: 'IMAGE' },
-      orderBy: { order: 'asc' },
+       where: { type: 'IMAGE' as const },
+       orderBy: { order: 'asc' as const },
       take: 1
     },
     bookings: {
       where: {
-        status: { notIn: ["CANCELLED"] }
+         status: { notIn: [BookingStatus.CANCELLED] }
       },
       select: { seats: true }
     }
-  } as const;
+   };
 
   // Fetch This Week Classes
   let thisWeekClasses: any[] = [];

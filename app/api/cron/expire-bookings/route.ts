@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 import { BookingStatus, PaymentStatus, BookingGroupStatus } from "@/app/generated/prisma";
-import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +82,7 @@ export async function GET(request: Request) {
     const expiredGroups = await prisma.bookingGroup.findMany({
       where: {
         createdAt: { lt: expirationThreshold },
-        status: { in: ["PENDING"] }
+         status: { in: [BookingGroupStatus.PENDING_PAYMENT] }
       },
       include: {
         user: true,
@@ -96,7 +95,7 @@ export async function GET(request: Request) {
     for (const group of expiredGroups) {
       await prisma.$transaction(async (tx) => {
         const g = await tx.bookingGroup.findUnique({ where: { id: group.id } });
-        if (!g || g.status !== "PENDING") return;
+         if (!g || g.status !== BookingGroupStatus.PENDING_PAYMENT) return;
 
         await tx.bookingGroup.update({
           where: { id: group.id },

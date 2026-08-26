@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { uploadMedia } from "@/utils/supabase/storage";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function updateClass(formData: FormData) {
+  await requireAdmin();
   const id = formData.get("id") as string;
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -150,6 +152,7 @@ export async function updateClass(formData: FormData) {
 }
 
 export async function updateGroupClass(formData: FormData) {
+  await requireAdmin();
   const originalName = formData.get("originalName") as string;
   const classEventIds = (formData.get("classEventIds") as string || "").split(",").filter(Boolean);
   
@@ -257,6 +260,7 @@ export async function updateGroupClass(formData: FormData) {
 }
 
 export async function uploadMediaAction(formData: FormData) {
+  await requireAdmin();
   const file = formData.get('file') as File;
   const path = formData.get('path') as string;
   
@@ -269,6 +273,7 @@ export async function uploadMediaAction(formData: FormData) {
 }
 
 export async function deleteClass(formData: FormData) {
+  await requireAdmin();
   const id = formData.get("id") as string;
   
   await prisma.$transaction(async (tx) => {
@@ -311,6 +316,7 @@ export async function deleteClass(formData: FormData) {
 }
 
 export async function closeClass(formData: FormData) {
+  await requireAdmin();
   const id = formData.get("id") as string;
   
   await prisma.classEvent.update({

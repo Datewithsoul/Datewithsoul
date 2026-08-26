@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
+import { BookingStatus, BookingGroupStatus, PaymentStatus } from "@/app/generated/prisma";
 
 interface BookingItemInput {
   classEventId: string;
@@ -46,7 +47,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
       where: {
         userId: authUser.id,
         classEventId: { in: classEventIds },
-        status: { in: ['BOOKING', 'AWAITING_PAYMENT', 'PAYMENT_REVIEW', 'PAID'] }
+         status: { in: [BookingStatus.PENDING_PAYMENT, BookingStatus.PAYMENT_REVIEW, BookingStatus.CONFIRMED] }
       },
       include: { classEvent: true }
     });
@@ -75,7 +76,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
         data: {
           userId: user.id,
           totalPrice,
-          status: "PENDING", // Correct enum value
+          status: BookingGroupStatus.PENDING_PAYMENT,
         }
       });
 
@@ -110,7 +111,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
       await tx.payment.create({
         data: {
           bookingGroupId: group.id,
-          status: "PENDING",
+          status: PaymentStatus.UNPAID,
         }
       });
 
@@ -168,4 +169,3 @@ export async function getAlternativeSchedules(className: string) {
   });
   return schedules;
 }
-

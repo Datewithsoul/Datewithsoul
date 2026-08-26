@@ -50,7 +50,7 @@ export function AdminBookingFilters() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const handleStatusChange = (value: string) => {
+  const handleStatusChange = (value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value && value !== "ALL") {
       params.set("status", value);

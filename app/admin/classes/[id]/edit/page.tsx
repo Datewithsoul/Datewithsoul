@@ -135,9 +135,10 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
               <label className="text-sm font-medium leading-none">รอบเวลาเรียน (วัน/เวลา)</label>
               <ScheduleRepeater 
                 initialData={[{
-                  date: formattedDate,
-                  timeslots: [{ startTime: classEvent.startTime, endTime: classEvent.endTime, totalSeats: classEvent.totalSeats.toString() }]
-                }]}
+                   date: formattedDate,
+                   endDate: formattedDate,
+                   timeslots: [{ startTime: classEvent.startTime, endTime: classEvent.endTime, totalSeats: classEvent.totalSeats.toString(), status: classEvent.status }]
+                 }]}
               />
             </div>
 

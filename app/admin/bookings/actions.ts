@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus } from "@/app/generated/prisma";
+import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 import {
   isBookingStatus,
   paymentStatusForBooking,
@@ -33,9 +33,7 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
     });
 
     const paymentStatus = paymentStatusForBooking(status);
-    let paymentId = booking.payment?.id;
-
-    if (booking.payment) {
+     if (booking.payment) {
       const prevPaymentStatus = booking.payment.status;
       await tx.payment.update({
         where: { bookingId },
@@ -44,7 +42,7 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
       if (reviewerId && prevPaymentStatus !== paymentStatus) {
         await tx.paymentReviewLog.create({
           data: {
-            paymentId,
+             paymentId: booking.payment.id,
             reviewerId,
             previousStatus: prevPaymentStatus,
             newStatus: paymentStatus,
@@ -56,13 +54,12 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
       const newPayment = await tx.payment.create({
         data: { bookingId, status: paymentStatus },
       });
-      paymentId = newPayment.id;
-      if (reviewerId) {
+       if (reviewerId) {
         await tx.paymentReviewLog.create({
           data: {
-            paymentId,
+             paymentId: newPayment.id,
             reviewerId,
-            previousStatus: "PENDING",
+             previousStatus: PaymentStatus.UNPAID,
             newStatus: paymentStatus,
             reason
           }

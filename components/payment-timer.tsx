@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Clock } from "lucide-react";
 import { cancelBooking } from "@/app/payment/[bookingId]/actions";
 import { useRouter } from "next/navigation";
@@ -16,9 +16,20 @@ export default function PaymentTimer({
   groupId?: string;
   onExpire?: () => void;
 }) {
-  const [timeLeft, setTimeLeft] = useState<number>(10 * 60);
+  const [timeLeft, setTimeLeft] = useState<number>(() => Math.max(0, Math.floor((new Date(createdAt).getTime() + 10 * 60 * 1000 - Date.now()) / 1000)));
   const [isExpired, setIsExpired] = useState(false);
   const router = useRouter();
+
+  const handleExpire = useCallback(async () => {
+    if (groupId) {
+      const { cancelGroupBooking } = await import("@/app/payment/group/[groupId]/actions");
+      await cancelGroupBooking(groupId);
+    } else if (bookingId) {
+      await cancelBooking(bookingId);
+    }
+    onExpire?.();
+    router.refresh();
+  }, [bookingId, groupId, onExpire, router]);
 
   useEffect(() => {
     const expiryTime = new Date(createdAt).getTime() + 10 * 60 * 1000;
@@ -28,8 +39,6 @@ export default function PaymentTimer({
       const diff = expiryTime - now;
       return Math.max(0, Math.floor(diff / 1000));
     };
-
-    setTimeLeft(calculateTimeLeft());
 
     const timer = setInterval(() => {
       const remaining = calculateTimeLeft();
@@ -45,21 +54,7 @@ export default function PaymentTimer({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [createdAt, isExpired]);
-
-  const handleExpire = async () => {
-    // Automatically cancel booking
-    if (groupId) {
-      const { cancelGroupBooking } = await import("@/app/payment/group/[groupId]/actions");
-      await cancelGroupBooking(groupId);
-    } else if (bookingId) {
-      await cancelBooking(bookingId);
-    }
-    if (onExpire) {
-      onExpire();
-    }
-    router.refresh(); // Refresh page to show expired state
-  };
+  }, [createdAt, handleExpire, isExpired]);
 
   if (isExpired || timeLeft <= 0) {
     return (

@@ -1,14 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
-import Image from "next/image";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
-import GroupSlipUploader from "./group-slip-uploader";
 import { createClient } from "@/utils/supabase/server";
 import { Upload } from "lucide-react";
 import { uploadGroupSlip } from "./actions";
+import { BookingGroupStatus } from "@/app/generated/prisma";
 
 export default async function GroupPaymentPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = await params;
@@ -31,29 +29,28 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
   if (!bookingGroup) {
     notFound();
   }
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.id !== bookingGroup.userId) {
+    redirect("/bookings");
+  }
 
   const now = new Date();
   const expiryTime = new Date(bookingGroup.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
   if (!isExpired && bookingGroup.status === "PENDING_PAYMENT") {
-    const timeRemaining = Math.max(0, expiryTime.getTime() - now.getTime());
-    if (timeRemaining === 0) {
-      await prisma.bookingGroup.update({
-        where: { id: groupId },
-        data: { status: "PENDING_PAYMENT" },
-      });
-      bookingGroup.status = "PENDING_PAYMENT" as any;
-    }
   }
 
   // Handle expired status
   if (isExpired && bookingGroup.status === "PENDING_PAYMENT") {
     await prisma.$transaction(async (tx) => {
-      await tx.bookingGroup.update({
-        where: { id: groupId },
-        data: { status: "CANCELLED" },
+      const updatedGroup = await tx.bookingGroup.updateMany({
+        where: { id: groupId, status: BookingGroupStatus.PENDING_PAYMENT },
+        data: { status: BookingGroupStatus.CANCELLED },
       });
+      if (updatedGroup.count === 0) return;
       
       for (const booking of bookingGroup.bookings) {
         await tx.booking.update({
@@ -74,7 +71,7 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
       }
     });
 
-    bookingGroup.status = "CANCELLED" as any;
+    bookingGroup.status = BookingGroupStatus.CANCELLED;
   }
 
   return (
@@ -124,7 +121,7 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
             {/* Left: Summary */}
             <div>
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 mb-6 relative overflow-hidden">
-                <PaymentTimer createdAt={bookingGroup.createdAt.toISOString()} />
+                 <PaymentTimer createdAt={bookingGroup.createdAt.toISOString()} groupId={bookingGroup.id} />
                 
                 <h2 className="text-xl font-bold mb-4 mt-6">สรุปรายการจอง</h2>
                 <div className="flex flex-col gap-4 mb-6">

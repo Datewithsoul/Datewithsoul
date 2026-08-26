@@ -1,10 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Image from "next/image";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
-import SlipUploader from "./slip-uploader";
 import { createClient } from "@/utils/supabase/server";
 import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
@@ -31,46 +28,38 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
     notFound();
   }
 
-  const isOwner = user?.id === booking.userId;
-  const payableStatuses = ["PENDING_PAYMENT"] as const;
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.id !== booking.userId) {
+    redirect("/bookings");
+  }
 
   const now = new Date();
   const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
 
-  if (!isExpired && booking.status === "PENDING_PAYMENT") {
-    const timeRemaining = Math.max(0, expiryTime.getTime() - now.getTime());
-    if (timeRemaining === 0) {
-      await prisma.booking.update({
-        where: { id: bookingId },
-        data: { status: "PENDING_PAYMENT" },
-      });
-      booking.status = "PENDING_PAYMENT" as any;
-    }
-  }
-
   // Handle expired status
   if (isExpired && booking.status === "PENDING_PAYMENT") {
     // We do a quiet update here, though cron/actions also handle this
-    await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: "CANCELLED" },
-    });
-    
-    // Also update class seats
-    await prisma.classEvent.update({
-      where: { id: booking.classEventId },
-      data: { totalSeats: { increment: booking.seats } },
-    });
-
-    if (booking.payment) {
-      await prisma.payment.update({
-        where: { id: booking.payment.id },
-        data: { status: "REJECTED" },
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.booking.updateMany({
+        where: { id: bookingId, status: "PENDING_PAYMENT" },
+        data: { status: "CANCELLED" },
       });
-    }
-
-    booking.status = "CANCELLED" as any;
+      if (updated.count === 0) return;
+      await tx.classEvent.update({
+        where: { id: booking.classEventId },
+        data: { totalSeats: { increment: booking.seats } },
+      });
+      if (booking.payment) {
+        await tx.payment.update({
+          where: { id: booking.payment.id },
+          data: { status: "REJECTED" },
+        });
+      }
+    });
+    booking.status = "CANCELLED";
   }
 
   return (

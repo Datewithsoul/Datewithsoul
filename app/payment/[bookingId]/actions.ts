@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
-import { notifyAdmins, sendLineMessage, sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
+import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
 function isPayable(status: string) {
   return (PAYABLE_BOOKING_STATUSES as readonly string[]).includes(status);
@@ -184,10 +184,11 @@ export async function cancelBooking(bookingId: string) {
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.booking.update({
-      where: { id: bookingId },
+    const updated = await tx.booking.updateMany({
+      where: { id: bookingId, status: "PENDING_PAYMENT" },
       data: { status: "CANCELLED" },
     });
+    if (updated.count === 0) return;
 
     await tx.classEvent.update({
       where: { id: booking.classEventId },
