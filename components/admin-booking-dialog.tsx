@@ -42,16 +42,25 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
         {triggerLabel}
       </DrawerTrigger>
       <DrawerContent 
-        className="bg-[#f4f1ec] m-2 sm:m-4 h-[calc(100dvh-1rem)] sm:h-[calc(100dvh-2rem)] rounded-2xl sm:rounded-2xl after:hidden" 
-        style={{ "--drawer-content-width": "min(320px, calc(100vw - 1rem))" } as React.CSSProperties}
+        className="bg-[#f4f1ec] m-2 sm:m-4 overflow-hidden rounded-2xl after:hidden"
+        style={{
+          width: "min(440px, calc(100vw - 1rem))",
+          height: "calc(100dvh - 2rem)",
+          maxHeight: "calc(100dvh - 2rem)",
+          "--drawer-content-width": "min(440px, calc(100vw - 1rem))",
+          "--drawer-content-height": "calc(100dvh - 2rem)",
+        } as React.CSSProperties}
         data-admin
       >
-        <div className="h-full overflow-y-auto p-3 flex flex-col gap-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 flex flex-col gap-4">
           <DrawerHeader className="mb-1 border-b border-[#ddd4c8] pb-3 px-0">
             <DrawerTitle className="text-[#3d3229]">รายละเอียดการจอง</DrawerTitle>
             <DrawerDescription className="text-[#6a5d50]">
               รหัสการจอง: {booking.id}
             </DrawerDescription>
+            <p className="text-sm text-[#8a6d1f]">
+              จองเมื่อ: {booking.createdAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
+            </p>
             <div className="mt-2 flex justify-center sm:justify-start">
               <BookingStatusBadge status={booking.status} />
             </div>

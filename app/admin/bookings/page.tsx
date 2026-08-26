@@ -90,6 +90,7 @@ export default async function AdminBookings(props: {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-5 text-[#6a5d50]">ลูกค้า</TableHead>
                 <TableHead className="text-[#6a5d50]">คอร์สเรียน</TableHead>
+                <TableHead className="text-[#6a5d50]">วันที่จอง</TableHead>
                 <TableHead className="text-center text-[#6a5d50]">ที่นั่ง</TableHead>
                 <TableHead className="text-right text-[#6a5d50]">ยอดรวม (บาท)</TableHead>
                 <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
@@ -100,7 +101,7 @@ export default async function AdminBookings(props: {
             <TableBody>
               {bookings.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={7} className="px-5 py-10 text-center text-[#6a5d50]">
+                  <TableCell colSpan={8} className="px-5 py-10 text-center text-[#6a5d50]">
                     ไม่พบรายการจองที่ตรงกับเงื่อนไข
                   </TableCell>
                 </TableRow>
@@ -122,6 +123,9 @@ export default async function AdminBookings(props: {
                       <div className="text-xs text-[#6a5d50]">
                         {b.classEvent.startTime}–{b.classEvent.endTime} น.
                       </div>
+                    </TableCell>
+                    <TableCell className="py-4 text-sm text-[#6a5d50] whitespace-nowrap">
+                      {b.createdAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
                     </TableCell>
                     <TableCell className="text-center tabular-nums py-4">{b.seats}</TableCell>
                     <TableCell className="text-right tabular-nums font-medium py-4">{b.totalPrice.toLocaleString("th-TH")}</TableCell>
@@ -177,6 +181,9 @@ export default async function AdminBookings(props: {
                   
                   <div className="text-[#6a5d50]">วันที่:</div>
                   <div className="text-[#3d3229] text-right">{b.classEvent.date.toLocaleDateString("th-TH")}</div>
+
+                  <div className="text-[#6a5d50]">วันที่จอง:</div>
+                  <div className="text-[#3d3229] text-right">{b.createdAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}</div>
                   
                   <div className="text-[#6a5d50]">ที่นั่ง:</div>
                   <div className="text-[#3d3229] text-right">{b.seats} ที่นั่ง</div>

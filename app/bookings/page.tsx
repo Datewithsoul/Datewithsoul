@@ -115,6 +115,10 @@ export default async function BookingsPage() {
                         <Clock size={16} />
                         <span>{c.startTime} - {c.endTime}</span>
                       </div>
+                      <div className="flex items-center gap-2 text-[#8a6d1f]">
+                        <Clock size={16} />
+                        <span>จองเมื่อ {booking.createdAt.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                      </div>
                     </div>
                     
                     <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
