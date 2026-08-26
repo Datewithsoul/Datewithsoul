@@ -6,6 +6,11 @@ import { createClient } from "@/utils/supabase/server";
 import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
+function redirectWithError(path: string, message: string): never {
+  const params = new URLSearchParams({ error: message });
+  redirect(`${path}?${params.toString()}`);
+}
+
 function isPayable(status: string) {
   return (PAYABLE_BOOKING_STATUSES as readonly string[]).includes(status);
 }
@@ -19,12 +24,12 @@ export async function uploadSlip(formData: FormData) {
   }
 
   if (slipImage.size > 5 * 1024 * 1024) {
-    redirect(`/payment/${bookingId}?error=ขนาดไฟล์เกิน 5MB`);
+    redirectWithError(`/payment/${bookingId}`, "ขนาดไฟล์เกิน 5MB");
   }
 
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowedTypes.includes(slipImage.type)) {
-    redirect(`/payment/${bookingId}?error=รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WEBP) เท่านั้น`);
+    redirectWithError(`/payment/${bookingId}`, "รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WEBP) เท่านั้น");
   }
 
   const supabase = await createClient();

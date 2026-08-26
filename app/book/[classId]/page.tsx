@@ -10,6 +10,11 @@ import BookingForm from "@/components/booking-form";
 
 import ScheduleSelector from "@/app/classes/[id]/schedule-selector";
 
+function redirectWithError(message: string): never {
+  const params = new URLSearchParams({ error: message });
+  redirect(`/login?${params.toString()}`);
+}
+
 export default async function BookClassPage({ 
   params,
   searchParams 
@@ -68,7 +73,7 @@ export default async function BookClassPage({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/login?error=กรุณาเข้าสู่ระบบก่อนทำการจอง`);
+    redirectWithError("กรุณาเข้าสู่ระบบก่อนทำการจอง");
   }
 
   const dbUser = await prisma.user.findUnique({

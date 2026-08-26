@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
+function redirectWithError(path: string, message: string): never {
+  const params = new URLSearchParams({ error: message });
+  redirect(`${path}?${params.toString()}`);
+}
+
 export async function submitBooking(formData: FormData) {
   const classEventId = formData.get("classEventId") as string;
   const name = formData.get("name") as string;
@@ -22,7 +27,7 @@ export async function submitBooking(formData: FormData) {
   }
 
   if (classEvent.totalSeats < seats) {
-    redirect(`/book/${classEventId}?error=ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
+    redirectWithError(`/book/${classEventId}`, `ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
   }
 
   const totalPrice = classEvent.price * seats;
@@ -31,7 +36,7 @@ export async function submitBooking(formData: FormData) {
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
   if (!authUser) {
-    redirect("/login?error=กรุณาเข้าสู่ระบบก่อนทำการจอง");
+    redirectWithError("/login", "กรุณาเข้าสู่ระบบก่อนทำการจอง");
   }
 
   // Prevent duplicate active bookings for the same class
@@ -44,7 +49,7 @@ export async function submitBooking(formData: FormData) {
   });
 
   if (existingBooking) {
-    redirect(`/payment/${existingBooking.id}?error=คุณมีการจองคลาสนี้อยู่แล้ว`);
+    redirectWithError(`/payment/${existingBooking.id}`, "คุณมีการจองคลาสนี้อยู่แล้ว");
   }
 
   let user = await prisma.user.findUnique({
@@ -97,7 +102,7 @@ export async function submitBooking(formData: FormData) {
     });
   } catch (error: any) {
     if (error.message === "NOT_ENOUGH_SEATS") {
-      redirect(`/classes/${classEventId}?error=ขออภัย ที่นั่งไม่เพียงพอ กรุณาลองใหม่อีกครั้ง`);
+      redirectWithError(`/classes/${classEventId}`, "ขออภัย ที่นั่งไม่เพียงพอ กรุณาลองใหม่อีกครั้ง");
     }
     throw error;
   }
