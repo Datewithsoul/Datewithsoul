@@ -1,173 +1,120 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { sendTemplatedLineMessage } from '@/lib/line';
-import { BookingStatus } from '@/app/generated/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { sendTemplatedLineMessage } from "@/lib/line";
+import { BookingStatus } from "@/app/generated/prisma";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+const TIME_ZONE = "Asia/Bangkok";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getBangkokDateParts(now: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(now);
+
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value),
+  };
+}
+
+// Class dates are stored as date-only values at UTC midnight. Convert the
+// Bangkok calendar day to the matching UTC range for Vercel's UTC runtime.
+function getBangkokDayBounds(offsetDays: number, now: Date) {
+  const { year, month, day } = getBangkokDateParts(now);
+  const start = new Date(Date.UTC(year, month - 1, day + offsetDays));
+  return { gte: start, lt: new Date(start.getTime() + DAY_MS) };
+}
+
+function formatClassDate(date: Date) {
+  return date.toLocaleDateString("th-TH", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+async function sendReminderForOffset(
+  offsetDays: number,
+  templateKey: "REMINDER_3_DAYS" | "REMINDER_1_DAY" | "REMINDER_SAME_DAY",
+  logType: "REMINDER_3_DAYS" | "REMINDER_1_DAY" | "REMINDER_SAME_DAY",
+  now: Date
+) {
+  const bounds = getBangkokDayBounds(offsetDays, now);
+  const classes = await prisma.classEvent.findMany({
+    where: { date: bounds },
+    include: {
+      bookings: {
+        where: {
+          status: BookingStatus.CONFIRMED,
+          notifications: { none: { type: logType } },
+        },
+        include: { user: true },
+      },
+    },
+  });
+
+  let sent = 0;
+  for (const cls of classes) {
+    for (const booking of cls.bookings) {
+      if (!booking.user.lineId) continue;
+
+      const success = await sendTemplatedLineMessage(
+        booking.user.lineId,
+        templateKey,
+        {
+          userName: booking.user.name,
+          className: cls.name,
+          date: formatClassDate(cls.date),
+          time: `${cls.startTime} - ${cls.endTime}`,
+          location: cls.locationName || "Date with Soul Love",
+          mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
+        },
+        {
+          bookingId: booking.id,
+          userId: booking.userId,
+          type: logType,
+        }
+      );
+
+      if (success) sent++;
+    }
+  }
+
+  return sent;
+}
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.warn("Unauthorized cron access attempt");
-      return new Response('Unauthorized', { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const dayAfterTomorrow = new Date(tomorrow);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-
-    // 0. "แจ้งเตือนก่อนวันเรียนล่วงหน้า 2 วัน" (Reminder 2 days before)
-    const inTwoDaysClasses = await prisma.classEvent.findMany({
-      where: {
-        date: {
-          gte: dayAfterTomorrow,
-          lt: new Date(dayAfterTomorrow.getTime() + 24 * 60 * 60 * 1000), // less than 3 days from now
-        },
-      },
-      include: {
-        bookings: {
-          where: { 
-             status: BookingStatus.CONFIRMED,
-            notifications: { none: { type: 'REMINDER_2_DAYS' } }
-          },
-          include: { user: true },
-        },
-      },
-    });
-
-    let countTwoDays = 0;
-    for (const cls of inTwoDaysClasses) {
-      for (const booking of cls.bookings) {
-        if (booking.user.lineId) {
-          const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
-          await sendTemplatedLineMessage(
-            booking.user.lineId,
-            "REMINDER_1_DAY",
-            {
-              userName: booking.user.name,
-              className: cls.name,
-              date: dateStr,
-              time: `${cls.startTime} - ${cls.endTime}`,
-              location: cls.locationName || "Date with Soul Love",
-              mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
-            },
-            {
-              bookingId: booking.id,
-              userId: booking.userId,
-              type: 'REMINDER_2_DAYS',
-            }
-          );
-          countTwoDays++;
-        }
-      }
-    }
-
-    // 1. "ใกล้กำหนดการก่อน 1 วัน" (Reminder 1 day before)
-    // Find classes happening tomorrow
-    const tomorrowClasses = await prisma.classEvent.findMany({
-      where: {
-        date: {
-          gte: tomorrow,
-          lt: dayAfterTomorrow,
-        },
-      },
-      include: {
-        bookings: {
-          where: { 
-             status: BookingStatus.CONFIRMED,
-            notifications: { none: { type: 'REMINDER_1_DAY' } }
-          },
-          include: { user: true },
-        },
-      },
-    });
-
-    let countTomorrow = 0;
-    for (const cls of tomorrowClasses) {
-      for (const booking of cls.bookings) {
-        if (booking.user.lineId) {
-          const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
-          await sendTemplatedLineMessage(
-            booking.user.lineId,
-            "REMINDER_1_DAY",
-            {
-              userName: booking.user.name,
-              className: cls.name,
-              date: dateStr,
-              time: `${cls.startTime} - ${cls.endTime}`,
-              location: cls.locationName || "Date with Soul Love",
-              mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
-            },
-            {
-              bookingId: booking.id,
-              userId: booking.userId,
-              type: 'REMINDER_1_DAY',
-            }
-          );
-          countTomorrow++;
-        }
-      }
-    }
-
-    // 2. "กำหนดเรียนวันนี้" (Reminder today)
-    // Find classes happening today
-    const todayClasses = await prisma.classEvent.findMany({
-      where: {
-        date: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
-      include: {
-        bookings: {
-          where: { 
-             status: BookingStatus.CONFIRMED,
-            notifications: { none: { type: 'REMINDER_SAME_DAY' } }
-          },
-          include: { user: true },
-        },
-      },
-    });
-
-    let countToday = 0;
-    for (const cls of todayClasses) {
-      for (const booking of cls.bookings) {
-        if (booking.user.lineId) {
-          const dateStr = cls.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric', year: 'numeric' });
-          await sendTemplatedLineMessage(
-            booking.user.lineId,
-            "REMINDER_SAME_DAY",
-            {
-              userName: booking.user.name,
-              className: cls.name,
-              date: dateStr,
-              time: `${cls.startTime} - ${cls.endTime}`,
-              location: cls.locationName || "Date with Soul Love",
-              mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
-            },
-            {
-              bookingId: booking.id,
-              userId: booking.userId,
-              type: 'REMINDER_SAME_DAY',
-            }
-          );
-          countToday++;
-        }
-      }
-    }
+    const now = new Date();
+    const [threeDays, oneDay, sameDay] = await Promise.all([
+      sendReminderForOffset(3, "REMINDER_3_DAYS", "REMINDER_3_DAYS", now),
+      sendReminderForOffset(1, "REMINDER_1_DAY", "REMINDER_1_DAY", now),
+      sendReminderForOffset(0, "REMINDER_SAME_DAY", "REMINDER_SAME_DAY", now),
+    ]);
 
     return NextResponse.json({
       success: true,
-      message: `Sent ${countTwoDays} reminders for 2 days before, ${countTomorrow} tomorrow reminders and ${countToday} today reminders`,
+      timezone: TIME_ZONE,
+      scheduledTime: "06:00",
+      sent: { threeDays, oneDay, sameDay },
     });
   } catch (error) {
-    console.error('Error in cron job:', error);
-    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error in reminder cron job:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

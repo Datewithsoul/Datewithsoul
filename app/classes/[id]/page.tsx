@@ -175,24 +175,24 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
         </div>
 
         {/* Large Media Gallery / Carousel */}
-        <div className="w-full aspect-video md:aspect-[2/1] rounded-2xl overflow-hidden mb-12 bg-gray-100 relative group">
+        <div className="w-full aspect-video rounded-2xl overflow-hidden mb-12 bg-gray-100 relative group">
           {classEvent.media && classEvent.media.length > 0 ? (
             <Carousel opts={{ align: "start", loop: true }} className="w-full h-full">
               <CarouselContent className="h-full">
                 {classEvent.media.map((m) => (
                   <CarouselItem key={m.id} className="h-full pl-0 basis-full">
-                    <div className="h-full w-full bg-gray-900 flex items-center justify-center">
+                    <div className="w-full h-full bg-gray-900 flex items-center justify-center">
                       {m.type === "VIDEO" ? (
                         <video 
                           src={m.url} 
-                          className="w-full h-full object-contain"
+                          className="block w-full h-full object-cover"
                           controls 
                         />
                       ) : (
                         <img 
                           src={m.url} 
                           alt={classEvent.name}
-                          className="w-full h-full object-contain"
+                          className="block w-full h-full object-cover object-center"
                         />
                       )}
                     </div>
@@ -231,7 +231,34 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                 <p className="whitespace-pre-wrap leading-relaxed">{classEvent.description || "ไม่มีรายละเอียด"}</p>
               </div>
             </div>
-            
+
+            {/* Location */}
+            {(classEvent.locationName || classEvent.googleMapUrl) && (
+              <div className="pb-8 border-b border-gray-200 mb-8">
+                <h2 className="text-2xl font-semibold mb-5">สถานที่จัดคลาส</h2>
+                <div className="flex items-center gap-4 rounded-2xl border border-[#eadfca] bg-[#fff9e8] p-5">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#E51D53] text-white shadow-sm">
+                    <MapPin size={27} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-lg font-bold text-[#3d3229]">
+                      {classEvent.locationName || "สถานที่จัดคลาส"}
+                    </p>
+                    {classEvent.googleMapUrl && (
+                      <a
+                        href={classEvent.googleMapUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 inline-block font-semibold text-[#E51D53] underline underline-offset-4 hover:text-[#b9143f]"
+                      >
+                        เปิดลิงก์ Google Maps
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* What you'll learn */}
             {classEvent.learningOutcomes && classEvent.learningOutcomes.length > 0 && (
               <div className="pb-8 border-b border-gray-200 mb-8">

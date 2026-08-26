@@ -163,6 +163,28 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     ],
   },
   {
+    key: "REMINDER_3_DAYS",
+    title: "เตือนความจำก่อนเรียน 3 วัน (ส่งให้ลูกค้า)",
+    description: "ส่งอัตโนมัติล่วงหน้า 3 วันก่อนวันเรียน",
+    category: "CUSTOMER",
+    defaultContent: `แจ้งเตือนคลาสเรียนล่วงหน้า 3 วัน ✨
+คลาส: {{className}}
+วันที่: {{date}}
+เวลา: {{time}}
+สถานที่: {{location}}
+{{mapUrl}}
+
+เตรียมตัวให้พร้อม แล้วพบกันนะคะ!`,
+    variables: [
+      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
+      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
+      { name: "date", label: "วันที่เรียน", example: "20 สิงหาคม 2026" },
+      { name: "time", label: "เวลาเรียน", example: "10:00 - 12:00" },
+      { name: "location", label: "สถานที่เรียน", example: "Date with Soul Love" },
+      { name: "mapUrl", label: "ลิงก์แผนที่", example: "แผนที่: https://maps.google.com/..." },
+    ],
+  },
+  {
     key: "REMINDER_1_DAY",
     title: "เตือนความจำก่อนเรียน 1 วัน (ส่งให้ลูกค้า)",
     description: "ส่งอัตโนมัติล่วงหน้า 1 วันก่อนเวลาเริ่มเรียน",

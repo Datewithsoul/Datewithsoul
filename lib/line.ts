@@ -125,6 +125,11 @@ export async function sendTemplatedLineMessage(
 
   const success = await sendLineMessage(lineUserId, text);
 
+  // Only log successful sends so failed messages can be retried by cron.
+  if (!success) {
+    return false;
+  }
+
   // DB Logging
   try {
     const { prisma } = await import("@/lib/prisma");
@@ -152,7 +157,7 @@ export async function sendTemplatedLineMessage(
     console.warn("Could not log notification:", err);
   }
 
-  return success;
+  return true;
 }
 
 /**

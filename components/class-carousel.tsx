@@ -23,7 +23,7 @@ export default function ClassCarousel({ classId, classNameTitle, media }: ClassC
         <CarouselContent>
           {media.map((m) => (
             <CarouselItem key={m.id} className="relative cursor-pointer">
-              <Link href={`/classes/${classId}`} className="w-full block aspect-[4/3]">
+              <Link href={`/classes/${classId}`} className="w-full block aspect-[4/3] bg-gray-100">
                 {m.type === "VIDEO" ? (
                   <video 
                     src={m.url} 
@@ -33,7 +33,7 @@ export default function ClassCarousel({ classId, classNameTitle, media }: ClassC
                   <img 
                     src={m.url} 
                     alt={classNameTitle}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                   />
                 )}
               </Link>
