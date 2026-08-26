@@ -2,11 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, PlayCircle, Check, Heart, Globe, Calendar, Clock, User, Share, Share2, MapPin, Users, BookOpen, AlertCircle } from "lucide-react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ShareButton from "@/components/share-button";
 import ScheduleSelector from "./schedule-selector";
 import Navbar from "@/components/navbar";
 import AddToCartButton from "@/components/add-to-cart-button";
+import MediaGallery from "@/components/media-gallery";
 import { ClassEvent } from "@/app/generated/prisma";
 import type { Metadata } from "next";
 
@@ -174,45 +174,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           </div>
         </div>
 
-        {/* Large Media Gallery / Carousel */}
-        <div className="w-full aspect-video rounded-2xl overflow-hidden mb-12 bg-gray-100 relative group">
-          {classEvent.media && classEvent.media.length > 0 ? (
-            <Carousel opts={{ align: "start", loop: true }} className="w-full h-full">
-              <CarouselContent className="h-full">
-                {classEvent.media.map((m) => (
-                  <CarouselItem key={m.id} className="h-full pl-0 basis-full">
-                    <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                      {m.type === "VIDEO" ? (
-                        <video 
-                          src={m.url} 
-                          className="block w-full h-full object-cover"
-                          controls 
-                        />
-                      ) : (
-                        <img 
-                          src={m.url} 
-                          alt={classEvent.name}
-                          className="block w-full h-full object-cover object-center"
-                        />
-                      )}
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              {classEvent.media.length > 1 && (
-                <>
-                  <CarouselPrevious className="left-4 bg-white/80 hover:bg-white shadow-md border-none h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity text-black" />
-                  <CarouselNext className="right-4 bg-white/80 hover:bg-white shadow-md border-none h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity text-black" />
-                </>
-              )}
-            </Carousel>
-          ) : (
-            <div className="h-full w-full flex flex-col items-center justify-center text-gray-400">
-              <PlayCircle size={48} className="mb-2" />
-              <span className="font-bold">ไม่มีรูปภาพประกอบ</span>
-            </div>
-          )}
-        </div>
+        <MediaGallery media={classEvent.media} classNameTitle={classEvent.name} />
 
         {/* Main Content Split */}
         <div className="flex flex-col lg:flex-row gap-16">
