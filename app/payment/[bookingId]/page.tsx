@@ -10,6 +10,7 @@ import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
 import { SubmitButton } from "@/components/submit-button";
 import { uploadSlip } from "./actions";
+import { Upload } from "lucide-react";
 
 export default async function PaymentPage({ params, searchParams }: { params: Promise<{ bookingId: string }>, searchParams: Promise<{ error?: string }> }) {
   const { bookingId } = await params;
