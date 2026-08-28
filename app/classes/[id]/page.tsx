@@ -44,7 +44,7 @@ export async function generateMetadata({
     classEvent.description,
     "ดูรายละเอียดและจองคลาสกับ Date with Soul Love"
   );
-  const imageUrl = classEvent.media[0]?.url || `${siteUrl}/logo.jpg`;
+  const imageUrl = classEvent.media[0]?.url || `${siteUrl}/`;
   const pageUrl = `${siteUrl}/classes/${id}`;
 
   return {

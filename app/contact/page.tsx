@@ -4,7 +4,7 @@ import { Contact } from "@/components/contact";
 
 export const metadata = {
   title: "ติดต่อเรา | Date with Soul Love",
-  description: "ติดต่อ Date with Soul Love ผ่าน LINE, Instagram หรืออีเมล",
+  description: "ติดต่อ Date with Soul Love ผ่าน LINE Official Account",
 };
 
 export default function ContactPage() {

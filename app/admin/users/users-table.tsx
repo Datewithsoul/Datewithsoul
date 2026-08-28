@@ -50,6 +50,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   
   // form states
   const [name, setName] = useState("");
@@ -57,6 +58,10 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
   const [phone, setPhone] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const filteredUsers = roleFilter === "ALL"
+    ? initialUsers
+    : initialUsers.filter((user) => user.role === roleFilter);
 
   const handleAdd = async () => {
     if (!name) return toast.error("กรุณากรอกชื่อ");
@@ -109,19 +114,36 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4 border-b border-[#ddd4c8] px-5 py-4">
+      <div className="flex flex-col gap-4 border-b border-[#ddd4c8] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-[#3d3229]">รายชื่อทั้งหมด</h2>
-          <p className="mt-1 text-sm text-[#6a5d50]">{initialUsers.length.toLocaleString("th-TH")} คน</p>
+          <p className="mt-1 text-sm text-[#6a5d50]">
+            {filteredUsers.length.toLocaleString("th-TH")} จาก {initialUsers.length.toLocaleString("th-TH")} คน
+          </p>
         </div>
-        <Button onClick={() => {
-          setName("");
-          setRole("CUSTOMER");
-          setPhone("");
-          setIsAddOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" /> เพิ่มผู้ใช้
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Label htmlFor="role-filter" className="text-sm font-medium text-[#6a5d50]">
+            แสดงบทบาท
+          </Label>
+          <Select value={roleFilter} onValueChange={(value) => value && setRoleFilter(value as "ALL" | Role)}>
+            <SelectTrigger id="role-filter" className="w-full sm:w-36">
+              <SelectValue placeholder="ทุกบทบาท" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">ทั้งหมด</SelectItem>
+              <SelectItem value="ADMIN">Admin</SelectItem>
+              <SelectItem value="CUSTOMER">User</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => {
+            setName("");
+            setRole("CUSTOMER");
+            setPhone("");
+            setIsAddOpen(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" /> เพิ่มผู้ใช้
+          </Button>
+        </div>
       </div>
 
       <Table>
@@ -135,14 +157,14 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {initialUsers.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={5} className="px-5 py-10 text-center text-[#6a5d50]">
-                ยังไม่มีผู้ใช้งานในระบบ
+                {initialUsers.length === 0 ? "ยังไม่มีผู้ใช้งานในระบบ" : "ไม่พบผู้ใช้งานตามบทบาทที่เลือก"}
               </TableCell>
             </TableRow>
           ) : (
-            initialUsers.map((user) => (
+            filteredUsers.map((user) => (
               <TableRow key={user.id} className="border-[#eee8e0]">
                 <TableCell className="px-5 font-medium text-[#3d3229]">{user.name}</TableCell>
                 <TableCell>{user.phone || "—"}</TableCell>
