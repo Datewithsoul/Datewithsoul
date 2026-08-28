@@ -35,6 +35,9 @@ export default async function BookClassPage({
   }
 
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const classEndDate = classEvent.endDate ?? classEvent.date;
+  const isPastClass = classEndDate < today;
   const relatedClassEventsData = await prisma.classEvent.findMany({
     where: { 
       name: classEvent.name,
@@ -134,6 +137,7 @@ export default async function BookClassPage({
               classEventId={classEvent.id}
               pricePerSeat={classEvent.price}
               totalAvailableSeats={classEvent.totalSeats}
+              isPastClass={isPastClass}
               defaultName={dbUser?.name || ""}
               defaultEmail={user.email || ""}
             />

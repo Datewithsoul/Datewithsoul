@@ -15,6 +15,12 @@ export default function AddToCartButton({ classEvent, mediaUrl, className = "" }
   const { addToCart } = useCart();
 
   const handleAdd = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(classEvent.date) < today) {
+      toast.error("ไม่สามารถจองได้แล้ว", { description: "คลาสนี้ผ่านวันเรียนแล้ว" });
+      return;
+    }
     addToCart({
       classEventId: classEvent.id,
       className: classEvent.name,

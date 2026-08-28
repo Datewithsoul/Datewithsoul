@@ -8,6 +8,7 @@ interface BookingFormProps {
   classEventId: string;
   pricePerSeat: number;
   totalAvailableSeats: number;
+  isPastClass?: boolean;
   defaultName: string;
   defaultEmail: string;
 }
@@ -16,6 +17,7 @@ export default function BookingForm({
   classEventId, 
   pricePerSeat, 
   totalAvailableSeats, 
+  isPastClass = false,
   defaultName, 
   defaultEmail 
 }: BookingFormProps) {
@@ -34,7 +36,11 @@ export default function BookingForm({
         </div>
       </div>
 
-      {isFull && (
+      {isPastClass ? (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 font-semibold flex items-center gap-2">
+          คลาสนี้ผ่านวันเรียนแล้ว ไม่สามารถจองได้
+        </div>
+      ) : isFull && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 font-semibold flex items-center gap-2">
           ขออภัย คลาสเรียนนี้ที่นั่งเต็มแล้ว
         </div>
@@ -51,7 +57,7 @@ export default function BookingForm({
             name="name" 
             required
             defaultValue={defaultName}
-            disabled={isFull}
+            disabled={isFull || isPastClass}
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400"
             placeholder="ชื่อ-นามสกุล"
           />
@@ -82,7 +88,7 @@ export default function BookingForm({
             min="1"
             max={Math.max(1, totalAvailableSeats)}
             value={seats}
-            disabled={isFull}
+            disabled={isFull || isPastClass}
             onChange={(e) => {
               const val = parseInt(e.target.value);
               setSeats(isNaN(val) ? (e.target.value as any) : val);
@@ -104,17 +110,17 @@ export default function BookingForm({
           <textarea 
             id="note" 
             name="note" 
-            disabled={isFull}
+             disabled={isFull || isPastClass}
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400 min-h-[100px] resize-y"
             placeholder="เช่น แพ้อาหาร, ความต้องการพิเศษ..."
           />
         </div>
 
         <SubmitButton 
-          disabled={isFull || seats > totalAvailableSeats || !seats || seats < 1}
+          disabled={isFull || isPastClass || seats > totalAvailableSeats || !seats || seats < 1}
           className="mt-6 pop-btn-red text-white font-bold py-3.5 rounded-xl text-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isFull ? "ที่นั่งเต็มแล้ว" : "ยืนยันการจอง"}
+          {isPastClass ? "ไม่สามารถจองได้แล้ว" : isFull ? "ที่นั่งเต็มแล้ว" : "ยืนยันการจอง"}
         </SubmitButton>
       </form>
     </>

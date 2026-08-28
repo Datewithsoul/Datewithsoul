@@ -26,6 +26,13 @@ export async function submitBooking(formData: FormData) {
     throw new Error("Class event not found");
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const classEndDate = classEvent.endDate ?? classEvent.date;
+  if (classEndDate < today) {
+    redirectWithError(`/book/${classEventId}`, "คลาสนี้ผ่านวันเรียนแล้ว ไม่สามารถจองได้");
+  }
+
   if (classEvent.totalSeats < seats) {
     redirectWithError(`/book/${classEventId}`, `ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
   }

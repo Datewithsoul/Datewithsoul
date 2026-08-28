@@ -127,6 +127,11 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
     };
   });
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const classEndDate = classEvent.endDate ?? classEvent.date;
+  const isPastClass = classEndDate < today;
+
   return (
     <main className="min-h-screen bg-white text-[#222222] font-sans pb-24">
       <Navbar />
@@ -264,7 +269,12 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
               />
               
               <div className="flex flex-col gap-3 mb-4">
-                {classEvent.status === "COMPLETED" ? (
+                {isPastClass ? (
+                  <div className="w-full rounded-lg border border-[#e8c9c9] bg-[#fff5f5] px-4 py-3 text-center font-bold text-[#b42318]">
+                    ไม่สามารถจองได้แล้ว
+                    <span className="mt-1 block text-xs font-medium text-[#8f3b2c]">คลาสนี้ผ่านวันเรียนแล้ว</span>
+                  </div>
+                ) : classEvent.status === "COMPLETED" ? (
                   <button disabled className="w-full bg-gray-300 text-gray-500 font-bold py-3.5 rounded-lg text-lg cursor-not-allowed">
                     คอร์สนี้ปิดรับสมัครแล้ว
                   </button>
