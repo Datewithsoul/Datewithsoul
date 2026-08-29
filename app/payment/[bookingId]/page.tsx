@@ -20,6 +20,7 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
+      user: true,
       classEvent: true,
       payment: true,
     }
