@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Clock } from "lucide-react";
-import { cancelBooking } from "@/app/payment/[bookingId]/actions";
 import { useRouter } from "next/navigation";
 
 export default function PaymentTimer({ 
@@ -21,12 +20,9 @@ export default function PaymentTimer({
   const router = useRouter();
 
   const handleExpire = useCallback(async () => {
-    if (groupId) {
-      const { cancelGroupBooking } = await import("@/app/payment/group/[groupId]/actions");
-      await cancelGroupBooking(groupId);
-    } else if (bookingId) {
-      await cancelBooking(bookingId);
-    }
+    // Expiration is a server-side concern. The cron job (or the payment page
+    // server fallback) changes the status and sends LINE notifications.
+    // Refreshing here only lets the user see that authoritative status.
     onExpire?.();
     router.refresh();
   }, [bookingId, groupId, onExpire, router]);

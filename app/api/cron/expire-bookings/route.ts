@@ -4,6 +4,8 @@ import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 import { BookingStatus, PaymentStatus, BookingGroupStatus } from "@/app/generated/prisma";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +22,7 @@ export async function GET(request: Request) {
     // 1. Find expired single bookings
     const expiredBookings = await prisma.booking.findMany({
       where: {
-        createdAt: { lt: expirationThreshold },
+        createdAt: { lte: expirationThreshold },
         status: { in: ["PENDING_PAYMENT"] },
         bookingGroupId: null // single bookings
       },
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
     // 2. Find expired group bookings
     const expiredGroups = await prisma.bookingGroup.findMany({
       where: {
-        createdAt: { lt: expirationThreshold },
+        createdAt: { lte: expirationThreshold },
          status: { in: [BookingGroupStatus.PENDING_PAYMENT] }
       },
       include: {

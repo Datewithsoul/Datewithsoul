@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/server";
 import { Upload } from "lucide-react";
 import { uploadGroupSlip } from "./actions";
 import { BookingGroupStatus } from "@/app/generated/prisma";
+import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
 export default async function GroupPaymentPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = await params;
@@ -70,6 +71,14 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
         });
       }
     });
+    const className = bookingGroup.bookings.map((b) => b.classEvent.name).join(", ");
+    if (bookingGroup.user.lineId) {
+      await sendTemplatedLineMessage(bookingGroup.user.lineId, "BOOKING_EXPIRED_USER", {
+        userName: bookingGroup.user.name,
+        className,
+      }, { userId: bookingGroup.userId, type: "BOOKING_EXPIRED" });
+    }
+    await notifyAdminsTemplated("ADMIN_BOOKING_EXPIRED", { userName: bookingGroup.user.name, className });
 
     bookingGroup.status = BookingGroupStatus.CANCELLED;
   }

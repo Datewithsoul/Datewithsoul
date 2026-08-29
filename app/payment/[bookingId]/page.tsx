@@ -8,6 +8,7 @@ import PaymentTimer from "@/components/payment-timer";
 import { SubmitButton } from "@/components/submit-button";
 import { uploadSlip } from "./actions";
 import { Upload } from "lucide-react";
+import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
 export default async function PaymentPage({ params, searchParams }: { params: Promise<{ bookingId: string }>, searchParams: Promise<{ error?: string }> }) {
   const { bookingId } = await params;
@@ -58,6 +59,16 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
           data: { status: "REJECTED" },
         });
       }
+    });
+    if (booking.user.lineId) {
+      await sendTemplatedLineMessage(booking.user.lineId, "BOOKING_EXPIRED_USER", {
+        userName: booking.user.name,
+        className: booking.classEvent.name,
+      }, { userId: booking.userId, bookingId: booking.id, type: "BOOKING_EXPIRED" });
+    }
+    await notifyAdminsTemplated("ADMIN_BOOKING_EXPIRED", {
+      userName: booking.user.name,
+      className: booking.classEvent.name,
     });
     booking.status = "CANCELLED";
   }
