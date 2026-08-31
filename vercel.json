@@ -5,10 +5,6 @@
       "schedule": "0 23 * * *"
     },
     {
-      "path": "/api/cron/expire-bookings",
-      "schedule": "*/5 * * * *"
-    },
-    {
       "path": "/api/cron/cleanup-slips",
       "schedule": "30 23 * * *"
     }
