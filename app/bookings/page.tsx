@@ -133,7 +133,7 @@ export default async function BookingsPage() {
                             <div className="flex items-center gap-2">
                               <CancelBookingButton bookingId={booking.id} />
                               <Link 
-                                href={`/payment/${booking.id}`}
+                                href={booking.bookingGroupId ? `/payment/group/${booking.bookingGroupId}` : `/payment/${booking.id}`}
                                 className="bg-[#222222] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors"
                               >
                                 ชำระเงิน

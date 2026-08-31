@@ -33,8 +33,13 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
   if (!user) {
     redirect("/login");
   }
+
   if (user.id !== booking.userId) {
     redirect("/bookings");
+  }
+
+  if (booking.bookingGroupId) {
+    redirect(`/payment/group/${booking.bookingGroupId}`);
   }
 
   const now = new Date();
