@@ -19,7 +19,7 @@ export default async function AdminTemplatesPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/notifications"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#3d3229] bg-white border border-[#ddd4c8] rounded-md hover:bg-[#ece7e1] transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-[#3d3229] bg-white border-2 border-[#3d3229] rounded-lg shadow-[2px_2px_0_0_#3d3229] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#3d3229] active:translate-y-0 active:shadow-[0_0_0_0_#3d3229] transition-all"
           >
             <History className="h-3.5 w-3.5" />
             ดูประวัติการส่งแจ้งเตือน
@@ -28,19 +28,19 @@ export default async function AdminTemplatesPage() {
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex border-b border-[#ddd4c8] gap-4 text-sm">
+      <div className="flex border-b-4 border-[#3d3229] gap-4 text-sm">
         <Link
           href="/admin/notifications"
-          className="pb-2.5 text-[#6a5d50] hover:text-[#3d3229] flex items-center gap-1.5 transition-colors"
+          className="pb-2.5 text-[#6a5d50] hover:text-[#3d3229] font-bold flex items-center gap-1.5 transition-colors"
         >
           <History className="h-4 w-4" />
           ประวัติการแจ้งเตือน (Logs)
         </Link>
         <Link
           href="/admin/notifications/templates"
-          className="pb-2.5 border-b-2 border-[#3d3229] font-bold text-[#3d3229] flex items-center gap-1.5"
+          className="pb-2.5 border-b-4 border-[#3d3229] font-black text-[#3d3229] flex items-center gap-1.5 translate-y-[4px]"
         >
-          <MessageSquare className="h-4 w-4 text-[#8a6d1f]" />
+          <MessageSquare className="h-4 w-4 text-[#e51d53]" />
           เทมเพลตข้อความ LINE (Message Templates)
         </Link>
       </div>

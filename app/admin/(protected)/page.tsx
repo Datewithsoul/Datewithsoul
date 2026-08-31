@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ArrowUpRight, Plus, Calendar, CheckCircle, Clock, XCircle, AlertCircle, Megaphone, Banknote, FileText } from "lucide-react";
+import { ArrowUpRight, Plus, Calendar, CheckCircle, Clock, XCircle, AlertCircle, Megaphone, Banknote, FileText, LineChart } from "lucide-react";
 import Link from "next/link";
 import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
@@ -176,6 +176,9 @@ export default async function AdminDashboard() {
           </Link>
           <Link href="/admin/classes" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
             <Calendar className="h-4 w-4" /> จัดการตารางเรียน
+          </Link>
+          <Link href="/admin/reports" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+            <LineChart className="h-4 w-4 text-[#8f3b2c]" /> รายงานและกราฟวิเคราะห์ (Analytics)
           </Link>
           <button disabled className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 px-4 py-2 rounded-md text-sm font-medium text-gray-400 cursor-not-allowed">
             <Megaphone className="h-4 w-4" /> ส่งประกาศถึงลูกค้า
