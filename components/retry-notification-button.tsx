@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { retryNotification } from "@/app/admin/notifications/actions";
+import { retryNotification } from "@/app/admin/(protected)/notifications/actions";
 
 export function RetryNotificationButton({ notificationId }: { notificationId: string }) {
   const [isPending, setIsPending] = useState(false);

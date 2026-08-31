@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { changeBookingClass } from "@/app/admin/bookings/actions";
+import { changeBookingClass } from "@/app/admin/(protected)/bookings/actions";
 
 type ClassEventOption = {
   id: string;

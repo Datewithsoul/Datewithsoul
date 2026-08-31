@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "./ui/button";
-import { uploadMediaAction } from "@/app/admin/classes/actions";
+import { uploadMediaAction } from "@/app/admin/(protected)/classes/actions";
 
 export type MediaItem = {
   id: string;

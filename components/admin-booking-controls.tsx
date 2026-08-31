@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { confirmPayment, updateBookingStatus } from "@/app/admin/bookings/actions";
+import { confirmPayment, updateBookingStatus } from "@/app/admin/(protected)/bookings/actions";
 import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-status";
 import type { AppBookingStatus } from "@/lib/booking-status";
 import { format } from "date-fns";
