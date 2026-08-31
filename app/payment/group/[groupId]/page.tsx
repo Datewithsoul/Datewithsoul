@@ -9,8 +9,11 @@ import { uploadGroupSlip } from "./actions";
 import { BookingGroupStatus } from "@/app/generated/prisma";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
-export default async function GroupPaymentPage({ params }: { params: Promise<{ groupId: string }> }) {
+const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
+
+export default async function GroupPaymentPage({ params, searchParams }: { params: Promise<{ groupId: string }>, searchParams: Promise<{ error?: string }> }) {
   const { groupId } = await params;
+  const { error } = await searchParams;
   
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +98,15 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
           <h1 className="text-3xl font-bold tracking-tight mb-2">ชำระเงิน (รายการกลุ่ม)</h1>
           <p className="text-gray-500">รหัสการจอง: {bookingGroup.id.split('-')[0].toUpperCase()}</p>
         </div>
+
+        {error && (
+          <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+            <p>{error}</p>
+            <a href={LINE_OA_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-semibold underline">
+              ติดต่อแอดมินผ่าน LINE OA
+            </a>
+          </div>
+        )}
 
         {bookingGroup.status === BookingGroupStatus.CANCELLED ? (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">

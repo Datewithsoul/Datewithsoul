@@ -5,21 +5,25 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { BookingGroupStatus } from "@/app/generated/prisma";
 
+function redirectWithError(groupId: string, message: string): never {
+  redirect(`/payment/group/${groupId}?error=${encodeURIComponent(message)}`);
+}
+
 export async function uploadGroupSlip(formData: FormData) {
   const groupId = formData.get("groupId") as string;
   const slipFile = formData.get("slip") as File;
   
   if (!slipFile || slipFile.size === 0) {
-    throw new Error("กรุณาแนบสลิปโอนเงิน");
+    redirectWithError(groupId, "กรุณาแนบสลิปโอนเงิน");
   }
 
   if (slipFile.size > 5 * 1024 * 1024) {
-    throw new Error("ขนาดไฟล์เกิน 5MB");
+    redirectWithError(groupId, "ขนาดไฟล์เกิน 5MB");
   }
 
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowedTypes.includes(slipFile.type)) {
-    throw new Error("รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, WEBP) เท่านั้น");
+    redirectWithError(groupId, "รองรับเฉพาะไฟล์รูปภาพ JPEG, PNG หรือ WEBP เท่านั้น");
   }
 
   // Generate a unique filename
@@ -51,22 +55,28 @@ export async function uploadGroupSlip(formData: FormData) {
     throw new Error("Unauthorized");
   }
   
-  // Upload to Supabase Storage
-  const { error: uploadError } = await supabase.storage
-    .from('slips')
-    .upload(filePath, slipFile, {
+  // Use the server key so customers do not need direct Storage insert policy access.
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY! || process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('class-media')
+    .upload(filePath, Buffer.from(await slipFile.arrayBuffer()), {
       contentType: slipFile.type,
-      upsert: true
+      upsert: false
     });
 
   if (uploadError) {
     console.error("Upload error:", uploadError);
-    throw new Error("ไม่สามารถอัพโหลดไฟล์ได้");
+    redirectWithError(groupId, "ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง");
   }
 
   // Get public URL
-  const { data: { publicUrl } } = supabase.storage
-    .from('slips')
+  const { data: { publicUrl } } = supabaseAdmin.storage
+    .from('class-media')
     .getPublicUrl(filePath);
 
   // Update payment and booking statuses in transaction

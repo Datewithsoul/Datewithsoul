@@ -10,6 +10,8 @@ import { uploadSlip } from "./actions";
 import { Upload } from "lucide-react";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
+const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
+
 export default async function PaymentPage({ params, searchParams }: { params: Promise<{ bookingId: string }>, searchParams: Promise<{ error?: string }> }) {
   const { bookingId } = await params;
   const { error } = await searchParams;
@@ -92,6 +94,24 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
         {error === 'expired' && (
           <div className="mb-6 p-4 bg-red-50 text-red-800 rounded-xl border border-red-200">
             รายการจองนี้หมดเวลาชำระเงินและถูกยกเลิกแล้ว กรุณาทำรายการจองใหม่
+          </div>
+        )}
+
+        {error === 'upload_failed' && (
+          <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+            <p>ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง</p>
+            <a href={LINE_OA_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-semibold underline">
+              หากยังมีปัญหา ติดต่อแอดมินผ่าน LINE OA
+            </a>
+          </div>
+        )}
+
+        {error && error !== 'expired' && error !== 'upload_failed' && (
+          <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+            <p>{error}</p>
+            <a href={LINE_OA_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-semibold underline">
+              ติดต่อแอดมินผ่าน LINE OA
+            </a>
           </div>
         )}
 
