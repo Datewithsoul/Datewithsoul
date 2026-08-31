@@ -4,7 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
 import { createClient } from "@/utils/supabase/server";
-import { Upload } from "lucide-react";
+import { SlipUploadForm } from "@/components/slip-upload-form";
 import { uploadGroupSlip } from "./actions";
 import { BookingGroupStatus } from "@/app/generated/prisma";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
@@ -44,9 +44,6 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
   const now = new Date();
   const expiryTime = new Date(bookingGroup.createdAt.getTime() + 10 * 60 * 1000);
   const isExpired = now > expiryTime;
-
-  if (!isExpired && bookingGroup.status === "PENDING_PAYMENT") {
-  }
 
   // Handle expired status
   if (isExpired && bookingGroup.status === "PENDING_PAYMENT") {
@@ -96,7 +93,7 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
       <section className="pt-12 px-6 max-w-4xl mx-auto">
         <div className="mb-8 text-center border-b border-gray-200 pb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">ชำระเงิน (รายการกลุ่ม)</h1>
-          <p className="text-gray-500">รหัสการจอง: {bookingGroup.id.split('-')[0].toUpperCase()}</p>
+          <p className="text-gray-500">รหัสการจอง: {bookingGroup.id.split("-")[0].toUpperCase()}</p>
         </div>
 
         {error && (
@@ -124,7 +121,7 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
         ) : (bookingGroup.status === BookingGroupStatus.PAYMENT_REVIEW || bookingGroup.status === BookingGroupStatus.CONFIRMED) ? (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
             <div className="text-green-500 mb-6 flex justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
             <h2 className="text-2xl font-bold mb-3">
               {bookingGroup.status === BookingGroupStatus.CONFIRMED ? "ชำระเงินสำเร็จ" : "กำลังตรวจสอบการชำระเงิน"}
@@ -185,31 +182,9 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
                   </div>
                 </div>
 
-                <form action={uploadGroupSlip} className="flex flex-col gap-4">
-                  <input type="hidden" name="groupId" value={bookingGroup.id} />
-                  
-                  <div className="flex flex-col gap-2">
-                    <label className="font-semibold text-sm text-gray-700">แนบสลิปโอนเงิน</label>
-                    <div className="relative">
-                      <input 
-                        type="file" 
-                        name="slip" 
-                        accept="image/*"
-                        required
-                        className="w-full p-3 pl-10 border border-gray-300 rounded-lg bg-white file:hidden text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-black cursor-pointer hover:bg-gray-50 transition-colors"
-                      />
-                      <Upload className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB</p>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    className="mt-4 bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors w-full"
-                  >
-                    แจ้งชำระเงิน
-                  </button>
-                </form>
+                <div className="mt-4">
+                  <SlipUploadForm id={bookingGroup.id} type="group" action={uploadGroupSlip} />
+                </div>
               </div>
             </div>
           </div>

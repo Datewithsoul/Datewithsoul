@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -50,10 +50,7 @@ export async function GET(request: Request) {
     if (!profile.userId) throw new Error('Failed to get LINE profile')
 
     // 3. Sync with Supabase (Bypass Email requirement)
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SECRET_KEY!
-    )
+    const supabaseAdmin = createAdminClient()
 
     const dummyEmail = `${profile.userId.toLowerCase()}@line.datewithsoul.local`
     

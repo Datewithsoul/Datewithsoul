@@ -101,7 +101,7 @@ export default async function AdminPayments(props: {
             <TableBody>
               {bookings.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="px-5 py-10 text-center text-[#6a5d50]">
+                  <TableCell colSpan={6} className="px-5 py-10 text-center text-[#6a5d50]">
                     ไม่มีรายการรอตรวจสอบการชำระเงินในขณะนี้
                   </TableCell>
                 </TableRow>

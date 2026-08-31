@@ -56,11 +56,8 @@ export async function uploadGroupSlip(formData: FormData) {
   }
   
   // Use the server key so customers do not need direct Storage insert policy access.
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY! || process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const supabaseAdmin = createAdminClient();
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('class-media')

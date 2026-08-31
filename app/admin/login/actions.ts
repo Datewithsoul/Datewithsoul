@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { prisma } from "@/lib/prisma";
 
 export async function adminLogin(formData: FormData) {
@@ -30,10 +30,7 @@ export async function adminLogin(formData: FormData) {
     
     if (adminCount === 0) {
       try {
-        const supabaseAdmin = createSupabaseClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SECRET_KEY! || process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        const supabaseAdmin = createAdminClient();
         
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,

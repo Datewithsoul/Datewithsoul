@@ -1,10 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "./admin";
 
 export async function uploadMedia(file: File, path: string): Promise<string | null> {
-  const supabase = createClient(
-    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
+  const supabase = createAdminClient();
 
   const buffer = Buffer.from(await file.arrayBuffer());
 

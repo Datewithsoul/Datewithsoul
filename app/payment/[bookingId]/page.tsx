@@ -5,9 +5,8 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
-import { SubmitButton } from "@/components/submit-button";
+import { SlipUploadForm } from "@/components/slip-upload-form";
 import { uploadSlip } from "./actions";
-import { Upload } from "lucide-react";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
@@ -88,16 +87,16 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
       <section className="pt-12 px-6 max-w-4xl mx-auto">
         <div className="mb-8 text-center border-b border-gray-200 pb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">ชำระเงิน</h1>
-          <p className="text-gray-500">รหัสการจอง: {booking.id.split('-')[0].toUpperCase()}</p>
+          <p className="text-gray-500">รหัสการจอง: {booking.id.split("-")[0].toUpperCase()}</p>
         </div>
 
-        {error === 'expired' && (
+        {error === "expired" && (
           <div className="mb-6 p-4 bg-red-50 text-red-800 rounded-xl border border-red-200">
             รายการจองนี้หมดเวลาชำระเงินและถูกยกเลิกแล้ว กรุณาทำรายการจองใหม่
           </div>
         )}
 
-        {error === 'upload_failed' && (
+        {error === "upload_failed" && (
           <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
             <p>ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง</p>
             <a href={LINE_OA_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-semibold underline">
@@ -106,7 +105,7 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
           </div>
         )}
 
-        {error && error !== 'expired' && error !== 'upload_failed' && (
+        {error && error !== "expired" && error !== "upload_failed" && (
           <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
             <p>{error}</p>
             <a href={LINE_OA_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block font-semibold underline">
@@ -204,7 +203,7 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
                   <div>
                     <div className="text-gray-500 mb-1">วันที่ / เวลา</div>
                     <div className="font-semibold">
-                      {booking.classEvent.date.toLocaleDateString('th-TH', { month: 'long', day: 'numeric' })} · {booking.classEvent.startTime} - {booking.classEvent.endTime}
+                      {booking.classEvent.date.toLocaleDateString("th-TH", { month: "long", day: "numeric" })} · {booking.classEvent.startTime} - {booking.classEvent.endTime}
                     </div>
                   </div>
                   <div className="flex justify-between pt-3 border-t border-gray-100 mt-1">
@@ -216,29 +215,9 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
 
               <div className="bg-white border border-gray-200 rounded-2xl p-8">
                 <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <Upload size={20} /> ส่งหลักฐานการโอนเงิน
+                  ส่งหลักฐานการโอนเงิน
                 </h2>
-                <form action={uploadSlip} className="flex flex-col gap-5">
-                  <input type="hidden" name="bookingId" value={booking.id} />
-                  
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="slipImage" className="font-semibold text-sm text-gray-700">อัปโหลดรูปสลิป <span className="text-red-500">*</span></label>
-                    <input 
-                      type="file" 
-                      id="slipImage" 
-                      name="slipImage" 
-                      accept="image/*"
-                      required
-                      className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
-                    />
-                  </div>
-                  
-                  <SubmitButton 
-                    className="mt-2 pop-btn-red text-white py-3 rounded-lg font-bold transition-colors w-full"
-                  >
-                    แจ้งชำระเงิน
-                  </SubmitButton>
-                </form>
+                <SlipUploadForm id={booking.id} type="booking" action={uploadSlip} />
               </div>
 
             </div>

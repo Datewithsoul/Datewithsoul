@@ -97,11 +97,8 @@ export async function uploadSlip(formData: FormData) {
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
   const filePath = `slips/${fileName}`;
 
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const supabaseAdmin = createAdminClient();
 
   const buffer = await slipImage.arrayBuffer();
 

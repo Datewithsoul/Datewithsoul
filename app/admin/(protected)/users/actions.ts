@@ -31,7 +31,7 @@ export async function deleteUser(userId: string) {
   }
 }
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function addUser(data: { name: string; role: "ADMIN" | "CUSTOMER"; phone?: string; username?: string; password?: string }) {
   await requireAdmin();
@@ -40,10 +40,7 @@ export async function addUser(data: { name: string; role: "ADMIN" | "CUSTOMER"; 
 
     // If username and password are provided, we should create a Supabase Auth user
     if (data.username && data.password) {
-      const supabaseAdmin = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SECRET_KEY! || process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
+      const supabaseAdmin = createAdminClient();
 
       const dummyEmail = data.username.includes("@") ? data.username : `${data.username}@admin.local`.toLowerCase();
 
