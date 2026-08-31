@@ -105,6 +105,8 @@ export async function GET(request: Request) {
         });
 
         for (const b of group.bookings) {
+          if (b.status !== BookingStatus.PENDING_PAYMENT) continue;
+
           await tx.booking.update({
             where: { id: b.id },
             data: { status: BookingStatus.CANCELLED }

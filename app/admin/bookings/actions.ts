@@ -32,6 +32,22 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
       data: { status },
     });
 
+    if (booking.bookingGroupId) {
+      await tx.bookingGroup.update({
+        where: { id: booking.bookingGroupId },
+        data: { status: status as any },
+      });
+      const groupPayment = await tx.payment.findUnique({
+        where: { bookingGroupId: booking.bookingGroupId },
+      });
+      if (groupPayment) {
+        await tx.payment.update({
+          where: { id: groupPayment.id },
+          data: { status: paymentStatusForBooking(status) },
+        });
+      }
+    }
+
     const paymentStatus = paymentStatusForBooking(status);
      if (booking.payment) {
       const prevPaymentStatus = booking.payment.status;

@@ -54,6 +54,8 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
       if (updatedGroup.count === 0) return;
       
       for (const booking of bookingGroup.bookings) {
+        if (booking.status !== "PENDING_PAYMENT") continue;
+
         await tx.booking.update({
           where: { id: booking.id },
           data: { status: "CANCELLED" }
