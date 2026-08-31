@@ -23,7 +23,8 @@ export default async function GroupPaymentPage({ params }: { params: Promise<{ g
           classEvent: true
         }
       },
-      payment: true
+      payment: true,
+      user: true
     }
   });
 
