@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -7,19 +8,28 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  // If not logged in, render just the children (login page) without sidebar
+  // If not logged in
   if (!user) {
-    return <>{children}</>;
+    if (pathname === "/admin/login") {
+      return <>{children}</>;
+    }
+    redirect("/admin/login");
   }
   
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   
-  // If not admin, render just the children so login page can show error
+  // If not admin
   if (dbUser?.role !== "ADMIN") {
-    return <>{children}</>;
+    if (pathname === "/admin/login") {
+      return <>{children}</>;
+    }
+    redirect("/admin/login?error=Unauthorized");
   }
 
   return (
