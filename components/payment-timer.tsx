@@ -15,14 +15,12 @@ export default function PaymentTimer({
   groupId?: string;
   onExpire?: () => void;
 }) {
-  const [timeLeft, setTimeLeft] = useState<number>(() => Math.max(0, Math.floor((new Date(createdAt).getTime() + 10 * 60 * 1000 - Date.now()) / 1000)));
+  // Use a stable initial value for SSR to prevent hydration errors.
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const router = useRouter();
 
   const handleExpire = useCallback(async () => {
-    // Expiration is a server-side concern. The cron job (or the payment page
-    // server fallback) changes the status and sends LINE notifications.
-    // Refreshing here only lets the user see that authoritative status.
     onExpire?.();
     router.refresh();
   }, [bookingId, groupId, onExpire, router]);
@@ -35,6 +33,15 @@ export default function PaymentTimer({
       const diff = expiryTime - now;
       return Math.max(0, Math.floor(diff / 1000));
     };
+
+    // Set initial time immediately on mount
+    const initialRemaining = calculateTimeLeft();
+    setTimeLeft(initialRemaining);
+    if (initialRemaining <= 0 && !isExpired) {
+      setIsExpired(true);
+      handleExpire();
+      return;
+    }
 
     const timer = setInterval(() => {
       const remaining = calculateTimeLeft();
@@ -52,6 +59,20 @@ export default function PaymentTimer({
     return () => clearInterval(timer);
   }, [createdAt, handleExpire, isExpired]);
 
+  // While rendering on server or before client hydration, don't show the timer 
+  // (or show a skeleton) to avoid structural mismatches.
+  if (timeLeft === null) {
+    return (
+      <div className="flex flex-col items-center p-4 rounded-xl border-2 bg-[#FFEB3B]/20 border-[#FFEB3B] text-[#5D4037] animate-pulse">
+        <span className="text-sm font-bold mb-1">กรุณาชำระเงินภายใน</span>
+        <div className="flex items-center gap-2 text-3xl font-black">
+          <Clock size={28} />
+          <span>--:--</span>
+        </div>
+      </div>
+    );
+  }
+
   if (isExpired || timeLeft <= 0) {
     return (
       <div className="flex items-center gap-2 text-[#F44336] font-bold text-lg bg-[#F44336]/10 p-4 rounded-xl border border-[#F44336]/20">
@@ -65,7 +86,7 @@ export default function PaymentTimer({
   const seconds = timeLeft % 60;
 
   return (
-    <div className={`flex flex-col items-center p-4 rounded-xl border-2 ${timeLeft < 60 ? 'bg-red-50 border-red-500 text-red-600 animate-pulse' : 'bg-[#FFEB3B]/20 border-[#FFEB3B] text-[#5D4037]'}`}>
+    <div className={`flex flex-col items-center p-4 rounded-xl border-2 transition-colors ${timeLeft < 60 ? 'bg-red-50 border-red-500 text-red-600 animate-pulse' : 'bg-[#FFEB3B]/20 border-[#FFEB3B] text-[#5D4037]'}`}>
       <span className="text-sm font-bold mb-1">กรุณาชำระเงินภายใน</span>
       <div className="flex items-center gap-2 text-3xl font-black tabular-nums">
         <Clock size={28} />
