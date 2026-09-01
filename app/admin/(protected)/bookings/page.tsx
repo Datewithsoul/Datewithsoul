@@ -13,9 +13,9 @@ import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
 import { AdminBookingFilters } from "@/components/admin-booking-filters";
 import { AdminBookingDialog } from "@/components/admin-booking-dialog";
-import { AdminCreateBookingDialog } from "@/components/admin-create-booking-dialog";
 import { BookingStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminBookings(props: {
   searchParams: Promise<{ q?: string; status?: string }>;
@@ -77,7 +77,13 @@ export default async function AdminBookings(props: {
       <AdminPageHeader
         title="รายการจอง"
         description="ดูสลิปจากลูกค้า ตรวจสอบว่าชำระเงินจริง แล้วยืนยันเป็นชำระเงินแล้ว หรือเปลี่ยนสถานะได้เอง"
-        action={<AdminCreateBookingDialog users={users} classEvents={classEvents} />}
+        action={
+          <Link href="/admin/bookings/create">
+            <Button className="admin-btn-primary h-9 px-3.5 text-sm gap-2">
+              <span>+ สร้างการจองให้ลูกค้า</span>
+            </Button>
+          </Link>
+        }
       />
 
       <section className="border border-[#ddd4c8] bg-white shadow-sm">

@@ -273,22 +273,48 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
 }
 export async function adminCreateBooking(formData: FormData) {
   const admin = await requireAdmin();
-  const userId = formData.get("userId") as string;
+  
+  // User selection / creation
+  let userId = formData.get("userId") as string | null;
+  const newCustomerName = formData.get("customerName") as string | null;
+  const newCustomerPhone = formData.get("customerPhone") as string | null;
+  
   const classEventId = formData.get("classEventId") as string;
   const seatsStr = formData.get("seats") as string;
   const seats = parseInt(seatsStr, 10);
   const note = formData.get("note") as string;
   const markAsPaid = formData.get("markAsPaid") === "on";
 
-  if (!userId || !classEventId || isNaN(seats) || seats <= 0) {
-    return { success: false, error: "ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง" };
+  if (!classEventId || isNaN(seats) || seats <= 0) {
+    return { success: false, error: "ข้อมูลการจองไม่ครบถ้วนหรือไม่ถูกต้อง" };
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  let user = null;
+
+  if (userId) {
+    user = await prisma.user.findUnique({ where: { id: userId } });
+  } else if (newCustomerName) {
+    if (newCustomerPhone) {
+      user = await prisma.user.findFirst({ where: { phone: newCustomerPhone } });
+    }
+    if (!user) {
+       user = await prisma.user.create({
+         data: {
+           name: newCustomerName,
+           phone: newCustomerPhone || null,
+         }
+       });
+    }
+  }
+
+  if (!user) {
+    return { success: false, error: "กรุณาเลือกลูกค้า หรือระบุชื่อลูกค้าใหม่" };
+  }
+
   const classEvent = await prisma.classEvent.findUnique({ where: { id: classEventId } });
 
-  if (!user || !classEvent) {
-    return { success: false, error: "ไม่พบผู้ใช้หรือคอร์สเรียน" };
+  if (!classEvent) {
+    return { success: false, error: "ไม่พบข้อมูลคอร์สเรียน" };
   }
 
   if (classEvent.totalSeats < seats) {
@@ -305,7 +331,7 @@ export async function adminCreateBooking(formData: FormData) {
 
     const b = await tx.booking.create({
       data: {
-        userId,
+        userId: user!.id,
         classEventId,
         seats,
         totalPrice,
