@@ -271,3 +271,105 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
   revalidatePath("/admin");
   return { success: true };
 }
+export async function adminCreateBooking(formData: FormData) {
+  const admin = await requireAdmin();
+  const userId = formData.get("userId") as string;
+  const classEventId = formData.get("classEventId") as string;
+  const seatsStr = formData.get("seats") as string;
+  const seats = parseInt(seatsStr, 10);
+  const note = formData.get("note") as string;
+  const markAsPaid = formData.get("markAsPaid") === "on";
+
+  if (!userId || !classEventId || isNaN(seats) || seats <= 0) {
+    return { success: false, error: "ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const classEvent = await prisma.classEvent.findUnique({ where: { id: classEventId } });
+
+  if (!user || !classEvent) {
+    return { success: false, error: "ไม่พบผู้ใช้หรือคอร์สเรียน" };
+  }
+
+  if (classEvent.totalSeats < seats) {
+    return { success: false, error: `ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)` };
+  }
+
+  const totalPrice = classEvent.price * seats;
+
+  const booking = await prisma.$transaction(async (tx) => {
+    await tx.classEvent.update({
+      where: { id: classEventId },
+      data: { totalSeats: { decrement: seats } },
+    });
+
+    const b = await tx.booking.create({
+      data: {
+        userId,
+        classEventId,
+        seats,
+        totalPrice,
+        note,
+        status: markAsPaid ? BookingStatus.CONFIRMED : BookingStatus.PENDING_PAYMENT,
+      },
+    });
+
+    await tx.payment.create({
+      data: {
+        bookingId: b.id,
+        status: markAsPaid ? PaymentStatus.VERIFIED : PaymentStatus.UNPAID,
+      },
+    });
+
+    return b;
+  });
+
+  if (user.lineId) {
+    const formattedDate = classEvent.date.toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    if (markAsPaid) {
+      await sendTemplatedLineMessage(
+        user.lineId,
+        "PAYMENT_VERIFIED_USER",
+        {
+          userName: user.name,
+          className: classEvent.name,
+          date: formattedDate,
+          time: `${classEvent.startTime} - ${classEvent.endTime}`,
+          location: classEvent.locationName || "Date with Soul Love",
+          mapUrl: classEvent.googleMapUrl ? `แผนที่: ${classEvent.googleMapUrl}` : "",
+          seats: seats,
+        },
+        {
+          userId: user.id,
+          bookingId: booking.id,
+          type: "PAYMENT_VERIFIED",
+        }
+      );
+    } else {
+      await sendTemplatedLineMessage(
+        user.lineId,
+        "BOOKING_CREATED_USER",
+        {
+          userName: user.name,
+          className: classEvent.name,
+          seats: seats,
+          totalPrice: totalPrice.toLocaleString("th-TH"),
+        },
+        {
+          userId: user.id,
+          bookingId: booking.id,
+          type: "BOOKING_CREATED",
+        }
+      );
+    }
+  }
+
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  return { success: true };
+}

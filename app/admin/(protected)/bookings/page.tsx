@@ -13,6 +13,7 @@ import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
 import { AdminBookingFilters } from "@/components/admin-booking-filters";
 import { AdminBookingDialog } from "@/components/admin-booking-dialog";
+import { AdminCreateBookingDialog } from "@/components/admin-create-booking-dialog";
 import { BookingStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
 
@@ -37,7 +38,7 @@ export default async function AdminBookings(props: {
     whereCondition.status = status as BookingStatus;
   }
 
-  const [bookings, classEvents] = await Promise.all([
+  const [bookings, classEvents, users] = await Promise.all([
     prisma.booking.findMany({
       where: whereCondition,
       include: {
@@ -65,6 +66,10 @@ export default async function AdminBookings(props: {
         totalSeats: true,
       },
     }),
+    prisma.user.findMany({
+      select: { id: true, name: true, phone: true, email: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return (
@@ -72,6 +77,7 @@ export default async function AdminBookings(props: {
       <AdminPageHeader
         title="รายการจอง"
         description="ดูสลิปจากลูกค้า ตรวจสอบว่าชำระเงินจริง แล้วยืนยันเป็นชำระเงินแล้ว หรือเปลี่ยนสถานะได้เอง"
+        action={<AdminCreateBookingDialog users={users} classEvents={classEvents} />}
       />
 
       <section className="border border-[#ddd4c8] bg-white shadow-sm">

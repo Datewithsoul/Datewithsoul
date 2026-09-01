@@ -46,19 +46,6 @@ export async function submitBooking(formData: FormData) {
     redirectWithError("/login", "กรุณาเข้าสู่ระบบก่อนทำการจอง");
   }
 
-  // Prevent duplicate active bookings for the same class
-  const existingBooking = await prisma.booking.findFirst({
-    where: {
-      userId: authUser.id,
-      classEventId: classEventId,
-      status: { in: ['PENDING_PAYMENT', 'PAYMENT_REVIEW', 'CONFIRMED'] }
-    }
-  });
-
-  if (existingBooking) {
-    redirectWithError(`/payment/${existingBooking.id}`, "คุณมีการจองคลาสนี้อยู่แล้ว");
-  }
-
   let user = await prisma.user.findUnique({
     where: { id: authUser.id },
   });
