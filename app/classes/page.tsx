@@ -88,7 +88,7 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2">
                   {category}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
                   {classes.map((c) => {
                     const bookedSeats = c.bookings.reduce((sum, b) => sum + b.seats, 0);
                     const totalCapacity = c.totalSeats + bookedSeats;

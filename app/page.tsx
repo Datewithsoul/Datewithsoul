@@ -56,7 +56,7 @@ function ClassCarousel({ classes }: { classes: any[] }) {
           const timeStrs = Array.from(new Set(c.allSchedules.map((sch: any) => `${sch.startTime}-${sch.endTime}`)));
 
           return (
-            <CarouselItem key={c.id} className="pl-4 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+            <CarouselItem key={c.id} className="pl-4 basis-[60%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
               <Link href={`/classes/${c.id}`} className="block h-full">
                 <div className="bg-white rounded-2xl overflow-hidden flex flex-col h-full shadow-sm border border-gray-100">
                   <div className="relative aspect-video overflow-hidden bg-gray-100">
