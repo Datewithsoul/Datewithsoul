@@ -25,16 +25,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div data-admin className="flex min-h-screen">
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex min-h-screen w-full flex-1 flex-col bg-[#f4f1ec]">
-          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[#ddd4c8] bg-[#faf8f5] px-4 sm:px-6">
+        <main className="flex min-h-screen w-full flex-1 flex-col bg-muted/30">
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-4 sm:px-6">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="-ml-1 text-[#3d3229]" />
-              <div className="hidden h-4 w-px bg-[#ddd4c8] sm:block" />
-              <span className="hidden text-sm text-[#6a5d50] sm:block">ระบบจัดการ</span>
+              <SidebarTrigger className="-ml-1 text-foreground" />
+              <div className="hidden h-4 w-px bg-border sm:block" />
+              <span className="hidden text-sm text-muted-foreground sm:block">ระบบจัดการ</span>
             </div>
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-[#3d3229] transition-colors hover:bg-[#ece7e1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a6d1f]"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               ดูเว็บไซต์ <ExternalLink className="h-3.5 w-3.5" />
             </Link>

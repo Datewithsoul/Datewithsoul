@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Timeslot = {
   id?: string;
@@ -171,16 +172,27 @@ export default function ScheduleRepeater({
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-medium text-gray-500">สถานะคอร์ส</label>
-                  <select 
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  <Select 
                     value={slot.status || "PUBLISHED"}
-                    onChange={(e) => updateTimeslot(dayIndex, slotIndex, 'status', e.target.value)}
+                    onValueChange={(val) => updateTimeslot(dayIndex, slotIndex, 'status', val)}
                   >
-                    <option value="PUBLISHED">เปิดรับสมัคร</option>
-                    <option value="COMPLETED">คอร์สเต็ม / ปิดรับสมัคร</option>
-                    <option value="DRAFT">ซ่อน (ฉบับร่าง)</option>
-                    <option value="CANCELLED">ยกเลิก</option>
-                  </select>
+                    <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <SelectValue placeholder="สถานะคอร์ส">
+                        {{
+                          "PUBLISHED": "เปิดรับสมัคร",
+                          "COMPLETED": "คอร์สเต็ม / ปิดรับสมัคร",
+                          "DRAFT": "ซ่อน (ฉบับร่าง)",
+                          "CANCELLED": "ยกเลิก"
+                        }[slot.status || "PUBLISHED"]}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PUBLISHED">เปิดรับสมัคร</SelectItem>
+                      <SelectItem value="COMPLETED">คอร์สเต็ม / ปิดรับสมัคร</SelectItem>
+                      <SelectItem value="DRAFT">ซ่อน (ฉบับร่าง)</SelectItem>
+                      <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="pb-1.5">

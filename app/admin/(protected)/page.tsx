@@ -5,6 +5,15 @@ import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { BookingStatus } from "@/app/generated/prisma";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -115,46 +124,46 @@ export default async function AdminDashboard() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {pendingPayments > 0 && (
-              <div className="bg-white border border-[#8f3b2c]/20 p-3 rounded-md flex flex-col gap-1">
+              <div className="bg-card border border-[#8f3b2c]/20 p-3 rounded-md flex flex-col gap-1">
                 <span className="text-sm font-medium text-[#8f3b2c]">รอตรวจสอบสลิป</span>
                 <span className="text-2xl font-bold text-[#8f3b2c]">{pendingPayments}</span>
                 <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="text-xs text-[#8f3b2c] hover:underline mt-1">ดูรายการ</Link>
               </div>
             )}
             {newBookingsToday > 0 && (
-              <div className="bg-white border border-[#ddd4c8] p-3 rounded-md flex flex-col gap-1">
-                <span className="text-sm font-medium text-[#3d3229]">การจองใหม่วันนี้</span>
-                <span className="text-2xl font-bold text-[#3d3229]">{newBookingsToday}</span>
-                <Link href="/admin/bookings" className="text-xs text-[#6a5d50] hover:underline mt-1">ดูรายการ</Link>
+              <div className="bg-card border border-border p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">การจองใหม่วันนี้</span>
+                <span className="text-2xl font-bold text-foreground">{newBookingsToday}</span>
+                <Link href="/admin/bookings" className="text-xs text-muted-foreground hover:underline mt-1">ดูรายการ</Link>
               </div>
             )}
             {awaitingPaymentBookings > 0 && (
-              <div className="bg-white border border-[#ddd4c8] p-3 rounded-md flex flex-col gap-1">
-                <span className="text-sm font-medium text-[#3d3229]">รอชำระเงิน</span>
-                <span className="text-2xl font-bold text-[#3d3229]">{awaitingPaymentBookings}</span>
-                <Link href="/admin/bookings?status=AWAITING_PAYMENT" className="text-xs text-[#6a5d50] hover:underline mt-1">ดูรายการ</Link>
+              <div className="bg-card border border-border p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">รอชำระเงิน</span>
+                <span className="text-2xl font-bold text-foreground">{awaitingPaymentBookings}</span>
+                <Link href="/admin/bookings?status=AWAITING_PAYMENT" className="text-xs text-muted-foreground hover:underline mt-1">ดูรายการ</Link>
               </div>
             )}
             {almostFullClasses > 0 && (
-              <div className="bg-white border border-[#ddd4c8] p-3 rounded-md flex flex-col gap-1">
-                <span className="text-sm font-medium text-[#3d3229]">คอร์สใกล้เต็ม</span>
-                <span className="text-2xl font-bold text-[#3d3229]">{almostFullClasses}</span>
-                <Link href="/admin/classes" className="text-xs text-[#6a5d50] hover:underline mt-1">ดูรายการ</Link>
+              <div className="bg-card border border-border p-3 rounded-md flex flex-col gap-1">
+                <span className="text-sm font-medium text-foreground">คอร์สใกล้เต็ม</span>
+                <span className="text-2xl font-bold text-foreground">{almostFullClasses}</span>
+                <Link href="/admin/classes" className="text-xs text-muted-foreground hover:underline mt-1">ดูรายการ</Link>
               </div>
             )}
           </div>
         </section>
       )}
 
-      <dl className="grid grid-cols-1 divide-y divide-[#ddd4c8] border border-[#ddd4c8] bg-white sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <dl className="grid grid-cols-1 divide-y divide-[#ddd4c8] border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {stats.map((stat) => (
           <div key={stat.label} className="px-5 py-4">
-            <dt className="text-sm text-[#6a5d50]">{stat.label}</dt>
+            <dt className="text-sm text-muted-foreground">{stat.label}</dt>
             <dd className="mt-1 flex items-baseline justify-between gap-3">
-              <span className={`text-2xl font-semibold tabular-nums ${stat.emphasize ? "text-[#8f3b2c]" : "text-[#3d3229]"}`}>
+              <span className={`text-2xl font-semibold tabular-nums ${stat.emphasize ? "text-[#8f3b2c]" : "text-foreground"}`}>
                 {stat.value.toLocaleString("th-TH")}
               </span>
-              <Link href={stat.href} className="inline-flex items-center gap-1 text-xs text-[#6a5d50] hover:text-[#3d3229]">
+              <Link href={stat.href} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                 ดูรายการ <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </dd>
@@ -163,21 +172,21 @@ export default async function AdminDashboard() {
       </dl>
 
       <section>
-        <h2 className="text-base font-semibold text-[#3d3229] mb-4">Quick Actions</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          <Link href="/admin/classes/new" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+          <Link href="/admin/classes/new" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
             <Plus className="h-4 w-4" /> เพิ่มคลาสใหม่
           </Link>
-          <Link href="/admin/bookings" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+          <Link href="/admin/bookings" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
             <FileText className="h-4 w-4" /> ดู Booking ทั้งหมด
           </Link>
-          <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+          <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
             <Banknote className="h-4 w-4" /> ตรวจสอบสลิป
           </Link>
-          <Link href="/admin/classes" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+          <Link href="/admin/classes" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
             <Calendar className="h-4 w-4" /> จัดการตารางเรียน
           </Link>
-          <Link href="/admin/reports" className="inline-flex items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-[#f7f4ef] transition-colors">
+          <Link href="/admin/reports" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
             <LineChart className="h-4 w-4 text-[#8f3b2c]" /> รายงานและกราฟวิเคราะห์ (Analytics)
           </Link>
           <button disabled className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 px-4 py-2 rounded-md text-sm font-medium text-gray-400 cursor-not-allowed">
@@ -187,156 +196,156 @@ export default async function AdminDashboard() {
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <section className="border border-[#ddd4c8] bg-white flex flex-col">
-          <div className="border-b border-[#ddd4c8] px-5 py-4">
-            <h2 className="text-base font-semibold text-[#3d3229]">Booking Overview</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">สรุปสถานะการจองทั้งหมด</p>
-          </div>
+        <Card className="flex flex-col">
+          <CardHeader className="border-b border-border pb-4">
+            <CardTitle className="text-base">Booking Overview</CardTitle>
+            <CardDescription>สรุปสถานะการจองทั้งหมด</CardDescription>
+          </CardHeader>
           <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">ยืนยันแล้ว</span>
-               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
+               <span className="text-sm text-muted-foreground">ยืนยันแล้ว</span>
+               <span className="text-2xl font-semibold text-foreground">{getBookingCount(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">รอชำระเงิน</span>
-               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.PENDING_PAYMENT).toLocaleString("th-TH")}</span>
+               <span className="text-sm text-muted-foreground">รอชำระเงิน</span>
+               <span className="text-2xl font-semibold text-foreground">{getBookingCount(BookingStatus.PENDING_PAYMENT).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">รอตรวจสอบ</span>
+               <span className="text-sm text-muted-foreground">รอตรวจสอบ</span>
                <span className="text-2xl font-semibold text-[#8f3b2c]">{getBookingCount(BookingStatus.PAYMENT_REVIEW).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">ยกเลิก</span>
-               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.CANCELLED).toLocaleString("th-TH")}</span>
+               <span className="text-sm text-muted-foreground">ยกเลิก</span>
+               <span className="text-2xl font-semibold text-foreground">{getBookingCount(BookingStatus.CANCELLED).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">หมดอายุ</span>
-               <span className="text-2xl font-semibold text-[#3d3229]">{getBookingCount(BookingStatus.EXPIRED).toLocaleString("th-TH")}</span>
+               <span className="text-sm text-muted-foreground">หมดอายุ</span>
+               <span className="text-2xl font-semibold text-foreground">{getBookingCount(BookingStatus.EXPIRED).toLocaleString("th-TH")}</span>
              </div>
           </div>
-        </section>
+        </Card>
 
-        <section className="border border-[#ddd4c8] bg-white flex flex-col">
-          <div className="border-b border-[#ddd4c8] px-5 py-4">
-            <h2 className="text-base font-semibold text-[#3d3229]">Payment Overview</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">สรุปยอดเงินตามสถานะ</p>
-          </div>
+        <Card className="flex flex-col">
+          <CardHeader className="border-b border-border pb-4">
+            <CardTitle className="text-base">Payment Overview</CardTitle>
+            <CardDescription>สรุปยอดเงินตามสถานะ</CardDescription>
+          </CardHeader>
           <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">ชำระแล้ว</span>
-               <span className="text-2xl font-semibold text-[#3d3229]">฿{getPaymentSum(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
+               <span className="text-sm text-muted-foreground">ชำระแล้ว</span>
+               <span className="text-2xl font-semibold text-foreground">฿{getPaymentSum(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col">
-               <span className="text-sm text-[#6a5d50]">รอตรวจสอบ</span>
+               <span className="text-sm text-muted-foreground">รอตรวจสอบ</span>
                <span className="text-2xl font-semibold text-[#8f3b2c]">฿{getPaymentSum(BookingStatus.PAYMENT_REVIEW).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col col-span-2">
-               <span className="text-sm text-[#6a5d50]">ถูกปฏิเสธ/ยกเลิก/หมดอายุ</span>
-               <span className="text-2xl font-semibold text-[#6a5d50]">฿{(getPaymentSum(BookingStatus.CANCELLED) + getPaymentSum(BookingStatus.EXPIRED)).toLocaleString("th-TH")}</span>
+               <span className="text-sm text-muted-foreground">ถูกปฏิเสธ/ยกเลิก/หมดอายุ</span>
+               <span className="text-2xl font-semibold text-muted-foreground">฿{(getPaymentSum(BookingStatus.CANCELLED) + getPaymentSum(BookingStatus.EXPIRED)).toLocaleString("th-TH")}</span>
              </div>
           </div>
-          <div className="border-t border-[#ddd4c8] p-4 bg-[#f7f4ef]">
-            <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="w-full flex justify-center items-center gap-2 bg-white border border-[#ddd4c8] px-4 py-2 rounded-md text-sm font-medium text-[#3d3229] hover:bg-gray-50 transition-colors">
+          <div className="border-t border-border p-4 bg-accent">
+            <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="w-full flex justify-center items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-gray-50 transition-colors">
                <Banknote className="h-4 w-4" /> ดูหน้าตรวจสอบ Payment
             </Link>
           </div>
-        </section>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.9fr)]">
         <div className="flex flex-col gap-8">
-          <section className="border border-[#ddd4c8] bg-white">
-            <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
+          <Card>
+            <CardHeader className="flex flex-row items-end justify-between gap-3 border-b border-border pb-4">
               <div>
-                <h2 className="text-base font-semibold text-[#3d3229]">รายได้ (บาท)</h2>
-                <p className="mt-1 text-sm text-[#6a5d50]">เปรียบเทียบข้อมูลย้อนหลัง 6 เดือน</p>
+                <CardTitle className="text-base">รายได้ (บาท)</CardTitle>
+                <CardDescription>เปรียบเทียบข้อมูลย้อนหลัง 6 เดือน</CardDescription>
               </div>
-            </div>
+            </CardHeader>
             <div className="px-3 py-4 sm:px-5">
               <DashboardChart data={chartData} dataKey="revenue" />
             </div>
-          </section>
+          </Card>
 
-          <section className="border border-[#ddd4c8] bg-white">
-            <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
+          <Card>
+            <CardHeader className="flex flex-row items-end justify-between gap-3 border-b border-border pb-4">
               <div>
-                <h2 className="text-base font-semibold text-[#3d3229]">จำนวนการจอง (ครั้ง)</h2>
-                <p className="mt-1 text-sm text-[#6a5d50]">เปรียบเทียบข้อมูลย้อนหลัง 6 เดือน</p>
+                <CardTitle className="text-base">จำนวนการจอง (ครั้ง)</CardTitle>
+                <CardDescription>เปรียบเทียบข้อมูลย้อนหลัง 6 เดือน</CardDescription>
               </div>
-            </div>
+            </CardHeader>
             <div className="px-3 py-4 sm:px-5">
               <DashboardChart data={chartData} dataKey="bookings" />
             </div>
-          </section>
+          </Card>
         </div>
 
-        <section className="border border-[#ddd4c8] bg-white">
-          <div className="border-b border-[#ddd4c8] px-5 py-4">
-            <h2 className="text-base font-semibold text-[#3d3229]">คอร์สที่กำลังจะถึง</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">เรียงตามวันที่จัด</p>
-          </div>
+        <Card>
+          <CardHeader className="border-b border-border pb-4">
+            <CardTitle className="text-base">คอร์สที่กำลังจะถึง</CardTitle>
+            <CardDescription>เรียงตามวันที่จัด</CardDescription>
+          </CardHeader>
           {upcomingClasses.length === 0 ? (
-            <p className="px-5 py-8 text-sm text-[#6a5d50]">ยังไม่มีคอร์สในอนาคต สามารถเพิ่มคอร์สใหม่ได้จากปุ่มด้านบน</p>
+            <p className="px-5 py-8 text-sm text-muted-foreground">ยังไม่มีคอร์สในอนาคต สามารถเพิ่มคอร์สใหม่ได้จากปุ่มด้านบน</p>
           ) : (
             <ul>
               {upcomingClasses.map((item, index) => (
-                <li key={item.id} className={index === 0 ? "" : "border-t border-[#ddd4c8]"}>
-                  <Link href={`/admin/classes/${item.id}/edit`} className="flex items-start justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-[#f7f4ef]">
+                <li key={item.id} className={index === 0 ? "" : "border-t border-border"}>
+                  <Link href={`/admin/classes/${item.id}/edit`} className="flex items-start justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-accent">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[#3d3229]">{item.name}</p>
-                      <p className="mt-0.5 text-xs text-[#6a5d50]">
+                      <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {item.date.toLocaleDateString("th-TH")} · {item.startTime}–{item.endTime}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs tabular-nums text-[#6a5d50]">{item.totalSeats} ที่นั่ง</span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{item.totalSeats} ที่นั่ง</span>
                   </Link>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
 
-      <section className="border border-[#ddd4c8] bg-white">
-        <div className="flex items-end justify-between gap-3 border-b border-[#ddd4c8] px-5 py-4">
+      <Card>
+        <CardHeader className="flex flex-row items-end justify-between gap-3 border-b border-border pb-4">
           <div>
-            <h2 className="text-base font-semibold text-[#3d3229]">รายการจองล่าสุด</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">รายการจองคลาสเรียนล่าสุดจากลูกค้า</p>
+            <CardTitle className="text-base">รายการจองล่าสุด</CardTitle>
+            <CardDescription>รายการจองคลาสเรียนล่าสุดจากลูกค้า</CardDescription>
           </div>
-          <Link href="/admin/bookings" className="text-sm text-[#6a5d50] hover:text-[#3d3229]">
+          <Link href="/admin/bookings" className="text-sm text-muted-foreground hover:text-foreground">
             ดูทั้งหมด
           </Link>
-        </div>
+        </CardHeader>
         {recentBookingsList.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-[#6a5d50]">ยังไม่มีรายการจองในขณะนี้</p>
+          <p className="px-5 py-8 text-sm text-muted-foreground">ยังไม่มีรายการจองในขณะนี้</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#ddd4c8] text-left text-xs text-[#6a5d50]">
-                  <th className="px-5 py-2.5 font-medium">ลูกค้า</th>
-                  <th className="px-5 py-2.5 font-medium">คอร์ส</th>
-                  <th className="px-5 py-2.5 font-medium">ยอด</th>
-                  <th className="px-5 py-2.5 font-medium">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>ลูกค้า</TableHead>
+                  <TableHead>คอร์ส</TableHead>
+                  <TableHead>ยอด</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {recentBookingsList.map((booking) => (
-                  <tr key={booking.id} className="border-b border-[#eee8e0] last:border-0 hover:bg-[#f7f4ef]/50">
-                    <td className="px-5 py-3 font-medium text-[#3d3229]">{booking.user.name}</td>
-                    <td className="px-5 py-3 text-[#3d3229]">
+                  <TableRow key={booking.id}>
+                    <TableCell className="font-medium">{booking.user.name}</TableCell>
+                    <TableCell>
                       <div>{booking.classEvent.name}</div>
-                      <div className="text-xs text-[#6a5d50]">{booking.classEvent.date.toLocaleDateString("th-TH")}</div>
-                    </td>
-                    <td className="px-5 py-3 tabular-nums">{booking.totalPrice.toLocaleString("th-TH")} บาท</td>
-                    <td className="px-5 py-3"><BookingStatusBadge status={booking.status} /></td>
-                  </tr>
+                      <div className="text-xs text-muted-foreground">{booking.classEvent.date.toLocaleDateString("th-TH")}</div>
+                    </TableCell>
+                    <TableCell className="tabular-nums">{booking.totalPrice.toLocaleString("th-TH")} บาท</TableCell>
+                    <TableCell><BookingStatusBadge status={booking.status} /></TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

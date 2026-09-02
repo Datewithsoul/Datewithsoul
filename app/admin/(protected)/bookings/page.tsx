@@ -16,6 +16,7 @@ import { AdminBookingDialog } from "@/components/admin-booking-dialog";
 import { BookingStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DataTablePagination } from "@/components/data-table-pagination";
 
 export default async function AdminBookings(props: {
   searchParams: Promise<{ q?: string; status?: string }>;
@@ -38,7 +39,10 @@ export default async function AdminBookings(props: {
     whereCondition.status = status as BookingStatus;
   }
 
-  const [bookings, classEvents, users] = await Promise.all([
+  const currentPage = Number(searchParams?.page) || 1;
+  const pageSize = 20;
+
+  const [bookings, classEvents, users, totalItems] = await Promise.all([
     prisma.booking.findMany({
       where: whereCondition,
       include: {
@@ -54,6 +58,8 @@ export default async function AdminBookings(props: {
         },
       },
       orderBy: { createdAt: "desc" },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
     }),
     prisma.classEvent.findMany({
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
@@ -70,7 +76,10 @@ export default async function AdminBookings(props: {
       select: { id: true, name: true, phone: true, email: true },
       orderBy: { name: "asc" },
     }),
+    prisma.booking.count({ where: whereCondition })
   ]);
+  
+  const totalPages = Math.ceil(totalItems / pageSize);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -231,6 +240,12 @@ export default async function AdminBookings(props: {
             ))
           )}
         </div>
+        
+        {totalPages > 1 && (
+          <div className="border-t border-[#ddd4c8] p-4">
+            <DataTablePagination totalPages={totalPages} />
+          </div>
+        )}
       </section>
     </div>
   );

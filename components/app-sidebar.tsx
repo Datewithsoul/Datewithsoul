@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { BookOpen, Calendar, LayoutDashboard, Users, CreditCard, MessageSquare, BarChart3, Settings, CheckSquare } from "lucide-react"
+import { BookOpen, Calendar, LayoutDashboard, Users, CreditCard, MessageSquare, BarChart3, CheckSquare, GalleryVerticalEnd } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
 
 const navItems = [
@@ -15,27 +15,31 @@ const navItems = [
   { title: "ลูกค้า", url: "/admin/users", icon: Users },
   { title: "การแจ้งเตือน LINE", url: "/admin/notifications", icon: MessageSquare },
   { title: "รายงาน", url: "/admin/reports", icon: BarChart3 },
-  { title: "การตั้งค่า", url: "/admin/settings", icon: Settings },
+
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   return (
-    <Sidebar {...props} className="border-r border-[#ddd4c8] bg-[#faf8f5]">
-      <SidebarHeader className="h-14 justify-center border-b border-[#ddd4c8] px-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#3d3229] text-[11px] font-semibold tracking-wide text-white">
-            DS
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[#3d3229]">Date with Soul Love</p>
-            <p className="text-xs text-[#6a5d50]">ระบบจัดการหลังบ้าน</p>
-          </div>
-        </div>
+    <Sidebar {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" render={<a href="/admin" />}>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <GalleryVerticalEnd className="size-4" />
+              </div>
+              <div className="flex flex-col gap-0.5 leading-none">
+                <span className="font-semibold">Date with Soul Love</span>
+                <span className="">ระบบจัดการหลังบ้าน</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup className="px-2 py-4">
-          <SidebarGroupLabel className="px-3 text-xs font-medium text-[#6a5d50]">เมนู</SidebarGroupLabel>
+        <SidebarGroup>
+          <SidebarGroupLabel>เมนู</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
@@ -46,7 +50,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       tooltip={item.title}
                       isActive={active}
                       render={<a href={item.url} />}
-                      className="h-9 rounded-md px-3 text-[#6a5d50] hover:bg-[#ece7e1] hover:text-[#3d3229] data-[active=true]:bg-[var(--brand-yellow)] data-[active=true]:font-medium data-[active=true]:text-[#3d3229]"
                     >
                       <item.icon />
                       <span>{item.title}</span>

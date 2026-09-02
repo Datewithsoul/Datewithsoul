@@ -6,10 +6,22 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { AttendanceToggle } from "./[id]/attendance-toggle";
 
+import { SearchBar } from "@/components/search-bar";
+import { DataTablePagination } from "@/components/data-table-pagination";
+
 export const dynamic = "force-dynamic";
 
-export default async function AttendanceListPage() {
-  const classes = await prisma.classEvent.findMany({
+export default async function AttendanceListPage({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
+  const { q, page } = await searchParams;
+  const currentPage = Number(page) || 1;
+  const pageSize = 20;
+
+  const where = q ? {
+    name: { contains: q }
+  } : {};
+
+  const allClasses = await prisma.classEvent.findMany({
+    where,
     orderBy: [{ date: 'desc' }, { startTime: 'desc' }],
     include: {
       bookings: {
@@ -21,29 +33,38 @@ export default async function AttendanceListPage() {
   });
 
   // Group classes by name
-  const groupedClasses = classes.reduce((acc, c) => {
+  const allGroupedClasses = allClasses.reduce((acc, c) => {
     if (!acc[c.name]) {
       acc[c.name] = [];
     }
     acc[c.name].push(c);
     return acc;
-  }, {} as Record<string, typeof classes>);
+  }, {} as Record<string, typeof allClasses>);
+
+  const groupedArray = Object.entries(allGroupedClasses);
+  const totalItems = groupedArray.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  
+  const paginatedGroups = groupedArray.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <AdminPageHeader
-        title="เช็คชื่อเข้าเรียน"
-        description="เลือกคอร์สเรียนเพื่อดูรอบเวลาและทำการเช็คชื่อผู้เข้าร่วม"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <AdminPageHeader
+          title="เช็คชื่อเข้าเรียน"
+          description={`ค้นพบ ${totalItems} คอร์ส • เลือกคอร์สเรียนเพื่อดูรอบเวลาและทำการเช็คชื่อผู้เข้าร่วม`}
+        />
+        <SearchBar placeholder="ค้นหาชื่อคอร์ส..." />
+      </div>
 
-      {classes.length === 0 ? (
+      {paginatedGroups.length === 0 ? (
         <div className="py-10 text-center text-[#6a5d50] bg-white rounded-xl border border-[#ddd4c8]">
           ยังไม่มีคอร์สเรียนในระบบ
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-[#ddd4c8] shadow-sm overflow-hidden p-2">
           <div className="w-full flex flex-col gap-2">
-            {Object.entries(groupedClasses).map(([courseName, events], index) => {
+            {paginatedGroups.map(([courseName, events], index) => {
               const totalPaidCourse = events.reduce((sum, e) => sum + e.bookings.reduce((s, b) => s + b.seats, 0), 0);
               
               return (
@@ -122,6 +143,10 @@ export default async function AttendanceListPage() {
             })}
           </div>
         </div>
+      )}
+      
+      {totalPages > 1 && (
+        <DataTablePagination totalPages={totalPages} />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import * as React from "react";
 import { adminCreateBooking } from "@/app/admin/(protected)/bookings/actions";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -29,6 +30,7 @@ export function AdminCreateBookingForm({
   const [error, setError] = React.useState<string | null>(null);
   const [isNewCustomer, setIsNewCustomer] = React.useState(false);
   const [selectedClassName, setSelectedClassName] = React.useState<string>("");
+  const [selectedEventId, setSelectedEventId] = React.useState<string>("");
 
   const handleSubmit = async (formData: FormData) => {
     setError(null);
@@ -62,17 +64,18 @@ export function AdminCreateBookingForm({
         </div>
         
         {!isNewCustomer ? (
-          <select 
-            name="userId" 
-            id="userId" 
-            required
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white text-base"
-          >
-            <option value="">-- เลือกลูกค้า --</option>
-            {users.map(u => (
-              <option key={u.id} value={u.id}>{u.name} {u.phone ? `(${u.phone})` : ""}</option>
-            ))}
-          </select>
+          <Select name="userId" required>
+            <SelectTrigger className="w-full bg-white border-border">
+              <SelectValue placeholder="-- เลือกลูกค้า --" />
+            </SelectTrigger>
+            <SelectContent>
+              {users.map(u => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name} {u.phone ? `(${u.phone})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : (
           <div className="flex flex-col gap-3 p-5 bg-gray-50 border border-gray-200 rounded-xl">
             <input 
@@ -99,38 +102,51 @@ export function AdminCreateBookingForm({
       {/* Class Selection */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-base text-gray-800 mb-1">ชื่อคอร์สเรียน</label>
-        <select 
+        <Select
           value={selectedClassName}
-          onChange={(e) => {
-            setSelectedClassName(e.target.value);
-            const eventSelect = document.getElementById("classEventId") as HTMLSelectElement;
-            if (eventSelect) eventSelect.value = "";
+          onValueChange={(val) => {
+            setSelectedClassName(val);
+            setSelectedEventId("");
           }}
-          className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white text-base"
         >
-          <option value="">-- เลือกชื่อคอร์สเรียน --</option>
-          {Array.from(new Set(classEvents.map(c => c.name))).map(name => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full bg-white border-border">
+            <SelectValue placeholder="-- เลือกชื่อคอร์สเรียน --" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from(new Set(classEvents.map(c => c.name))).map(name => (
+              <SelectItem key={name} value={name}>{name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="classEventId" className="font-semibold text-base text-gray-800 mb-1">รอบเรียน (วันและเวลา)</label>
-        <select 
+        <Select 
           name="classEventId" 
-          id="classEventId" 
-          required
+          required 
           disabled={!selectedClassName}
-          className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all bg-white text-base disabled:bg-gray-100 disabled:text-gray-400"
+          value={selectedEventId}
+          onValueChange={setSelectedEventId}
         >
-          <option value="">-- เลือกรอบเรียน --</option>
-          {classEvents.filter(c => c.name === selectedClassName).map(c => (
-            <option key={c.id} value={c.id} disabled={c.totalSeats === 0}>
-              {new Date(c.date).toLocaleDateString("th-TH")} {c.startTime}-{c.endTime} - ว่าง {c.totalSeats} ที่
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full bg-white border-border disabled:bg-gray-100 disabled:text-gray-400">
+            <SelectValue placeholder="-- เลือกรอบเรียน --">
+              {selectedEventId && classEvents.find(c => c.id === selectedEventId)
+                ? (() => {
+                    const c = classEvents.find(c => c.id === selectedEventId)!;
+                    return `${new Date(c.date).toLocaleDateString("th-TH")} ${c.startTime}-${c.endTime} - ว่าง ${c.totalSeats} ที่`;
+                  })()
+                : "-- เลือกรอบเรียน --"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {classEvents.filter(c => c.name === selectedClassName).map(c => (
+              <SelectItem key={c.id} value={c.id} disabled={c.totalSeats === 0}>
+                {new Date(c.date).toLocaleDateString("th-TH")} {c.startTime}-{c.endTime} - ว่าง {c.totalSeats} ที่
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-2">

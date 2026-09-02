@@ -34,7 +34,7 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { toast } from "sonner";
-
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 interface Props {
   initialTemplates: LoadedTemplate[];
 }
@@ -344,31 +344,43 @@ export function TemplateEditor({ initialTemplates }: Props) {
                 </span>
               </div>
               <div className="flex items-center gap-2 mb-1">
-                <select
+                <Select
                   value={selectedTemplateForTest}
-                  onChange={(e) => handleSelectTemplateForTest(e.target.value)}
-                  className="w-full text-xs font-bold rounded-lg border-2 border-[#3d3229] bg-white p-2.5 text-[#3d3229] focus:outline-none focus:ring-0 shadow-[2px_2px_0_0_#3d3229] cursor-pointer"
+                  onValueChange={(val) => handleSelectTemplateForTest(val)}
                 >
-                  <option value="">-- เลือกโหลดข้อความจากเทมเพลต --</option>
-                  <optgroup label="ข้อความส่งหาลูกค้า (Customer)">
-                    {templates
-                      .filter((t) => t.category === "CUSTOMER")
-                      .map((t) => (
-                        <option key={t.key} value={t.key}>
-                          👤 {t.title}
-                        </option>
-                      ))}
-                  </optgroup>
-                  <optgroup label="ข้อความแจ้งเตือนแอดมิน (Admin)">
-                    {templates
-                      .filter((t) => t.category === "ADMIN")
-                      .map((t) => (
-                        <option key={t.key} value={t.key}>
-                          🛡️ {t.title}
-                        </option>
-                      ))}
-                  </optgroup>
-                </select>
+                  <SelectTrigger className="w-full h-11 text-xs font-bold rounded-lg border-2 border-[#3d3229] bg-white px-3 text-[#3d3229] focus:outline-none focus:ring-0 shadow-[2px_2px_0_0_#3d3229] cursor-pointer hover:bg-stone-50">
+                    <SelectValue placeholder="-- เลือกโหลดข้อความจากเทมเพลต --">
+                      {selectedTemplateForTest 
+                        ? (() => {
+                            const found = templates.find(t => t.key === selectedTemplateForTest);
+                            return found ? `${found.category === "CUSTOMER" ? "👤" : "🛡️"} ${found.title}` : selectedTemplateForTest;
+                          })()
+                        : "-- เลือกโหลดข้อความจากเทมเพลต --"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel className="text-xs font-bold">ข้อความส่งหาลูกค้า (Customer)</SelectLabel>
+                      {templates
+                        .filter((t) => t.category === "CUSTOMER")
+                        .map((t) => (
+                          <SelectItem key={t.key} value={t.key} className="text-xs font-bold">
+                            👤 {t.title}
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel className="text-xs font-bold">ข้อความแจ้งเตือนแอดมิน (Admin)</SelectLabel>
+                      {templates
+                        .filter((t) => t.category === "ADMIN")
+                        .map((t) => (
+                          <SelectItem key={t.key} value={t.key} className="text-xs font-bold">
+                            🛡️ {t.title}
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               <textarea

@@ -2,23 +2,47 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { RequestStatus, RequestType } from "@/app/generated/prisma";
 import { format } from "date-fns";
+import { SearchBar } from "@/components/search-bar";
+import { DataTablePagination } from "@/components/data-table-pagination";
 
-export default async function AdminRequestsPage() {
+export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
   await requireAdmin();
+  
+  const { q, page } = await searchParams;
+  const currentPage = Number(page) || 1;
+  const pageSize = 20;
 
-  const requests = await prisma.changeRequest.findMany({
-    where: { status: RequestStatus.PENDING, type: RequestType.COURSE_CHANGE },
-    include: {
-      user: true,
-      booking: { include: { classEvent: true } },
-      requestedEvent: true
-    },
-    orderBy: { createdAt: "desc" }
-  });
+  const where: any = { status: RequestStatus.PENDING, type: RequestType.COURSE_CHANGE };
+  if (q) {
+    where.OR = [
+      { user: { name: { contains: q } } },
+      { customerReason: { contains: q } }
+    ];
+  }
+
+  const [requests, totalItems] = await Promise.all([
+    prisma.changeRequest.findMany({
+      where,
+      include: {
+        user: true,
+        booking: { include: { classEvent: true } },
+        requestedEvent: true
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.changeRequest.count({ where })
+  ]);
+  
+  const totalPages = Math.ceil(totalItems / pageSize);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-[#4A3B32]">คำขอเปลี่ยนรอบเรียน</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold text-[#4A3B32]">คำขอเปลี่ยนรอบเรียน</h1>
+        <SearchBar placeholder="ค้นหาชื่อ, เหตุผล..." />
+      </div>
       
       {requests.length === 0 ? (
         <div className="bg-white border border-[#4A3B32]/20 rounded-2xl p-12 text-center">
@@ -70,6 +94,10 @@ export default async function AdminRequestsPage() {
             </div>
           ))}
         </div>
+      )}
+      
+      {totalPages > 1 && (
+        <DataTablePagination totalPages={totalPages} />
       )}
     </div>
   );

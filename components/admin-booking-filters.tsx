@@ -43,6 +43,7 @@ export function AdminBookingFilters() {
     } else {
       params.delete("q");
     }
+    params.set("page", "1");
 
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
@@ -57,6 +58,7 @@ export function AdminBookingFilters() {
     } else {
       params.delete("status");
     }
+    params.set("page", "1");
 
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);

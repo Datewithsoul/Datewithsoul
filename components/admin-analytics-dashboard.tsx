@@ -549,7 +549,9 @@ export function AdminAnalyticsDashboard({
             <div className="relative flex-1 sm:flex-none min-w-[220px]">
               <Select value={selectedCourseName} onValueChange={setSelectedCourseName}>
                 <SelectTrigger className="w-full bg-[#faf8f5] border-[#ddd4c8] text-[#3d3229] font-semibold h-9 focus:ring-[#8f3b2c]">
-                  <SelectValue placeholder="🌟 ทุกคอร์สเรียน (รวมทุกคอร์ส)" />
+                  <SelectValue placeholder="🌟 ทุกคอร์สเรียน (รวมทุกคอร์ส)">
+                    {selectedCourseName === "all" ? "🌟 ทุกคอร์สเรียน (รวมทุกคอร์ส)" : `📚 ${selectedCourseName}`}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="font-semibold text-[#3d3229]">

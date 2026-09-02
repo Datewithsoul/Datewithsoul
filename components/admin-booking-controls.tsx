@@ -6,7 +6,7 @@ import { confirmPayment, updateBookingStatus } from "@/app/admin/(protected)/boo
 import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-status";
 import type { AppBookingStatus } from "@/lib/booking-status";
 import { format } from "date-fns";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 export function AdminBookingControls({
   bookingId,
   status,
@@ -49,18 +49,24 @@ export function AdminBookingControls({
 
   return (
     <div className="flex min-w-[14rem] flex-col items-start gap-2">
-      <select
+      <Select
         value={status}
+        onValueChange={(value) => changeStatus(value)}
         disabled={isPending}
-        onChange={(event) => changeStatus(event.target.value)}
-        className="h-8 w-full rounded-md border border-[#ddd4c8] bg-white px-2 text-xs text-[#3d3229] outline-none focus:ring-2 focus:ring-[#8a6d1f]"
       >
-        {BOOKING_STATUSES.map((item) => (
-          <option key={item} value={item}>
-            {BOOKING_STATUS_LABELS[item]}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring">
+          <SelectValue placeholder="เลือกสถานะ">
+            {status ? BOOKING_STATUS_LABELS[status] : "เลือกสถานะ"}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {BOOKING_STATUSES.map((item) => (
+            <SelectItem key={item} value={item} className="text-xs">
+              {BOOKING_STATUS_LABELS[item]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       <div className="flex flex-wrap items-center gap-2">
         {slipUrl ? (

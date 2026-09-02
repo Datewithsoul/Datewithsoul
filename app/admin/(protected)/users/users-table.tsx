@@ -42,16 +42,38 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { SearchBar } from "@/components/search-bar";
+import { DataTablePagination } from "@/components/data-table-pagination";
+
 interface UsersClientProps {
   initialUsers: User[];
+  totalItems: number;
+  totalPages: number;
 }
 
-export function UsersClient({ initialUsers }: UsersClientProps) {
+export function UsersClient({ initialUsers, totalItems, totalPages }: UsersClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   
+  const currentRole = searchParams.get("role") || "ALL";
+  
+  const handleRoleChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value && value !== "ALL") {
+      params.set("role", value);
+    } else {
+      params.delete("role");
+    }
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   // form states
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("CUSTOMER");
@@ -59,9 +81,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const filteredUsers = roleFilter === "ALL"
-    ? initialUsers
-    : initialUsers.filter((user) => user.role === roleFilter);
+  const filteredUsers = initialUsers;
 
   const handleAdd = async () => {
     if (!name) return toast.error("กรุณากรอกชื่อ");
@@ -76,6 +96,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
       setPhone("");
       setUsername("");
       setPassword("");
+      router.refresh();
     } else {
       toast.error(res.error || "เกิดข้อผิดพลาด");
     }
@@ -89,6 +110,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
       toast.success("อัปเดตผู้ใช้สำเร็จ");
       setIsEditOpen(false);
       setEditingUser(null);
+      router.refresh();
     } else {
       toast.error(res.error || "เกิดข้อผิดพลาด");
     }
@@ -99,6 +121,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
     const res = await deleteUser(id);
     if (res.success) {
       toast.success("ลบผู้ใช้สำเร็จ");
+      router.refresh();
     } else {
       toast.error(res.error || "เกิดข้อผิดพลาด");
     }
@@ -118,16 +141,16 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
         <div>
           <h2 className="text-base font-semibold text-[#3d3229]">รายชื่อทั้งหมด</h2>
           <p className="mt-1 text-sm text-[#6a5d50]">
-            {filteredUsers.length.toLocaleString("th-TH")} จาก {initialUsers.length.toLocaleString("th-TH")} คน
+            ค้นพบ {totalItems.toLocaleString("th-TH")} คน
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Label htmlFor="role-filter" className="text-sm font-medium text-[#6a5d50]">
-            แสดงบทบาท
-          </Label>
-          <Select value={roleFilter} onValueChange={(value) => value && setRoleFilter(value as "ALL" | Role)}>
+          <SearchBar placeholder="ค้นหาชื่อ, เบอร์โทร..." />
+              <Select value={currentRole} onValueChange={handleRoleChange}>
             <SelectTrigger id="role-filter" className="w-full sm:w-36">
-              <SelectValue placeholder="ทุกบทบาท" />
+              <SelectValue placeholder="ทุกบทบาท">
+                {{ "ALL": "ทั้งหมด", "ADMIN": "Admin", "CUSTOMER": "User" }[currentRole] || "ทุกบทบาท"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">ทั้งหมด</SelectItem>
@@ -199,6 +222,12 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
           )}
         </TableBody>
       </Table>
+      
+      {totalPages > 1 && (
+        <div className="border-t border-[#ddd4c8] p-4">
+          <DataTablePagination totalPages={totalPages} />
+        </div>
+      )}
 
       {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -252,7 +281,9 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
               </Label>
               <Select value={role} onValueChange={(v) => v && setRole(v as Role)}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="เลือกบทบาท" />
+                  <SelectValue placeholder="เลือกบทบาท">
+                    {{ "ADMIN": "Admin", "CUSTOMER": "Customer" }[role]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CUSTOMER">Customer</SelectItem>
@@ -306,7 +337,9 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
               </Label>
               <Select value={role} onValueChange={(v) => v && setRole(v as Role)}>
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="เลือกบทบาท" />
+                  <SelectValue placeholder="เลือกบทบาท">
+                    {{ "ADMIN": "Admin", "CUSTOMER": "Customer" }[role]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CUSTOMER">Customer</SelectItem>

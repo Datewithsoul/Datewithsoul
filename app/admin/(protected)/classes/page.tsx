@@ -14,16 +14,34 @@ import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-heade
 import { CancelClassButton } from "@/components/cancel-class-button";
 import { CloseClassButton } from "@/components/close-class-button";
 
-export default async function AdminClasses() {
-  const classes = await prisma.classEvent.findMany({
+import { SearchBar } from "@/components/search-bar";
+import { DataTablePagination } from "@/components/data-table-pagination";
+
+export default async function AdminClasses({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
+  const { q, page } = await searchParams;
+  const currentPage = Number(page) || 1;
+  const pageSize = 20;
+
+  const where = q ? {
+    name: { contains: q }
+  } : {};
+
+  const allClasses = await prisma.classEvent.findMany({
+    where,
     orderBy: { date: "desc" },
   });
 
-  const groupedClasses = classes.reduce((acc: Record<string, typeof classes>, c) => {
+  const allGroupedClasses = allClasses.reduce((acc: Record<string, typeof allClasses>, c) => {
     if (!acc[c.name]) acc[c.name] = [];
     acc[c.name].push(c);
     return acc;
   }, {});
+
+  const groupedArray = Object.values(allGroupedClasses);
+  const totalItems = groupedArray.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const paginatedGroups = groupedArray.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -38,9 +56,12 @@ export default async function AdminClasses() {
       />
 
       <section className="border border-[#ddd4c8] bg-white">
-        <div className="border-b border-[#ddd4c8] px-5 py-4">
-          <h2 className="text-base font-semibold text-[#3d3229]">รายการทั้งหมด</h2>
-          <p className="mt-1 text-sm text-[#6a5d50]">{classes.length.toLocaleString("th-TH")} คอร์ส</p>
+        <div className="border-b border-[#ddd4c8] px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-[#3d3229]">รายการทั้งหมด</h2>
+            <p className="mt-1 text-sm text-[#6a5d50]">ค้นพบ {totalItems.toLocaleString("th-TH")} คอร์ส</p>
+          </div>
+          <SearchBar placeholder="ค้นหาชื่อคอร์ส..." />
         </div>
         <div className="hidden md:block overflow-x-auto">
           <Table>
@@ -56,14 +77,14 @@ export default async function AdminClasses() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classes.length === 0 ? (
+              {paginatedGroups.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={7} className="px-5 py-10 text-center text-[#6a5d50]">
                     ยังไม่มีคอร์สเรียน ใช้ปุ่มเพิ่มคอร์สเรียนเพื่อเปิดรอบแรก
                   </TableCell>
                 </TableRow>
               ) : (
-                Object.values(groupedClasses).map((group: any) => {
+                paginatedGroups.map((group: any) => {
                   const firstClass = group[0];
                   return (
                   <TableRow key={firstClass.id} className="border-[#eee8e0]">
@@ -104,12 +125,12 @@ export default async function AdminClasses() {
 
         {/* Mobile View */}
         <div className="md:hidden flex flex-col gap-4 p-4 bg-[#f4f1ec]">
-          {classes.length === 0 ? (
+          {paginatedGroups.length === 0 ? (
             <div className="py-10 text-center text-sm text-[#6a5d50] bg-white rounded-md border border-[#ddd4c8]">
               ยังไม่มีคอร์สเรียน ใช้ปุ่มเพิ่มคอร์สเรียนเพื่อเปิดรอบแรก
             </div>
           ) : (
-            Object.values(groupedClasses).map((group: any) => {
+            paginatedGroups.map((group: any) => {
               const firstClass = group[0];
               return (
               <div key={firstClass.id} className="bg-white p-4 rounded-md border border-[#ddd4c8] shadow-sm flex flex-col gap-3">
@@ -149,6 +170,12 @@ export default async function AdminClasses() {
             )})
           )}
         </div>
+        
+        {totalPages > 1 && (
+          <div className="border-t border-[#ddd4c8] p-4">
+            <DataTablePagination totalPages={totalPages} />
+          </div>
+        )}
       </section>
     </div>
   );

@@ -213,8 +213,38 @@
   --admin-canvas: #f4f1ec;
   --admin-gold: #8a6d1f;
   --admin-danger: #8f3b2c;
-  color: var(--admin-ink);
-  background: var(--admin-canvas);
+
+  /* Map to shadcn tokens so default components inherit admin style */
+  --background: var(--admin-canvas);
+  --foreground: var(--admin-ink);
+  
+  --card: var(--admin-paper);
+  --card-foreground: var(--admin-ink);
+  
+  --popover: var(--admin-paper);
+  --popover-foreground: var(--admin-ink);
+  
+  --primary: var(--admin-ink);
+  --primary-foreground: var(--admin-paper);
+  
+  --secondary: var(--admin-line);
+  --secondary-foreground: var(--admin-ink);
+  
+  --muted: var(--admin-canvas);
+  --muted-foreground: var(--admin-muted);
+  
+  --accent: #f7f4ef;
+  --accent-foreground: var(--admin-ink);
+  
+  --destructive: var(--admin-danger);
+  --destructive-foreground: var(--admin-paper);
+  
+  --border: var(--admin-line);
+  --input: var(--admin-line);
+  --ring: var(--admin-gold);
+
+  color: var(--foreground);
+  background: var(--background);
   caret-color: var(--admin-ink);
 }
 
