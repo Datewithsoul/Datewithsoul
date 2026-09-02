@@ -5,6 +5,11 @@ import { adminCreateBooking } from "@/app/admin/(protected)/bookings/actions";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -31,6 +36,10 @@ export function AdminCreateBookingForm({
   const [isNewCustomer, setIsNewCustomer] = React.useState(false);
   const [selectedClassName, setSelectedClassName] = React.useState<string>("");
   const [selectedEventId, setSelectedEventId] = React.useState<string>("");
+  const [selectedUserId, setSelectedUserId] = React.useState<string>("");
+  const [openUser, setOpenUser] = React.useState(false);
+  const [openClass, setOpenClass] = React.useState(false);
+  const [openEvent, setOpenEvent] = React.useState(false);
 
   const handleSubmit = async (formData: FormData) => {
     setError(null);
@@ -64,18 +73,53 @@ export function AdminCreateBookingForm({
         </div>
         
         {!isNewCustomer ? (
-          <Select name="userId" required>
-            <SelectTrigger className="w-full bg-white border-border">
-              <SelectValue placeholder="-- เลือกลูกค้า --" />
-            </SelectTrigger>
-            <SelectContent>
-              {users.map(u => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.name} {u.phone ? `(${u.phone})` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <>
+            <input type="hidden" name="userId" value={selectedUserId} required={!isNewCustomer} />
+            <Popover open={openUser} onOpenChange={setOpenUser}>
+              <PopoverTrigger render={<Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openUser}
+                  className="w-full justify-between bg-white text-base font-normal h-12 px-3 border-gray-300"
+                >
+                  {selectedUserId
+                    ? (() => {
+                        const u = users.find((user) => user.id === selectedUserId);
+                        return u ? `${u.name} ${u.phone ? `(${u.phone})` : ""}` : "-- เลือกลูกค้า --";
+                      })()
+                    : "-- เลือกลูกค้า --"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>} />
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="ค้นหาลูกค้า (ชื่อ, เบอร์โทร)..." className="h-9" />
+                  <CommandList>
+                    <CommandEmpty>ไม่พบลูกค้าที่ค้นหา</CommandEmpty>
+                    <CommandGroup>
+                      {users.map((u) => (
+                        <CommandItem
+                          key={u.id}
+                          value={`${u.name} ${u.phone || ""} ${u.id}`}
+                          onSelect={() => {
+                            setSelectedUserId(u.id);
+                            setOpenUser(false);
+                          }}
+                        >
+                          {u.name} {u.phone ? `(${u.phone})` : ""}
+                          <Check
+                            className={cn(
+                              "ml-auto h-4 w-4",
+                              selectedUserId === u.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </>
         ) : (
           <div className="flex flex-col gap-3 p-5 bg-gray-50 border border-gray-200 rounded-xl">
             <input 
@@ -102,51 +146,101 @@ export function AdminCreateBookingForm({
       {/* Class Selection */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-base text-gray-800 mb-1">ชื่อคอร์สเรียน</label>
-        <Select
-          value={selectedClassName}
-          onValueChange={(val) => {
-            setSelectedClassName(val);
-            setSelectedEventId("");
-          }}
-        >
-          <SelectTrigger className="w-full bg-white border-border">
-            <SelectValue placeholder="-- เลือกชื่อคอร์สเรียน --" />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from(new Set(classEvents.map(c => c.name))).map(name => (
-              <SelectItem key={name} value={name}>{name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={openClass} onOpenChange={setOpenClass}>
+          <PopoverTrigger render={<Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={openClass}
+              className="w-full justify-between bg-white text-base font-normal h-12 px-3 border-gray-300"
+            >
+              {selectedClassName || "-- เลือกชื่อคอร์สเรียน --"}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>} />
+          <PopoverContent className="w-full p-0" align="start">
+            <Command>
+              <CommandInput placeholder="ค้นหาชื่อคอร์ส..." className="h-9" />
+              <CommandList>
+                <CommandEmpty>ไม่พบคอร์สเรียนที่ค้นหา</CommandEmpty>
+                <CommandGroup>
+                  {Array.from(new Set(classEvents.map(c => c.name))).map((name) => (
+                    <CommandItem
+                      key={name}
+                      value={name}
+                      onSelect={(currentValue) => {
+                        setSelectedClassName(name);
+                        setSelectedEventId("");
+                        setOpenClass(false);
+                      }}
+                    >
+                      {name}
+                      <Check
+                        className={cn(
+                          "ml-auto h-4 w-4",
+                          selectedClassName === name ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="classEventId" className="font-semibold text-base text-gray-800 mb-1">รอบเรียน (วันและเวลา)</label>
-        <Select 
-          name="classEventId" 
-          required 
-          disabled={!selectedClassName}
-          value={selectedEventId}
-          onValueChange={setSelectedEventId}
-        >
-          <SelectTrigger className="w-full bg-white border-border disabled:bg-gray-100 disabled:text-gray-400">
-            <SelectValue placeholder="-- เลือกรอบเรียน --">
-              {selectedEventId && classEvents.find(c => c.id === selectedEventId)
-                ? (() => {
-                    const c = classEvents.find(c => c.id === selectedEventId)!;
-                    return `${new Date(c.date).toLocaleDateString("th-TH")} ${c.startTime}-${c.endTime} - ว่าง ${c.totalSeats} ที่`;
-                  })()
-                : "-- เลือกรอบเรียน --"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {classEvents.filter(c => c.name === selectedClassName).map(c => (
-              <SelectItem key={c.id} value={c.id} disabled={c.totalSeats === 0}>
-                {new Date(c.date).toLocaleDateString("th-TH")} {c.startTime}-{c.endTime} - ว่าง {c.totalSeats} ที่
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <>
+          <input type="hidden" name="classEventId" value={selectedEventId} required />
+          <Popover open={openEvent} onOpenChange={setOpenEvent}>
+            <PopoverTrigger render={<Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openEvent}
+                disabled={!selectedClassName}
+                className="w-full justify-between bg-white text-base font-normal h-12 px-3 border-gray-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                {selectedEventId && classEvents.find(c => c.id === selectedEventId)
+                  ? (() => {
+                      const c = classEvents.find(c => c.id === selectedEventId)!;
+                      return `${new Date(c.date).toLocaleDateString("th-TH")} ${c.startTime}-${c.endTime} - ว่าง ${c.totalSeats} ที่`;
+                    })()
+                  : "-- เลือกรอบเรียน --"}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>} />
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="ค้นหารอบเรียน..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>ไม่พบรอบเรียนที่ค้นหา</CommandEmpty>
+                  <CommandGroup>
+                    {classEvents.filter(c => c.name === selectedClassName).map((c) => (
+                      <CommandItem
+                        key={c.id}
+                        value={`${new Date(c.date).toLocaleDateString("th-TH")} ${c.startTime}-${c.endTime} ${c.id}`}
+                        disabled={c.totalSeats === 0}
+                        onSelect={() => {
+                          if (c.totalSeats > 0) {
+                            setSelectedEventId(c.id);
+                            setOpenEvent(false);
+                          }
+                        }}
+                      >
+                        {new Date(c.date).toLocaleDateString("th-TH")} {c.startTime}-{c.endTime} - ว่าง {c.totalSeats} ที่
+                        <Check
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            selectedEventId === c.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </>
       </div>
 
       <div className="flex flex-col gap-2">
