@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 
 import { CartProvider } from "@/hooks/use-cart";
 import { Toaster } from "@/components/ui/sonner";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
