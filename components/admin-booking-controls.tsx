@@ -2,48 +2,72 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { confirmPayment, updateBookingStatus } from "@/app/admin/(protected)/bookings/actions";
+import { confirmPayment, updateBookingStatus, confirmGroupPayment, updateGroupBookingStatus } from "@/app/admin/(protected)/bookings/actions";
 import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-status";
-import type { AppBookingStatus } from "@/lib/booking-status";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface AdminBookingControlsProps {
+  bookingId: string;
+  isGroup?: boolean;
+  status: string;
+  slipUrl: string | null;
+  reviewLogs: {
+    id: string;
+    reviewer: { name: string };
+    previousStatus: string;
+    newStatus: string;
+    createdAt: Date;
+    reason?: string | null;
+  }[];
+}
+
 export function AdminBookingControls({
   bookingId,
+  isGroup = false,
   status,
   slipUrl,
-  reviewLogs = [],
-}: {
-  bookingId: string;
-  status: AppBookingStatus;
-  slipUrl: string | null;
-  reviewLogs?: any[];
-}) {
+  reviewLogs,
+}: AdminBookingControlsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showSlip, setShowSlip] = useState(false);
 
-  function changeStatus(nextStatus: string, reason?: string) {
-    setError(null);
+  const handleStatusChange = (newStatus: string, reason?: string) => {
     startTransition(async () => {
-      const result = await updateBookingStatus(bookingId, nextStatus, reason);
-      if (!result.success) {
-        setError(result.error ?? "เปลี่ยนสถานะไม่สำเร็จ");
-        return;
+      setError(null);
+      let res;
+      if (isGroup) {
+        res = await updateGroupBookingStatus(bookingId, newStatus, reason);
+      } else {
+        res = await updateBookingStatus(bookingId, newStatus, reason);
       }
-      router.refresh();
+      
+      if (!res.success) {
+        setError(res.error ?? "อัปเดตสถานะไม่สำเร็จ");
+      } else {
+        router.refresh();
+      }
     });
-  }
+  };
 
   function verifyPayment() {
-    setError(null);
     startTransition(async () => {
-      const result = await confirmPayment(bookingId);
-      if (!result.success) {
-        setError(result.error ?? "ยืนยันชำระเงินไม่สำเร็จ");
-        return;
+      setError(null);
+      let res;
+      if (isGroup) {
+        res = await confirmGroupPayment(bookingId);
+      } else {
+        res = await confirmPayment(bookingId);
       }
-      router.refresh();
+      
+      if (!res.success) {
+        setError(res.error ?? "ยืนยันชำระเงินไม่สำเร็จ");
+      } else {
+        setShowSlip(false);
+        router.refresh();
+      }
     });
   }
 
@@ -51,7 +75,7 @@ export function AdminBookingControls({
     <div className="flex min-w-[14rem] flex-col items-start gap-2">
       <Select
         value={status}
-        onValueChange={(value) => changeStatus(value)}
+        onValueChange={(value) => handleStatusChange(value)}
         disabled={isPending}
       >
         <SelectTrigger className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring">
@@ -123,7 +147,7 @@ export function AdminBookingControls({
                   onClick={() => {
                     const reason = window.prompt("ระบุเหตุผลที่ปฏิเสธสลิป:");
                     if (reason !== null) {
-                      changeStatus("PENDING_PAYMENT", reason);
+                      handleStatusChange("PENDING_PAYMENT", reason);
                       setShowSlip(false);
                     }
                   }}

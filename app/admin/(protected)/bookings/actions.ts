@@ -200,6 +200,106 @@ export async function confirmPayment(bookingId: string) {
   return { success: true };
 }
 
+export async function confirmGroupPayment(groupId: string) {
+  const admin = await requireAdmin();
+
+  const group = await prisma.bookingGroup.findUnique({
+    where: { id: groupId },
+    include: { payment: true, bookings: true },
+  });
+
+  if (!group) {
+    return { success: false, error: "ไม่พบรายการจองแบบกลุ่ม" };
+  }
+
+  if (!group.payment?.slipUrl) {
+    return { success: false, error: "ยังไม่มีสลิปจากลูกค้า" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Update group status
+    await tx.bookingGroup.update({
+      where: { id: groupId },
+      data: { status: "CONFIRMED" },
+    });
+
+    // 2. Update group payment status
+    if (group.payment) {
+      const prevStatus = group.payment.status;
+      await tx.payment.update({
+        where: { id: group.payment.id },
+        data: { status: "VERIFIED" },
+      });
+      if (prevStatus !== "VERIFIED") {
+        await tx.paymentReviewLog.create({
+          data: {
+            paymentId: group.payment.id,
+            reviewerId: admin.id,
+            previousStatus: prevStatus,
+            newStatus: "VERIFIED",
+          }
+        });
+      }
+    }
+
+    // 3. Update all bookings in the group
+    await tx.booking.updateMany({
+      where: { bookingGroupId: groupId },
+      data: { status: "CONFIRMED" },
+    });
+  });
+
+  // 4. Send notifications
+  const groupWithDetails = await prisma.bookingGroup.findUnique({
+    where: { id: groupId },
+    include: { user: true, bookings: { include: { classEvent: true } } },
+  });
+  
+  if (groupWithDetails?.user?.lineId) {
+    const classNames = groupWithDetails.bookings.map((b: any) => `• ${b.classEvent.name} (${new Date(b.classEvent.date).toLocaleDateString("th-TH")} ${b.classEvent.startTime}-${b.classEvent.endTime})`).join('\n');
+    await sendTemplatedLineMessage(
+      groupWithDetails.user.lineId,
+      "PAYMENT_GROUP_VERIFIED_USER",
+      {
+        userName: groupWithDetails.user.name,
+        classNames,
+      },
+      {
+        userId: groupWithDetails.userId,
+        type: "PAYMENT_GROUP_VERIFIED",
+      }
+    );
+  }
+
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function updateGroupBookingStatus(groupId: string, status: string, reason?: string) {
+  const admin = await requireAdmin();
+
+  if (!isBookingStatus(status)) {
+    return { success: false, error: "สถานะไม่ถูกต้อง" };
+  }
+
+  const group = await prisma.bookingGroup.findUnique({
+    where: { id: groupId },
+    include: { bookings: true },
+  });
+
+  if (!group) return { success: false, error: "ไม่พบการจองกลุ่ม" };
+
+  for (const b of group.bookings) {
+    // This will reuse the existing logic and properly handle seats / lines
+    await applyBookingStatus(b.id, status as any, admin.id, reason);
+  }
+
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
 export async function changeBookingClass(bookingId: string, newClassEventId: string) {
   await requireAdmin();
 

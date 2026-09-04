@@ -17,9 +17,10 @@ import { BookingStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/data-table-pagination";
+import { AdminGroupedBookingRow } from "@/components/admin-grouped-booking-row";
 
 export default async function AdminBookings(props: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const query = searchParams?.q ?? "";
@@ -50,7 +51,14 @@ export default async function AdminBookings(props: {
         classEvent: true,
         bookingGroup: {
           include: {
-            payment: true,
+            payment: {
+              include: {
+                reviewLogs: {
+                  include: { reviewer: true },
+                  orderBy: { createdAt: "desc" },
+                },
+              },
+            },
           }
         },
         payment: {
@@ -85,6 +93,36 @@ export default async function AdminBookings(props: {
   ]);
   
   const totalPages = Math.ceil(totalItems / pageSize);
+
+  const groupedBookings = bookings.reduce((acc: any[], booking) => {
+    if (booking.bookingGroupId) {
+      const existing = acc.find(g => g.isGroup && g.id === booking.bookingGroupId);
+      if (existing) {
+        existing.items.push(booking);
+        existing.totalSeats += booking.seats;
+        return acc;
+      }
+      acc.push({
+        isGroup: true,
+        id: booking.bookingGroupId,
+        user: booking.user,
+        createdAt: booking.createdAt, // Group createdAt isn't fetched, fallback to booking
+        totalSeats: booking.seats,
+        totalPrice: booking.bookingGroup!.totalPrice,
+        status: booking.bookingGroup!.status,
+        items: [booking],
+        slipUrl: booking.bookingGroup?.payment?.slipUrl ?? null,
+        reviewLogs: booking.bookingGroup?.payment?.reviewLogs ?? [],
+      });
+    } else {
+      acc.push({
+        isGroup: false,
+        id: booking.id,
+        items: [booking],
+      });
+    }
+    return acc;
+  }, []);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -125,59 +163,15 @@ export default async function AdminBookings(props: {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings.length === 0 ? (
+              {groupedBookings.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={8} className="px-5 py-10 text-center text-[#6a5d50]">
                     ไม่พบรายการจองที่ตรงกับเงื่อนไข
                   </TableCell>
                 </TableRow>
               ) : (
-                bookings.map((b) => (
-                  <TableRow key={b.id} className="border-[#eee8e0] align-top group hover:bg-[#f7f4ef]/50">
-                    <TableCell className="px-5 py-4">
-                      <div className="font-medium text-[#3d3229]">{b.user.name}</div>
-                      {b.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{b.user.phone}</div>}
-                      <div className="text-[10px] text-[#a09486] font-mono mt-1" title={b.id}>
-                        {b.id.substring(0, 8)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="font-medium text-[#3d3229]">{b.classEvent.name}</div>
-                      <div className="text-xs text-[#6a5d50] mt-0.5">
-                        {b.classEvent.date.toLocaleDateString("th-TH")}
-                      </div>
-                      <div className="text-xs text-[#6a5d50]">
-                        {b.classEvent.startTime}–{b.classEvent.endTime} น.
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 text-sm text-[#6a5d50] whitespace-nowrap">
-                      {b.createdAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
-                    </TableCell>
-                    <TableCell className="text-center tabular-nums py-4">{b.seats}</TableCell>
-                    <TableCell className="text-right tabular-nums font-medium py-4">{b.totalPrice.toLocaleString("th-TH")}</TableCell>
-                    <TableCell className="py-4">
-                      <BookingStatusBadge status={b.status} />
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <AdminBookingControls
-                        bookingId={b.id}
-                        status={b.status}
-                        slipUrl={b.payment?.slipUrl ?? b.bookingGroup?.payment?.slipUrl ?? null}
-                        reviewLogs={b.payment?.reviewLogs ?? []}
-                      />
-                    </TableCell>
-                    <TableCell className="px-5 py-4 flex flex-col items-start gap-2">
-                      <AdminBookingDialog booking={b} />
-                      {b.status !== "CANCELLED" ? (
-                        <AdminChangeClassDialog
-                          bookingId={b.id}
-                          currentClassEventId={b.classEventId}
-                          seats={b.seats}
-                          classEvents={classEvents}
-                        />
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
+                groupedBookings.map((g) => (
+                  <AdminGroupedBookingRow key={g.id} group={g} classEvents={classEvents} />
                 ))
               )}
             </TableBody>
@@ -222,8 +216,8 @@ export default async function AdminBookings(props: {
                   <AdminBookingControls
                     bookingId={b.id}
                     status={b.status}
-                    slipUrl={b.payment?.slipUrl ?? null}
-                    reviewLogs={b.payment?.reviewLogs ?? []}
+                    slipUrl={b.payment?.slipUrl ?? b.bookingGroup?.payment?.slipUrl ?? null}
+                    reviewLogs={b.payment?.reviewLogs ?? b.bookingGroup?.payment?.reviewLogs ?? []}
                   />
                   <div className="flex gap-2 w-full mt-2">
                     <div className="flex-1">
