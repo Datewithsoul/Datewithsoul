@@ -136,16 +136,16 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
                 <div className="font-medium text-[#3d3229] text-lg">{booking.totalPrice.toLocaleString("th-TH")} บาท</div>
                 
                 <div className="text-[#6a5d50]">สถานะการชำระเงิน:</div>
-                <div>{booking.payment?.status ?? "ยังไม่ชำระ"}</div>
+                <div>{booking.payment?.status ?? booking.bookingGroup?.payment?.status ?? "ยังไม่ชำระ"}</div>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2 w-full">
                   <h3 className="text-sm font-medium text-[#3d3229]">สลิปโอนเงิน</h3>
-                  {booking.payment?.slipUrl ? (
-                    <a href={booking.payment.slipUrl} target="_blank" rel="noreferrer" className="block w-full max-h-[300px] rounded border border-[#ddd4c8] overflow-hidden hover:opacity-90 transition-opacity bg-black/5 flex items-center justify-center">
+                  {booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl ? (
+                    <a href={booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl} target="_blank" rel="noreferrer" className="block w-full max-h-[300px] rounded border border-[#ddd4c8] overflow-hidden hover:opacity-90 transition-opacity bg-black/5 flex items-center justify-center">
                       <img 
-                        src={booking.payment.slipUrl} 
+                        src={booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl} 
                         alt="Payment Slip" 
                         className="max-w-full max-h-[300px] object-contain"
                       />
@@ -163,7 +163,7 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
                     <AdminBookingControls
                       bookingId={booking.id}
                       status={booking.status}
-                      slipUrl={booking.payment?.slipUrl ?? null}
+                      slipUrl={booking.payment?.slipUrl ?? booking.bookingGroup?.payment?.slipUrl ?? null}
                       reviewLogs={booking.payment?.reviewLogs ?? []}
                     />
                   </div>

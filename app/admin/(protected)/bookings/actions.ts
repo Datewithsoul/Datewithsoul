@@ -177,14 +177,20 @@ export async function confirmPayment(bookingId: string) {
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    include: { payment: true },
+    include: { 
+      payment: true,
+      bookingGroup: {
+        include: { payment: true }
+      }
+    },
   });
 
   if (!booking) {
     return { success: false, error: "ไม่พบรายการจอง" };
   }
 
-  if (!booking.payment?.slipUrl) {
+  const hasSlip = booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl;
+  if (!hasSlip) {
     return { success: false, error: "ยังไม่มีสลิปจากลูกค้า" };
   }
 

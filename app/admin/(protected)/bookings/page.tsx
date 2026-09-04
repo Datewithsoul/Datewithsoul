@@ -48,6 +48,11 @@ export default async function AdminBookings(props: {
       include: {
         user: true,
         classEvent: true,
+        bookingGroup: {
+          include: {
+            payment: true,
+          }
+        },
         payment: {
           include: {
             reviewLogs: {
@@ -157,7 +162,7 @@ export default async function AdminBookings(props: {
                       <AdminBookingControls
                         bookingId={b.id}
                         status={b.status}
-                        slipUrl={b.payment?.slipUrl ?? null}
+                        slipUrl={b.payment?.slipUrl ?? b.bookingGroup?.payment?.slipUrl ?? null}
                         reviewLogs={b.payment?.reviewLogs ?? []}
                       />
                     </TableCell>
