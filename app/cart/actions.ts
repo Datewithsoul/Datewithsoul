@@ -41,21 +41,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
     // Verify all classes exist and calculate total price
     let totalPrice = 0;
     
-    // Check for existing bookings first
-    const classEventIds = items.map(i => i.classEventId);
-    const existingBookings = await prisma.booking.findMany({
-      where: {
-        userId: authUser.id,
-        classEventId: { in: classEventIds },
-         status: { in: [BookingStatus.PENDING_PAYMENT, BookingStatus.PAYMENT_REVIEW, BookingStatus.CONFIRMED] }
-      },
-      include: { classEvent: true }
-    });
 
-    if (existingBookings.length > 0) {
-      const names = existingBookings.map(b => b.classEvent.name).join(", ");
-      return { error: `คุณมีการจองคลาสเหล่านี้อยู่แล้ว: ${names}` };
-    }
 
     const classEvents = await Promise.all(
       items.map(async (item) => {
