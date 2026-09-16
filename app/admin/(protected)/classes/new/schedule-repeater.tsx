@@ -163,7 +163,7 @@ export default function ScheduleRepeater({
                   <label className="text-[10px] font-medium text-gray-500">ที่นั่ง (คน)</label>
                   <Input 
                     type="number" 
-                    min="1"
+                    min="0"
                     required
                     placeholder="10"
                     value={slot.totalSeats}
