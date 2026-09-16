@@ -23,6 +23,7 @@ model User {
   changeRequests   ChangeRequest[]
   notifications    NotificationLog[]
   paymentReviews   PaymentReviewLog[]
+  promoUsages      PromoUsage[]
 }
 
 model ClassEvent {
@@ -48,6 +49,7 @@ model ClassEvent {
   originalRequests  ChangeRequest[]  @relation("OriginalEvent")
   requestedRequests ChangeRequest[]  @relation("RequestedEvent")
   media             ClassMedia[]
+  applicablePromos  PromoCode[]      @relation("PromoApplicableEvents")
 }
 
 model ClassMedia {
@@ -68,6 +70,8 @@ model Booking {
   status         BookingStatus     @default(PENDING_PAYMENT)
   seats          Int               @default(1)
   totalPrice     Float
+  discountAmount Float             @default(0)
+  promoCodeId    String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   bookingGroupId String?
@@ -77,21 +81,25 @@ model Booking {
   bookingGroup   BookingGroup?     @relation(fields: [bookingGroupId], references: [id])
   classEvent     ClassEvent        @relation(fields: [classEventId], references: [id])
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode      PromoCode?        @relation(fields: [promoCodeId], references: [id])
   changeRequests ChangeRequest[]
   notifications  NotificationLog[]
   payment        Payment?
 }
 
 model BookingGroup {
-  id         String             @id @default(uuid())
-  userId     String
-  totalPrice Float
-  status     BookingGroupStatus @default(PENDING_PAYMENT)
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  bookings   Booking[]
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payment    Payment?
+  id             String             @id @default(uuid())
+  userId         String
+  totalPrice     Float
+  discountAmount Float              @default(0)
+  promoCodeId    String?
+  status         BookingGroupStatus @default(PENDING_PAYMENT)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  bookings       Booking[]
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment        Payment?
+  promoCode      PromoCode?         @relation(fields: [promoCodeId], references: [id])
 }
 
 model Payment {
@@ -220,4 +228,44 @@ enum RequestStatus {
   REJECTED
   COMPLETED
   CANCELLED
+}
+
+model PromoCode {
+  id              String         @id @default(uuid())
+  code            String         @unique
+  discountType    DiscountType
+  discountValue   Float
+  applyToAll      Boolean        @default(true)
+  maxUses         Int?
+  usedCount       Int            @default(0)
+  perUserLimit    Int            @default(1)
+  startDate       DateTime?
+  endDate         DateTime?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  applicableEvents ClassEvent[]  @relation("PromoApplicableEvents")
+  usages           PromoUsage[]
+  bookingGroups    BookingGroup[]
+  bookings         Booking[]
+}
+
+model PromoUsage {
+  id            String       @id @default(uuid())
+  promoCodeId   String
+  userId        String
+  bookingGroupId String?
+  bookingId      String?
+  discountSaved Float
+  usedAt        DateTime     @default(now())
+
+  promoCode     PromoCode    @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE
 }

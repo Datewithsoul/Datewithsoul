@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { BookOpen, Calendar, LayoutDashboard, Users, CreditCard, MessageSquare, BarChart3, CheckSquare, GalleryVerticalEnd } from "lucide-react"
+import { BookOpen, Calendar, LayoutDashboard, Users, CreditCard, MessageSquare, BarChart3, CheckSquare, GalleryVerticalEnd, Ticket } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { title: "ลูกค้า", url: "/admin/users", icon: Users },
   { title: "การแจ้งเตือน LINE", url: "/admin/notifications", icon: MessageSquare },
   { title: "รายงาน", url: "/admin/reports", icon: BarChart3 },
+  { title: "โค้ดส่วนลด", url: "/admin/promo-codes", icon: Ticket },
 
 ]
 

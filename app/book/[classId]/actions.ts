@@ -14,6 +14,8 @@ export async function submitBooking(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const seats = parseInt(formData.get("seats") as string, 10);
+  const promoCodeStr = formData.get("promoCode") as string | undefined;
+
   if (isNaN(seats) || seats <= 0) {
     throw new Error("จำนวนที่นั่งต้องเป็นจำนวนเต็มบวก");
   }
@@ -37,7 +39,7 @@ export async function submitBooking(formData: FormData) {
     redirectWithError(`/book/${classEventId}`, `ที่นั่งไม่เพียงพอ (เหลือ ${classEvent.totalSeats} ที่)`);
   }
 
-  const totalPrice = classEvent.price * seats;
+  let totalPrice = classEvent.price * seats;
 
   const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -55,6 +57,30 @@ export async function submitBooking(formData: FormData) {
       data: { id: authUser.id, name: name || authUser.email!, email: authUser.email! },
     });
   }
+
+  let appliedPromo = null;
+  let discountAmount = 0;
+
+  if (promoCodeStr) {
+    // Import from cart actions to reuse validation logic
+    const { validatePromoCode } = await import('@/app/cart/actions');
+    const valRes = await validatePromoCode(promoCodeStr, user.id, [classEventId]);
+    if (valRes.promo) {
+      appliedPromo = valRes.promo;
+      if (appliedPromo.discountType === "PERCENTAGE") {
+        discountAmount = (totalPrice * appliedPromo.discountValue) / 100;
+      } else if (appliedPromo.discountType === "FIXED_AMOUNT") {
+        discountAmount = appliedPromo.discountValue;
+      } else if (appliedPromo.discountType === "FREE") {
+        discountAmount = totalPrice;
+      }
+      
+      if (discountAmount > totalPrice) discountAmount = totalPrice;
+    }
+  }
+
+  const finalPrice = totalPrice - discountAmount;
+  const isFree = finalPrice <= 0;
 
   let booking;
   try {
@@ -79,16 +105,33 @@ export async function submitBooking(formData: FormData) {
           userId: user.id,
           classEventId,
           seats,
-          totalPrice,
+          totalPrice: finalPrice,
+          discountAmount,
+          promoCodeId: appliedPromo?.id,
           note: formData.get("note") as string || null,
-          status: "PENDING_PAYMENT",
+          status: isFree ? "CONFIRMED" : "PENDING_PAYMENT",
         },
       });
+
+      if (appliedPromo) {
+        await tx.promoUsage.create({
+          data: {
+            promoCodeId: appliedPromo.id,
+            userId: user.id,
+            bookingId: b.id,
+            discountSaved: discountAmount
+          }
+        });
+        await tx.promoCode.update({
+          where: { id: appliedPromo.id },
+          data: { usedCount: { increment: 1 } }
+        });
+      }
 
       await tx.payment.create({
         data: {
           bookingId: b.id,
-          status: "UNPAID",
+          status: isFree ? "VERIFIED" : "UNPAID",
         },
       });
 
@@ -111,7 +154,7 @@ export async function submitBooking(formData: FormData) {
         userName: user.name,
         className: classEvent.name,
         seats,
-        totalPrice: totalPrice.toLocaleString("th-TH"),
+        totalPrice: finalPrice.toLocaleString("th-TH"),
       },
       {
         userId: user.id,
@@ -125,7 +168,7 @@ export async function submitBooking(formData: FormData) {
     userName: user.name,
     className: classEvent.name,
     seats,
-    totalPrice: totalPrice.toLocaleString("th-TH"),
+    totalPrice: finalPrice.toLocaleString("th-TH"),
   });
 
   // Redirect to payment page instead of classes

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { submitBooking } from "@/app/book/[classId]/actions";
 import { SubmitButton } from "@/components/submit-button";
+import { toast } from "sonner";
 
 interface BookingFormProps {
   classEventId: string;
@@ -22,17 +23,67 @@ export default function BookingForm({
   defaultEmail 
 }: BookingFormProps) {
   const [seats, setSeats] = useState(1);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
   
   const totalPrice = seats * pricePerSeat;
-
   const isFull = totalAvailableSeats <= 0;
+
+  const handleApplyPromo = async () => {
+    if (!promoCodeInput) return;
+    try {
+      const res = await fetch("/api/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCodeInput, classEventIds: [classEventId] })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        toast.error(data.error);
+        setPromoCode("");
+        setDiscountAmount(0);
+      } else {
+        toast.success("ใช้โค้ดส่วนลดสำเร็จ!");
+        setPromoCode(data.promo.code);
+        let discount = 0;
+        if (data.promo.discountType === "PERCENTAGE") {
+          discount = (totalPrice * data.promo.discountValue) / 100;
+        } else if (data.promo.discountType === "FIXED_AMOUNT") {
+          discount = data.promo.discountValue;
+        } else if (data.promo.discountType === "FREE") {
+          discount = totalPrice;
+        }
+        setDiscountAmount(discount > totalPrice ? totalPrice : discount);
+      }
+    } catch (e) {
+      toast.error("ตรวจสอบโค้ดส่วนลดไม่สำเร็จ");
+    }
+  };
+
+  const finalPrice = totalPrice - discountAmount;
 
   return (
     <>
       <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-6">
-        <div className="flex justify-between items-center text-lg">
-          <span className="font-semibold">ราคารวม ({seats || 1} ที่นั่ง)</span>
-          <span className="text-2xl font-bold text-[#F44336]">฿{totalPrice.toLocaleString()}</span>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center text-gray-600">
+            <span>ราคารวม ({seats || 1} ที่นั่ง)</span>
+            <span>฿{totalPrice.toLocaleString()}</span>
+          </div>
+          
+          {discountAmount > 0 && (
+            <div className="flex justify-between items-center text-green-600">
+              <span>ส่วนลด (โค้ด: {promoCode})</span>
+              <span>-฿{discountAmount.toLocaleString()}</span>
+            </div>
+          )}
+          
+          <div className="pt-2 border-t border-gray-200 mt-2 flex justify-between items-center text-lg">
+            <span className="font-bold">ยอดสุทธิ</span>
+            <span className="text-2xl font-bold text-[#E51D53]">฿{finalPrice.toLocaleString()}</span>
+          </div>
         </div>
       </div>
 
@@ -46,8 +97,42 @@ export default function BookingForm({
         </div>
       )}
 
+      <div className="mb-6">
+        <label htmlFor="promo" className="font-semibold text-sm text-gray-700 mb-2 block">โค้ดส่วนลด (ถ้ามี)</label>
+        <div className="flex gap-2">
+          <input 
+            type="text" 
+            id="promo" 
+            value={promoCodeInput}
+            onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+            disabled={!!promoCode || isFull || isPastClass}
+            className="p-3 flex-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all uppercase disabled:bg-gray-100 disabled:text-gray-400"
+            placeholder="กรอกโค้ดส่วนลด"
+          />
+          {promoCode ? (
+            <button 
+              type="button"
+              onClick={() => { setPromoCode(""); setPromoCodeInput(""); setDiscountAmount(0); }}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 rounded-lg font-semibold transition-colors"
+            >
+              ยกเลิก
+            </button>
+          ) : (
+            <button 
+              type="button"
+              onClick={handleApplyPromo}
+              disabled={!promoCodeInput || isFull || isPastClass}
+              className="bg-[#222222] hover:bg-black disabled:bg-gray-300 text-white px-6 rounded-lg font-semibold transition-colors"
+            >
+              ใช้โค้ด
+            </button>
+          )}
+        </div>
+      </div>
+
       <form action={submitBooking} className="flex flex-col gap-5">
         <input type="hidden" name="classEventId" value={classEventId} />
+        {promoCode && <input type="hidden" name="promoCode" value={promoCode} />}
         
         <div className="flex flex-col gap-2">
           <label htmlFor="name" className="font-semibold text-sm text-gray-700">ชื่อ-นามสกุล</label>
@@ -92,6 +177,13 @@ export default function BookingForm({
             onChange={(e) => {
               const val = parseInt(e.target.value);
               setSeats(isNaN(val) ? (e.target.value as any) : val);
+              // reset discount when seats change
+              if (promoCode) {
+                 setPromoCode("");
+                 setPromoCodeInput("");
+                 setDiscountAmount(0);
+                 toast.info("กรุณากดใช้โค้ดส่วนลดอีกครั้งเนื่องจากมีการเปลี่ยนจำนวนที่นั่ง");
+              }
             }}
             onBlur={() => {
               if (!seats || seats < 1) setSeats(1);
@@ -120,7 +212,7 @@ export default function BookingForm({
           disabled={isFull || isPastClass || seats > totalAvailableSeats || !seats || seats < 1}
           className="mt-6 pop-btn-red text-white font-bold py-3.5 rounded-xl text-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPastClass ? "ไม่สามารถจองได้แล้ว" : isFull ? "ที่นั่งเต็มแล้ว" : "ยืนยันการจอง"}
+          {isPastClass ? "ไม่สามารถจองได้แล้ว" : isFull ? "ที่นั่งเต็มแล้ว" : finalPrice <= 0 ? "ยืนยันการจอง (เรียนฟรี)" : "ยืนยันและไปหน้าชำระเงิน"}
         </SubmitButton>
       </form>
     </>
