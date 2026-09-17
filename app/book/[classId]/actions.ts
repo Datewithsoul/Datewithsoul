@@ -171,6 +171,10 @@ export async function submitBooking(formData: FormData) {
     totalPrice: finalPrice.toLocaleString("th-TH"),
   });
 
-  // Redirect to payment page instead of classes
-  redirect(`/payment/${booking.id}`);
+  // Redirect to payment page instead of classes (or bookings if free)
+  if (isFree) {
+    redirect('/bookings');
+  } else {
+    redirect(`/payment/${booking.id}`);
+  }
 }

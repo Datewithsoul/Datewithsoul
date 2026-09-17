@@ -103,7 +103,11 @@ export default function CheckoutClient({ user, authUserEmail }: CheckoutClientPr
         } else if (result.groupId) {
           clearCart(); // Clear cart after successful checkout!
           toast.success("สร้างรายการจองสำเร็จ!");
-          router.push(`/payment/group/${result.groupId}`);
+          if (finalPrice <= 0) {
+            router.push('/bookings');
+          } else {
+            router.push(`/payment/group/${result.groupId}`);
+          }
         }
       } catch (err) {
         toast.error("เกิดข้อผิดพลาดที่ไม่รู้จัก กรุณาลองใหม่");
