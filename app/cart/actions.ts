@@ -37,7 +37,7 @@ export async function validatePromoCode(code: string, userId: string, classEvent
   return { success: true, promo };
 }
 
-export async function createCartBookings(items: BookingItemInput[], name: string, promoCode?: string) {
+export async function createCartBookings(items: BookingItemInput[], name: string, email?: string, promoCode?: string) {
   try {
     const supabase = await createClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -56,12 +56,15 @@ export async function createCartBookings(items: BookingItemInput[], name: string
 
     if (!user) {
       user = await prisma.user.create({
-        data: { id: authUser.id, name: name || authUser.email!, email: authUser.email! },
+        data: { id: authUser.id, name: name || authUser.email!, email: email || authUser.email! },
       });
-    } else if (user.name !== name && name) {
+    } else if ((user.name !== name && name) || (email && user.email !== email)) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { name }
+        data: { 
+          ...(name ? { name } : {}),
+          ...(email ? { email } : {})
+        }
       });
     }
 

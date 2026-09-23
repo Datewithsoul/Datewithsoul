@@ -156,8 +156,8 @@ export default function BookingForm({
             name="email" 
             required
             defaultValue={defaultEmail}
-            readOnly
-            className="p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+            disabled={isFull || isPastClass}
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400"
           />
         </div>
 

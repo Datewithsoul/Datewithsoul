@@ -54,7 +54,12 @@ export async function submitBooking(formData: FormData) {
 
   if (!user) {
     user = await prisma.user.create({
-      data: { id: authUser.id, name: name || authUser.email!, email: authUser.email! },
+      data: { id: authUser.id, name: name || authUser.email!, email: email },
+    });
+  } else if (user.email !== email || user.name !== name) {
+    user = await prisma.user.update({
+      where: { id: authUser.id },
+      data: { email, name }
     });
   }
 

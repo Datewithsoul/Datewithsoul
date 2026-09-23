@@ -89,6 +89,7 @@ export default function CheckoutClient({ user, authUserEmail }: CheckoutClientPr
     startTransition(async () => {
       try {
         const name = formData.get("name") as string;
+        const email = formData.get("email") as string;
         
         // Items formatted for action
         const bookingItems = items.map(item => ({
@@ -96,7 +97,7 @@ export default function CheckoutClient({ user, authUserEmail }: CheckoutClientPr
           seats: item.seats
         }));
 
-        const result = await createCartBookings(bookingItems, name, promoCode || undefined);
+        const result = await createCartBookings(bookingItems, name, email, promoCode || undefined);
         
         if (result.error) {
           toast.error("เกิดข้อผิดพลาด: " + result.error);
@@ -209,8 +210,7 @@ export default function CheckoutClient({ user, authUserEmail }: CheckoutClientPr
               name="email" 
               required
               defaultValue={authUserEmail || ""}
-              readOnly
-              className="p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
             />
           </div>
 
