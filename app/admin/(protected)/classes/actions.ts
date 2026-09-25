@@ -7,90 +7,60 @@ import { uploadMedia } from "@/utils/supabase/storage";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function updateClass(formData: FormData) {
-  await requireAdmin();
-  const id = formData.get("id") as string;
-  const name = formData.get("name") as string;
-  const description = formData.get("description") as string;
-  const instructor = "ไม่ระบุผู้สอน";
-  const price = parseFloat(formData.get("price") as string);
-  const category = (formData.get("category") as string) || "เวิร์กชอป";
-  const locationName = formData.get("locationName") as string || "Date with Soul Love";
-  const googleMapUrl = formData.get("googleMapUrl") as string || null;
-  const endDate = null;
-  const status = formData.get("status") as any;
-  
-  const learningOutcomes = formData.getAll("learningOutcomes").map(s => String(s).trim()).filter(Boolean);
-  const requirements = formData.getAll("requirements").map(s => String(s).trim()).filter(Boolean);
-
-  const mediaJson = formData.get("mediaJson") as string;
-  let mediaItems: { url: string, type: string, order: number }[] = [];
-  
   try {
-    if (mediaJson) {
-      mediaItems = JSON.parse(mediaJson);
+    await requireAdmin();
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    if (!name) throw new Error("ชื่อคอร์สไม่สามารถเว้นว่างได้");
+    
+    const description = formData.get("description") as string;
+    const instructor = "ไม่ระบุผู้สอน";
+    const price = parseFloat(formData.get("price") as string) || 0;
+    const category = (formData.get("category") as string) || "เวิร์กชอป";
+    const locationName = formData.get("locationName") as string || "Date with Soul Love";
+    const googleMapUrl = formData.get("googleMapUrl") as string || null;
+    const endDate = null;
+    const status = formData.get("status") as any;
+    
+    const learningOutcomes = formData.getAll("learningOutcomes").map(s => String(s).trim()).filter(Boolean);
+    const requirements = formData.getAll("requirements").map(s => String(s).trim()).filter(Boolean);
+
+    const mediaJson = formData.get("mediaJson") as string;
+    let mediaItems: { url: string, type: string, order: number }[] = [];
+    
+    try {
+      if (mediaJson) {
+        mediaItems = JSON.parse(mediaJson);
+      }
+    } catch (e) {
+      console.error("Failed to parse media JSON", e);
     }
-  } catch (e) {
-    console.error("Failed to parse media JSON", e);
-  }
 
-  const schedulesJson = formData.get("schedulesJson") as string;
-  let schedules: { date: string, endDate?: string, startTime: string, endTime: string, totalSeats: string, status?: string }[] = [];
-  try {
-    if (schedulesJson) {
-      schedules = JSON.parse(schedulesJson);
+    const schedulesJson = formData.get("schedulesJson") as string;
+    let schedules: { date: string, endDate?: string, startTime: string, endTime: string, totalSeats: string, status?: string }[] = [];
+    try {
+      if (schedulesJson) {
+        schedules = JSON.parse(schedulesJson);
+      }
+    } catch (e) {
+      console.error("Failed to parse schedulesJson", e);
     }
-  } catch (e) {
-    console.error("Failed to parse schedulesJson", e);
-  }
 
-  // Delete all existing media for this class
-  await prisma.classMedia.deleteMany({
-    where: { classEventId: id }
-  });
-
-  if (schedules.length > 0) {
-    const firstSchedule = schedules[0];
-    const firstDate = new Date(firstSchedule.date);
-    const firstEndDate = firstSchedule.endDate ? new Date(firstSchedule.endDate) : null;
-
-    // Update the current class event with the first schedule
-    await prisma.classEvent.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        category,
-        locationName,
-        googleMapUrl,
-        instructor,
-        date: firstDate,
-        endDate: firstEndDate,
-        startTime: firstSchedule.startTime,
-        endTime: firstSchedule.endTime,
-        price,
-        totalSeats: parseInt(firstSchedule.totalSeats, 10),
-        status: (firstSchedule.status as any) || status || undefined,
-        learningOutcomes,
-        requirements,
-        media: {
-          create: mediaItems.map(m => ({
-            url: m.url,
-            type: m.type,
-            order: m.order
-          }))
-        }
-      },
+    // Delete all existing media for this class
+    await prisma.classMedia.deleteMany({
+      where: { classEventId: id }
     });
 
-    // Create new class events for any additional schedules
-    for (let i = 1; i < schedules.length; i++) {
-      const schedule = schedules[i];
-      if (!schedule.date) continue;
+    if (schedules.length > 0) {
+      const firstSchedule = schedules[0];
+      const firstDate = new Date(firstSchedule.date);
+      const firstEndDate = firstSchedule.endDate ? new Date(firstSchedule.endDate) : null;
       
-      const dDate = new Date(schedule.date);
-      const dEndDate = schedule.endDate ? new Date(schedule.endDate) : null;
-      
-      await prisma.classEvent.create({
+      const totalSeats = parseInt(firstSchedule.totalSeats, 10);
+
+      // Update the current class event with the first schedule
+      await prisma.classEvent.update({
+        where: { id },
         data: {
           name,
           description,
@@ -98,13 +68,13 @@ export async function updateClass(formData: FormData) {
           locationName,
           googleMapUrl,
           instructor,
-          date: dDate,
-          endDate: dEndDate,
-          startTime: schedule.startTime,
-          endTime: schedule.endTime,
+          date: isNaN(firstDate.getTime()) ? new Date() : firstDate,
+          endDate: firstEndDate,
+          startTime: firstSchedule.startTime || "00:00",
+          endTime: firstSchedule.endTime || "00:00",
           price,
-          totalSeats: parseInt(schedule.totalSeats, 10),
-          status: (schedule.status as any) || status || undefined,
+          totalSeats: isNaN(totalSeats) ? 0 : totalSeats,
+          status: (firstSchedule.status as any) || status || undefined,
           learningOutcomes,
           requirements,
           media: {
@@ -114,36 +84,74 @@ export async function updateClass(formData: FormData) {
               order: m.order
             }))
           }
-        }
+        },
+      });
+
+      // Create new class events for any additional schedules
+      for (let i = 1; i < schedules.length; i++) {
+        const schedule = schedules[i];
+        if (!schedule.date) continue;
+        
+        const dDate = new Date(schedule.date);
+        const dEndDate = schedule.endDate ? new Date(schedule.endDate) : null;
+        const sTotalSeats = parseInt(schedule.totalSeats, 10);
+        
+        await prisma.classEvent.create({
+          data: {
+            name,
+            description,
+            category,
+            locationName,
+            googleMapUrl,
+            instructor,
+            date: isNaN(dDate.getTime()) ? new Date() : dDate,
+            endDate: dEndDate,
+            startTime: schedule.startTime || "00:00",
+            endTime: schedule.endTime || "00:00",
+            price,
+            totalSeats: isNaN(sTotalSeats) ? 0 : sTotalSeats,
+            status: (schedule.status as any) || status || undefined,
+            learningOutcomes,
+            requirements,
+            media: {
+              create: mediaItems.map(m => ({
+                url: m.url,
+                type: m.type,
+                order: m.order
+              }))
+            }
+          }
+        });
+      }
+
+    } else {
+      // Fallback if something went wrong
+      await prisma.classEvent.update({
+        where: { id },
+        data: {
+          name,
+          description,
+          category,
+          locationName,
+          googleMapUrl,
+          instructor,
+          price,
+          status: status || undefined,
+          learningOutcomes,
+          requirements,
+          media: {
+            create: mediaItems.map(m => ({
+              url: m.url,
+              type: m.type,
+              order: m.order
+            }))
+          }
+        },
       });
     }
-
-  } else {
-    // Fallback if something went wrong
-    await prisma.classEvent.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        category,
-        locationName,
-        googleMapUrl,
-        instructor,
-        price,
-        status: status || undefined,
-        learningOutcomes,
-        requirements,
-        media: {
-          create: mediaItems.map(m => ({
-            url: m.url,
-            type: m.type,
-            order: m.order
-          }))
-        }
-      },
-    });
+  } catch (error: any) {
+    console.error("updateClass Error:", error);
   }
-
   revalidatePath("/");
   revalidatePath("/schedule");
   revalidatePath("/classes");
@@ -152,106 +160,113 @@ export async function updateClass(formData: FormData) {
 }
 
 export async function updateGroupClass(formData: FormData) {
-  await requireAdmin();
-  const originalName = formData.get("originalName") as string;
-  const classEventIds = (formData.get("classEventIds") as string || "").split(",").filter(Boolean);
-  
-  const name = formData.get("name") as string;
-  const description = formData.get("description") as string;
-  const instructor = "ไม่ระบุผู้สอน";
-  const price = parseFloat(formData.get("price") as string);
-  const category = (formData.get("category") as string) || "เวิร์กชอป";
-  const locationName = formData.get("locationName") as string || "Date with Soul Love";
-  const googleMapUrl = formData.get("googleMapUrl") as string || null;
-  const status = formData.get("status") as any;
-  
-  const learningOutcomes = formData.getAll("learningOutcomes").map(s => String(s).trim()).filter(Boolean);
-  const requirements = formData.getAll("requirements").map(s => String(s).trim()).filter(Boolean);
-
-  const mediaJson = formData.get("mediaJson") as string;
-  let mediaItems: { url: string, type: string, order: number }[] = [];
   try {
-    if (mediaJson) mediaItems = JSON.parse(mediaJson);
-  } catch (e) {}
+    await requireAdmin();
+    const originalName = formData.get("originalName") as string;
+    const classEventIds = (formData.get("classEventIds") as string || "").split(",").filter(Boolean);
+    
+    const name = formData.get("name") as string;
+    if (!name) throw new Error("ชื่อคอร์สไม่สามารถเว้นว่างได้");
 
-  const schedulesJson = formData.get("schedulesJson") as string;
-  let schedules: { id?: string, date: string, endDate?: string, startTime: string, endTime: string, totalSeats: string, status?: string }[] = [];
-  try {
-    if (schedulesJson) schedules = JSON.parse(schedulesJson);
-  } catch (e) {}
+    const description = formData.get("description") as string;
+    const instructor = "ไม่ระบุผู้สอน";
+    const price = parseFloat(formData.get("price") as string) || 0;
+    const category = (formData.get("category") as string) || "เวิร์กชอป";
+    const locationName = formData.get("locationName") as string || "Date with Soul Love";
+    const googleMapUrl = formData.get("googleMapUrl") as string || null;
+    const status = formData.get("status") as any;
+    
+    const learningOutcomes = formData.getAll("learningOutcomes").map(s => String(s).trim()).filter(Boolean);
+    const requirements = formData.getAll("requirements").map(s => String(s).trim()).filter(Boolean);
 
-  const submittedIds = schedules.map(s => s.id).filter(Boolean) as string[];
-  const idsToDelete = classEventIds.filter(id => !submittedIds.includes(id));
+    const mediaJson = formData.get("mediaJson") as string;
+    let mediaItems: { url: string, type: string, order: number }[] = [];
+    try {
+      if (mediaJson) mediaItems = JSON.parse(mediaJson);
+    } catch (e) {}
 
-  // Handle deletions first
-  if (idsToDelete.length > 0) {
-    for (const idToDelete of idsToDelete) {
-      const bookingsCount = await prisma.booking.count({
-        where: { classEventId: idToDelete }
-      });
-      if (bookingsCount === 0) {
-        await prisma.classMedia.deleteMany({ where: { classEventId: idToDelete } });
-        await prisma.classEvent.delete({ where: { id: idToDelete } });
-      } else {
+    const schedulesJson = formData.get("schedulesJson") as string;
+    let schedules: { id?: string, date: string, endDate?: string, startTime: string, endTime: string, totalSeats: string, status?: string }[] = [];
+    try {
+      if (schedulesJson) schedules = JSON.parse(schedulesJson);
+    } catch (e) {}
+
+    const submittedIds = schedules.map(s => s.id).filter(Boolean) as string[];
+    const idsToDelete = classEventIds.filter(id => !submittedIds.includes(id));
+
+    // Handle deletions first
+    if (idsToDelete.length > 0) {
+      for (const idToDelete of idsToDelete) {
+        const bookingsCount = await prisma.booking.count({
+          where: { classEventId: idToDelete }
+        });
+        if (bookingsCount === 0) {
+          await prisma.classMedia.deleteMany({ where: { classEventId: idToDelete } });
+          await prisma.classEvent.delete({ where: { id: idToDelete } });
+        } else {
+          await prisma.classEvent.update({
+            where: { id: idToDelete },
+            data: { status: "CANCELLED" }
+          });
+        }
+      }
+    }
+
+    for (const schedule of schedules) {
+      if (!schedule.date) continue;
+      const dDate = new Date(schedule.date);
+      const dEndDate = schedule.endDate ? new Date(schedule.endDate) : null;
+      
+      const totalSeats = parseInt(schedule.totalSeats, 10);
+
+      const commonData = {
+        name,
+        description,
+        category,
+        locationName,
+        googleMapUrl,
+        instructor,
+        price,
+        status: (schedule.status as any) || status || undefined,
+        learningOutcomes,
+        requirements,
+        date: isNaN(dDate.getTime()) ? new Date() : dDate,
+        endDate: dEndDate,
+        startTime: schedule.startTime || "00:00",
+        endTime: schedule.endTime || "00:00",
+        totalSeats: isNaN(totalSeats) ? 0 : totalSeats,
+      };
+
+      if (schedule.id) {
+        // Delete existing media for this class event before updating
+        await prisma.classMedia.deleteMany({
+          where: { classEventId: schedule.id }
+        });
+        // Update existing
         await prisma.classEvent.update({
-          where: { id: idToDelete },
-          data: { status: "CANCELLED" }
+          where: { id: schedule.id },
+          data: {
+            ...commonData,
+            media: {
+              create: mediaItems.map(m => ({ url: m.url, type: m.type, order: m.order }))
+            }
+          }
+        });
+      } else {
+        // Create new
+        await prisma.classEvent.create({
+          data: {
+            ...commonData,
+            media: {
+              create: mediaItems.map(m => ({ url: m.url, type: m.type, order: m.order }))
+            }
+          }
         });
       }
     }
+  } catch (error: any) {
+    console.error("updateGroupClass Error:", error);
   }
-
-  for (const schedule of schedules) {
-    if (!schedule.date) continue;
-    const dDate = new Date(schedule.date);
-    const dEndDate = schedule.endDate ? new Date(schedule.endDate) : null;
-
-    const commonData = {
-      name,
-      description,
-      category,
-      locationName,
-      googleMapUrl,
-      instructor,
-      price,
-      status: (schedule.status as any) || status || undefined,
-      learningOutcomes,
-      requirements,
-      date: dDate,
-      endDate: dEndDate,
-      startTime: schedule.startTime,
-      endTime: schedule.endTime,
-      totalSeats: parseInt(schedule.totalSeats, 10),
-    };
-
-    if (schedule.id) {
-      // Delete existing media for this class event before updating
-      await prisma.classMedia.deleteMany({
-        where: { classEventId: schedule.id }
-      });
-      // Update existing
-      await prisma.classEvent.update({
-        where: { id: schedule.id },
-        data: {
-          ...commonData,
-          media: {
-            create: mediaItems.map(m => ({ url: m.url, type: m.type, order: m.order }))
-          }
-        }
-      });
-    } else {
-      // Create new
-      await prisma.classEvent.create({
-        data: {
-          ...commonData,
-          media: {
-            create: mediaItems.map(m => ({ url: m.url, type: m.type, order: m.order }))
-          }
-        }
-      });
-    }
-  }
-
   revalidatePath("/");
   revalidatePath("/schedule");
   revalidatePath("/classes");
