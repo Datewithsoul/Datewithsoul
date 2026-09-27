@@ -3,7 +3,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Users, CheckCircle2 } from "lucide-react";
 import { AttendanceToggle } from "./[id]/attendance-toggle";
 
 import { SearchBar } from "@/components/search-bar";
@@ -52,14 +52,14 @@ export default async function AttendanceListPage({ searchParams }: { searchParam
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <AdminPageHeader
           title="เช็คชื่อเข้าเรียน"
-          description={`ค้นพบ ${totalItems} คอร์ส • เลือกคอร์สเรียนเพื่อดูรอบเวลาและทำการเช็คชื่อผู้เข้าร่วม`}
+          description={`มี ${totalItems.toLocaleString("th-TH")} คอร์ส เลือกรอบเรียนเพื่อดูรายชื่อผู้จองและบันทึกการมาเข้าเรียน`}
         />
         <SearchBar placeholder="ค้นหาชื่อคอร์ส..." />
       </div>
 
       {paginatedGroups.length === 0 ? (
         <div className="py-10 text-center text-[#6a5d50] bg-white rounded-xl border border-[#ddd4c8]">
-          ยังไม่มีคอร์สเรียนในระบบ
+          {q ? "ไม่พบคอร์สที่ตรงกับคำค้น" : "ยังไม่มีคอร์สเรียนให้เช็คชื่อ"}
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-[#ddd4c8] shadow-sm overflow-hidden p-2">
@@ -92,18 +92,18 @@ export default async function AttendanceListPage({ searchParams }: { searchParam
                           <div key={c.id} className="bg-[#fbfaf8] border border-[#ddd4c8] rounded-lg p-4 flex flex-col hover:border-[#8a6d1f] hover:shadow-sm transition-all">
                             <div className="flex justify-between items-start gap-2 mb-3">
                               <div className="text-[#3d3229] font-medium">
-                                📅 {c.date.toLocaleDateString("th-TH")}
+                        {c.date.toLocaleDateString("th-TH")}
                               </div>
                               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${c.status === "COMPLETED" ? "bg-gray-200 text-gray-700" : "bg-green-100 text-green-700"}`}>
-                                {c.status === "COMPLETED" ? "ปิดรับสมัคร" : c.status}
+                                {c.status === "COMPLETED" ? "จบแล้ว" : c.status === "CANCELLED" ? "ยกเลิก" : "เปิดอยู่"}
                               </span>
                             </div>
                             
                             <div className="text-sm text-[#6a5d50] mb-4 space-y-1">
-                              <div>⏰ เวลา: {c.startTime} - {c.endTime}</div>
+                              <div>เวลา {c.startTime}–{c.endTime}</div>
                               <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#eee8e0]">
-                                <span>จองแล้ว: <span className="font-bold text-[#3d3229]">{totalPaid} / {totalCapacity}</span> ที่นั่ง</span>
-                                <span>มาแล้ว: <span className="font-bold text-green-600">{totalAttended}</span></span>
+                                <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> จองแล้ว <span className="font-bold text-[#3d3229]">{totalPaid}/{totalCapacity}</span></span>
+                                <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> มาแล้ว <span className="font-bold text-green-600">{totalAttended}</span></span>
                               </div>
                             </div>
 
@@ -113,8 +113,10 @@ export default async function AttendanceListPage({ searchParams }: { searchParam
                                 {c.bookings.map(b => (
                                   <div key={b.id} className="flex items-center justify-between gap-2 text-sm bg-white p-2 rounded border border-[#eee8e0]">
                                     <div className="flex flex-col truncate">
-                                      <span className="font-semibold text-[#3d3229] truncate">{b.user.name}</span>
-                                      <span className="text-[10px] text-[#6a5d50]">{b.seats} ที่นั่ง</span>
+                                      <span className="font-semibold text-[#3d3229] truncate">ชื่อ LINE: {b.user.lineName || "ยังไม่มีข้อมูล"}</span>
+                                      <span className="text-xs text-[#6a5d50] truncate">ชื่อ-นามสกุล: {b.user.name}</span>
+                                      <span className="text-xs text-[#6a5d50] truncate">เบอร์โทร: {b.user.phone || "ยังไม่มีข้อมูล"}</span>
+                                      <span className="text-[10px] text-[#8a6d1f] font-medium mt-0.5">{b.seats} ที่นั่ง</span>
                                     </div>
                                     <div className="shrink-0 scale-75 origin-right">
                                       <AttendanceToggle bookingId={b.id} initialStatus={b.attended} />
@@ -124,13 +126,13 @@ export default async function AttendanceListPage({ searchParams }: { searchParam
                               </div>
                             ) : (
                               <div className="mt-2 text-xs text-center text-[#a09486] border-t border-[#eee8e0] pt-3">
-                                ยังไม่มีผู้ชำระเงิน
+                                ยังไม่มีผู้จองที่ชำระเงินแล้ว
                               </div>
                             )}
 
                             <div className="mt-4 pt-2 flex gap-2">
                               <Link href={`/admin/attendance/${c.id}`} className="flex-1">
-                                <Button variant="outline" size="sm" className="w-full text-xs">จัดการเต็มรูปแบบ</Button>
+                                <Button variant="outline" size="sm" className="w-full text-xs">เปิดรายชื่อเพื่อเช็คชื่อ</Button>
                               </Link>
                             </div>
                           </div>

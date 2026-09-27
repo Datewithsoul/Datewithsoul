@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ArrowUpRight, Plus, Calendar, CheckCircle, Clock, XCircle, AlertCircle, Megaphone, Banknote, FileText, LineChart } from "lucide-react";
+import { ArrowUpRight, Plus, Calendar, Banknote } from "lucide-react";
 import Link from "next/link";
 import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
@@ -171,34 +171,10 @@ export default async function AdminDashboard() {
         ))}
       </dl>
 
-      <section>
-        <h2 className="text-base font-semibold text-foreground mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/admin/classes/new" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
-            <Plus className="h-4 w-4" /> เพิ่มคลาสใหม่
-          </Link>
-          <Link href="/admin/bookings" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
-            <FileText className="h-4 w-4" /> ดู Booking ทั้งหมด
-          </Link>
-          <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
-            <Banknote className="h-4 w-4" /> ตรวจสอบสลิป
-          </Link>
-          <Link href="/admin/classes" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
-            <Calendar className="h-4 w-4" /> จัดการตารางเรียน
-          </Link>
-          <Link href="/admin/reports" className="inline-flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors">
-            <LineChart className="h-4 w-4 text-[#8f3b2c]" /> รายงานและกราฟวิเคราะห์ (Analytics)
-          </Link>
-          <button disabled className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 px-4 py-2 rounded-md text-sm font-medium text-gray-400 cursor-not-allowed">
-            <Megaphone className="h-4 w-4" /> ส่งประกาศถึงลูกค้า
-          </button>
-        </div>
-      </section>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="flex flex-col">
           <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-base">Booking Overview</CardTitle>
+            <CardTitle className="text-base">ภาพรวมการจอง</CardTitle>
             <CardDescription>สรุปสถานะการจองทั้งหมด</CardDescription>
           </CardHeader>
           <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
@@ -227,7 +203,7 @@ export default async function AdminDashboard() {
 
         <Card className="flex flex-col">
           <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-base">Payment Overview</CardTitle>
+            <CardTitle className="text-base">ภาพรวมการชำระเงิน</CardTitle>
             <CardDescription>สรุปยอดเงินตามสถานะ</CardDescription>
           </CardHeader>
           <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
@@ -246,7 +222,7 @@ export default async function AdminDashboard() {
           </div>
           <div className="border-t border-border p-4 bg-accent">
             <Link href="/admin/bookings?status=PAYMENT_REVIEW" className="w-full flex justify-center items-center gap-2 bg-card border border-border px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-gray-50 transition-colors">
-               <Banknote className="h-4 w-4" /> ดูหน้าตรวจสอบ Payment
+               <Banknote className="h-4 w-4" /> ตรวจสอบการชำระเงิน
             </Link>
           </div>
         </Card>

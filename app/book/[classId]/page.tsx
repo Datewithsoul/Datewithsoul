@@ -140,6 +140,7 @@ export default async function BookClassPage({
               isPastClass={isPastClass}
               defaultName={dbUser?.name || ""}
               defaultEmail={user.email || ""}
+              defaultPhone={dbUser?.phone || ""}
             />
           </div>
         </div>

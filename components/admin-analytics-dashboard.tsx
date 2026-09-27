@@ -516,12 +516,12 @@ export function AdminAnalyticsDashboard({
           {/* Period Selector Buttons */}
           <div className="flex flex-wrap items-center gap-1.5 bg-[#f4f1ec] p-1 rounded-lg">
             <span className="text-xs font-semibold text-[#6a5d50] px-2 flex items-center gap-1">
-              <Calendar size={14} /> ช่วงเวลา:
+              <Calendar size={14} /> ช่วงเวลา
             </span>
             {(
               [
-                { key: "7d", label: "7 วัน (สัปดาห์)" },
-                { key: "30d", label: "30 วัน (เดือน)" },
+                { key: "7d", label: "7 วัน" },
+                { key: "30d", label: "30 วัน" },
                 { key: "3m", label: "3 เดือน" },
                 { key: "6m", label: "6 เดือน" },
                 { key: "1y", label: "1 ปี" },
@@ -549,17 +549,17 @@ export function AdminAnalyticsDashboard({
             <div className="relative flex-1 sm:flex-none min-w-[220px]">
               <Select value={selectedCourseName} onValueChange={setSelectedCourseName}>
                 <SelectTrigger className="w-full bg-[#faf8f5] border-[#ddd4c8] text-[#3d3229] font-semibold h-9 focus:ring-[#8f3b2c]">
-                  <SelectValue placeholder="🌟 ทุกคอร์สเรียน (รวมทุกคอร์ส)">
-                    {selectedCourseName === "all" ? "🌟 ทุกคอร์สเรียน (รวมทุกคอร์ส)" : `📚 ${selectedCourseName}`}
+                  <SelectValue placeholder="ทุกคอร์ส">
+                    {selectedCourseName === "all" ? "ทุกคอร์ส" : selectedCourseName}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="font-semibold text-[#3d3229]">
-                    🌟 ทุกคอร์สเรียน (รวมทุกคอร์ส)
+                    ทุกคอร์ส
                   </SelectItem>
                   {uniqueCourseNames.map((name) => (
                     <SelectItem key={name} value={name} className="font-medium text-[#3d3229]">
-                      📚 {name}
+                      {name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -578,7 +578,7 @@ export function AdminAnalyticsDashboard({
                     : "text-[#6a5d50] hover:text-[#3d3229]"
                 }`}
               >
-                ฿ ยอดขาย
+                ยอดขาย
               </Button>
               <Button
                 variant={metric === "bookings" ? "default" : "ghost"}
@@ -590,7 +590,7 @@ export function AdminAnalyticsDashboard({
                     : "text-[#6a5d50] hover:text-[#3d3229]"
                 }`}
               >
-                🎟️ จำนวนจอง
+                จำนวนจอง
               </Button>
               <Button
                 variant={metric === "seats" ? "default" : "ghost"}
@@ -602,7 +602,7 @@ export function AdminAnalyticsDashboard({
                     : "text-[#6a5d50] hover:text-[#3d3229]"
                 }`}
               >
-                🪑 ที่นั่ง
+                ที่นั่ง
               </Button>
             </div>
           </div>
@@ -614,7 +614,7 @@ export function AdminAnalyticsDashboard({
         {/* Total Revenue */}
         <Card className="border-[#ddd4c8] bg-white shadow-xs p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#6a5d50]">
-            <span className="text-xs font-bold uppercase tracking-wider">ยอดขายรวมในช่วงเวลา</span>
+            <span className="text-xs font-bold tracking-wide">ยอดขายรวม</span>
             <div className="p-2 rounded-lg bg-[#faf8f5] text-[#8f3b2c] border border-[#ddd4c8]">
               <DollarSign size={18} />
             </div>
@@ -705,7 +705,7 @@ export function AdminAnalyticsDashboard({
                 </CardTitle>
               </div>
               <CardDescription className="text-xs text-[#6a5d50] mt-0.5">
-                แสดงผลแยกตาม{granularity === "day" ? "รายวัน" : granularity === "week" ? "รายสัปดาห์" : "รายเดือน"} ในช่วง {period.toUpperCase()}
+                แสดงข้อมูล{granularity === "day" ? "รายวัน" : granularity === "week" ? "รายสัปดาห์" : "รายเดือน"} ตามตัวกรองด้านบน
               </CardDescription>
             </div>
 
@@ -812,12 +812,12 @@ export function AdminAnalyticsDashboard({
                 </CardTitle>
               </div>
               <CardDescription className="text-xs text-[#6a5d50] mt-0.5">
-                เปรียบเทียบแนวโน้มของคอร์สเรียนแต่ละชื่อ เพื่อวิเคราะห์ว่าคอร์สไหนเติบโตสูงสุดในแต่ละสัปดาห์/เดือน
+                เปรียบเทียบยอดของแต่ละคอร์สในช่วงเวลาที่เลือก
               </CardDescription>
             </div>
 
             <span className="text-xs font-semibold text-[#6a5d50]">
-              แสดง 6 คอร์สยอดนิยม + คอร์สอื่นๆ
+              แสดง 6 คอร์สแรกและรวมคอร์สที่เหลือ
             </span>
           </CardHeader>
 
@@ -925,10 +925,10 @@ export function AdminAnalyticsDashboard({
               </span>
               <div>
                 <CardTitle className="text-base font-bold text-[#3d3229]">
-                  วันไหนมีคนจองมากที่สุด (Day of Week)
+                  วันที่มีการจองมากที่สุด
                 </CardTitle>
                 <CardDescription className="text-xs text-[#6a5d50] mt-0.5">
-                  วิเคราะห์ความหนาแน่นของผู้เรียนแยกตามวันในสัปดาห์ (จันทร์ - อาทิตย์)
+                  จำนวนการจองแยกตามวันในสัปดาห์
                 </CardDescription>
               </div>
             </div>
@@ -1023,7 +1023,7 @@ export function AdminAnalyticsDashboard({
             )}
 
             <div className="mt-4 pt-3 border-t border-[#eee8e0] flex items-center justify-between text-xs text-[#6a5d50]">
-              <span>💡 คำแนะนำ: นำข้อมูลนี้ไปวางแผนเปิดรอบสอนในวันที่ลูกค้าสะดวกที่สุด</span>
+              <span>ใช้วันที่ยอดนิยมช่วยวางแผนเปิดรอบสอน</span>
             </div>
           </CardContent>
         </Card>
@@ -1037,10 +1037,10 @@ export function AdminAnalyticsDashboard({
               </span>
               <div>
                 <CardTitle className="text-base font-bold text-[#3d3229]">
-                  ช่วงเวลาไหนมีคนจองมากที่สุด (Time Slots)
+                  ช่วงเวลาที่มีการจองมากที่สุด
                 </CardTitle>
                 <CardDescription className="text-xs text-[#6a5d50] mt-0.5">
-                  เปรียบเทียบรอบเวลาสอน (เช่น 10:00-12:00, 14:00-16:00)
+                  จำนวนการจองแยกตามรอบเวลา
                 </CardDescription>
               </div>
             </div>
@@ -1058,7 +1058,7 @@ export function AdminAnalyticsDashboard({
               </div>
             ) : timeSlotStats.data.length === 0 ? (
               <div className="h-[240px] w-full flex items-center justify-center text-sm text-[#6a5d50]">
-                ยังไม่มีข้อมูลรอบเวลาสอนในช่วงเวลานี้
+                ยังไม่มีรายการจองในช่วงเวลานี้ ลองเปลี่ยนช่วงเวลาหรือเลือก “ทุกคอร์ส”
               </div>
             ) : (
               <div className="w-full h-[240px]">
@@ -1138,7 +1138,7 @@ export function AdminAnalyticsDashboard({
             )}
 
             <div className="mt-4 pt-3 border-t border-[#eee8e0] flex items-center justify-between text-xs text-[#6a5d50]">
-              <span>💡 ช่วงเวลาที่มีการจองหนาแน่นที่สุด คือช่วงเวลาที่แนะนำให้เปิดรอบสอนเพิ่ม</span>
+              <span>ใช้ช่วงเวลายอดนิยมช่วยวางแผนเปิดรอบเพิ่ม</span>
             </div>
           </CardContent>
         </Card>
@@ -1153,11 +1153,11 @@ export function AdminAnalyticsDashboard({
                 <Award size={16} />
               </span>
               <CardTitle className="text-base font-bold text-[#3d3229]">
-                ตารางสรุปและเปรียบเทียบอันดับคอร์สเรียนทั้งหมด (รวมคอร์สชื่อเดียวกัน)
+                เปรียบเทียบผลลัพธ์ของแต่ละคอร์ส
               </CardTitle>
             </div>
             <CardDescription className="text-xs text-[#6a5d50] mt-0.5">
-              วิเคราะห์คอร์สที่มียอดจองและยอดขายสูงสุดในช่วงเวลาที่เลือก (คลิกแถวเพื่อกรองเฉพาะคอร์สนั้น)
+              คลิกแถวเพื่อดูข้อมูลเฉพาะคอร์สนั้น
             </CardDescription>
           </div>
 
@@ -1210,7 +1210,7 @@ export function AdminAnalyticsDashboard({
               {courseStatsList.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="py-8 text-center text-[#6a5d50]">
-                    ไม่มีข้อมูลคอร์สเรียนในช่วงเวลานี้
+                    ไม่พบข้อมูลในช่วงเวลาหรือคอร์สที่เลือก ลองเปลี่ยนตัวกรองด้านบน
                   </TableCell>
                 </TableRow>
               ) : (

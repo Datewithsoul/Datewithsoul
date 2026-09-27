@@ -1,39 +1,43 @@
-import { MessageCircle, Calendar, CreditCard, CheckCircle, Pin, Heart, Sparkles } from "lucide-react";
+import { LogIn, Calendar, ClipboardPenLine, CreditCard, CheckCircle, Pin, Heart, Sparkles } from "lucide-react";
 
 const steps = [
   {
     step: "01",
-    icon: Calendar,
-    title: "เลือกคลาสและเวลา",
-    description:
-      "ดูตารางคลาสที่ต้องการ และเลือกช่วงเวลาที่สะดวก ตรวจสอบจำนวนที่นั่งที่เหลือ",
+    icon: LogIn,
+    title: "เข้าสู่ระบบ",
+    description: "เข้าสู่ระบบด้วย LINE ก่อนเริ่มจอง เพื่อให้ระบบบันทึกการจองและติดตามสถานะให้คุณได้",
     bg: "var(--brand-yellow)",
     color: "var(--brand-brown)",
   },
   {
     step: "02",
-    icon: MessageCircle,
-    title: "แจ้งจองผ่าน LINE",
-    description:
-      "ส่งข้อความมาที่ LINE Official Account แจ้งชื่อ เบอร์โทร คลาส และช่วงเวลา",
+    icon: Calendar,
+    title: "เลือกคลาสและรอบเวลา",
+    description: "เลือกคลาส วันที่ และช่วงเวลาที่ต้องการ จากนั้นกดจองคลาสเพื่อเริ่มกรอกข้อมูล",
     bg: "#06C755",
     color: "#fff",
   },
   {
     step: "03",
+    icon: ClipboardPenLine,
+    title: "กรอกข้อมูลผู้จอง",
+    description: "ตรวจสอบชื่อ-นามสกุล อีเมล และเบอร์โทร เลือกจำนวนที่นั่ง แล้วกดยืนยันการจอง",
+    bg: "var(--brand-yellow)",
+    color: "var(--brand-brown)",
+  },
+  {
+    step: "04",
     icon: CreditCard,
-    title: "ชำระเงินและส่งสลิป",
-    description:
-      "โอนเงินตามที่แจ้ง แล้วส่งหลักฐานการชำระเงินกลับมาใน LINE เพื่อยืนยัน",
+    title: "ชำระเงินภายใน 10 นาที",
+    description: "สแกน QR พร้อมเพย์ตามยอดที่ระบบแสดง แล้วอัปโหลดสลิปในหน้าชำระเงิน",
     bg: "var(--brand-red)",
     color: "#fff",
   },
   {
-    step: "04",
+    step: "05",
     icon: CheckCircle,
-    title: "รับการยืนยันการจอง",
-    description:
-      "รับข้อความยืนยัน พร้อมรายละเอียดสถานที่และสิ่งที่ต้องเตรียมก่อนวันเข้าคลาส",
+    title: "รอแอดมินตรวจสอบ",
+    description: "เมื่อสลิปผ่านการตรวจสอบ สถานะจะเปลี่ยนเป็นยืนยันแล้ว ดูความคืบหน้าได้ที่ประวัติการจอง",
     bg: "var(--brand-brown)",
     color: "#fff",
   },
@@ -65,12 +69,12 @@ export function HowToBook() {
             <span style={{ color: "var(--brand-red)" }}>ง่ายมาก!</span>
           </h2>
           <p className="font-medium" style={{ color: "var(--brand-brown-mid)" }}>
-            เพียง 4 ขั้นตอน คุณก็พร้อมเดินทางสู่ประสบการณ์ใหม่
+            ตั้งแต่เลือกคลาสจนถึงยืนยันการชำระเงิน
           </p>
         </div>
 
         {/* Steps */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (

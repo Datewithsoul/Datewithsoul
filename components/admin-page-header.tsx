@@ -14,12 +14,13 @@ export function AdminPageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>
+    <div className={cn("flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0">
-        <h1 className="text-[1.625rem] font-semibold tracking-tight text-[#3d3229]">{title}</h1>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6d1f]">ระบบจัดการ</p>
+        <h1 className="text-2xl font-bold tracking-tight text-[#3d3229]">{title}</h1>
         {description ? <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[#6a5d50]">{description}</p> : null}
       </div>
-      {action}
+      {action ? <div className="flex flex-wrap items-center gap-2">{action}</div> : null}
     </div>
   );
 }

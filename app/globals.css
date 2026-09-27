@@ -248,6 +248,26 @@
   caret-color: var(--admin-ink);
 }
 
+[data-admin] main {
+  min-width: 0;
+}
+
+[data-admin] table {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-admin] th {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+[data-admin] button:not([disabled]),
+[data-admin] a {
+  -webkit-tap-highlight-color: transparent;
+}
+
 [data-admin] ::selection {
   background: #e8dfd0;
   color: var(--admin-ink);

@@ -12,19 +12,19 @@ export const metadata = {
 const faqs = [
   {
     q: "จองได้กี่ที่นั่ง?",
-    a: "สามารถจองได้สูงสุด 4 ที่นั่งต่อการจองครั้งเดียว หากต้องการมากกว่านั้นกรุณาติดต่อเราโดยตรง",
+    a: "เลือกจำนวนที่นั่งได้ตามจำนวนที่ระบบแสดงในรอบนั้น หากที่นั่งไม่พอ ให้เลือกรอบอื่นหรือติดต่อเรา",
   },
   {
     q: "ชำระเงินด้วยวิธีใดได้บ้าง?",
-    a: "ชำระผ่านการโอนเงินผ่านธนาคาร หรือ PromptPay แล้วส่งสลิปยืนยันผ่านระบบ",
+    a: "ชำระผ่าน QR พร้อมเพย์ที่แสดงในหน้าชำระเงิน แล้วอัปโหลดสลิปในระบบภายในเวลาที่กำหนด",
   },
   {
     q: "หากต้องการยกเลิก ทำอย่างไร?",
-    a: "กรุณาแจ้งยกเลิกล่วงหน้าอย่างน้อย 3 วันก่อนวันเรียน สามารถยกเลิกได้ผ่านหน้าประวัติการจองหรือแจ้งผ่าน LINE",
+    a: "เปิดหน้าประวัติการจองเพื่อตรวจสอบสถานะ หากต้องการยกเลิกหรือขอความช่วยเหลือ ให้ติดต่อเราผ่าน LINE Official Account",
   },
   {
     q: "ไม่ได้รับการยืนยันทางอีเมล/LINE ทำอย่างไร?",
-    a: "กรุณาตรวจสอบในหน้าตรวจสอบสถานะการจอง หรือติดต่อเราผ่าน LINE Official Account",
+    a: "ระบบจะแจ้งเตือนเมื่อแอดมินตรวจสอบสลิปแล้ว ระหว่างนี้ดูสถานะล่าสุดได้ที่หน้าประวัติการจอง หากมีปัญหาให้ติดต่อ LINE Official Account",
   },
 ];
 
@@ -48,8 +48,14 @@ export default function HowItWorksPage() {
             <span style={{ color: "var(--brand-red)" }}>ง่ายมาก!</span>
           </h1>
           <p className="text-base md:text-lg font-medium max-w-xl mx-auto" style={{ color: "var(--brand-brown)" }}>
-            เพียง 4 ขั้นตอนสั้นๆ คุณก็พร้อมเข้าร่วมคลาสได้เลย
+            จองผ่านระบบได้ด้วยตัวเอง ตั้งแต่เลือกคลาสจนถึงส่งสลิปชำระเงิน
           </p>
+          <Link
+            href="/classes"
+            className="pop-btn-red inline-flex items-center gap-2 mt-7 px-6 py-3 rounded-full text-sm"
+          >
+            ดูคลาสที่เปิดจอง <ChevronRight className="w-4 h-4" />
+          </Link>
         </section>
 
         {/* Steps */}
@@ -98,9 +104,9 @@ export default function HowItWorksPage() {
               คำถามที่พบบ่อย
             </h2>
             <div className="flex flex-col gap-4">
-              {faqs.map((item, i) => (
+              {faqs.map((item) => (
                 <div
-                  key={i}
+                  key={item.q}
                   className="rounded-2xl bg-white p-5"
                   style={{ border: "var(--pop-outline)", boxShadow: "3px 3px 0 var(--brand-brown)" }}
                 >

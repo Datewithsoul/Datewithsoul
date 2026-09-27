@@ -10,6 +10,7 @@ datasource db {
 model User {
   id               String             @id @default(uuid())
   lineId           String?            @unique
+  lineName         String?
   name             String
   email            String?            @unique
   role             Role               @default(CUSTOMER)

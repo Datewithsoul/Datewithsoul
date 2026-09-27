@@ -128,7 +128,7 @@ export default async function AdminBookings(props: {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
         title="รายการจอง"
-        description="ดูสลิปจากลูกค้า ตรวจสอบว่าชำระเงินจริง แล้วยืนยันเป็นชำระเงินแล้ว หรือเปลี่ยนสถานะได้เอง"
+        description="ค้นหา ดูสถานะ และจัดการรายการจองของลูกค้า"
         action={
           <Link href="/admin/bookings/create">
             <Button className="admin-btn-primary h-9 px-3.5 text-sm gap-2">
@@ -142,7 +142,7 @@ export default async function AdminBookings(props: {
         <div className="border-b border-[#ddd4c8] px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-base font-semibold text-[#3d3229]">รายการทั้งหมด</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">พบ {bookings.length.toLocaleString("th-TH")} รายการ</p>
+            <p className="mt-1 text-sm text-[#6a5d50]">แสดง {bookings.length.toLocaleString("th-TH")} รายการ</p>
           </div>
         </div>
         
@@ -154,11 +154,11 @@ export default async function AdminBookings(props: {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-5 text-[#6a5d50]">ลูกค้า</TableHead>
                 <TableHead className="text-[#6a5d50]">คอร์สเรียน</TableHead>
-                <TableHead className="text-[#6a5d50]">วันที่จอง</TableHead>
+                <TableHead className="text-[#6a5d50]">จองเมื่อ</TableHead>
                 <TableHead className="text-center text-[#6a5d50]">ที่นั่ง</TableHead>
                 <TableHead className="text-right text-[#6a5d50]">ยอดรวม (บาท)</TableHead>
                 <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
-                <TableHead className="text-[#6a5d50]">ตรวจสอบสลิป</TableHead>
+                <TableHead className="text-[#6a5d50]">การชำระเงิน</TableHead>
                 <TableHead className="px-5 text-[#6a5d50]">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

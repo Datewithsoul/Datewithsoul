@@ -13,6 +13,7 @@ export async function submitBooking(formData: FormData) {
   const classEventId = formData.get("classEventId") as string;
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
+  const phone = formData.get("phone") as string;
   const seats = parseInt(formData.get("seats") as string, 10);
   const promoCodeStr = formData.get("promoCode") as string | undefined;
 
@@ -54,12 +55,12 @@ export async function submitBooking(formData: FormData) {
 
   if (!user) {
     user = await prisma.user.create({
-      data: { id: authUser.id, name: name || authUser.email!, email: email },
+      data: { id: authUser.id, name: name || authUser.email!, email: email, phone: phone },
     });
-  } else if (user.email !== email || user.name !== name) {
+  } else if (user.email !== email || user.name !== name || user.phone !== phone) {
     user = await prisma.user.update({
       where: { id: authUser.id },
-      data: { email, name }
+      data: { email, name, phone }
     });
   }
 

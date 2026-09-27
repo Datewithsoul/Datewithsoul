@@ -3,8 +3,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { notFound } from "next/navigation";
 import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { AttendanceToggle } from "./attendance-toggle";
 
 export default async function AttendancePage(props: { params: Promise<{ id: string }> }) {
@@ -39,7 +38,7 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
 
       <AdminPageHeader
         title={`เช็คชื่อ: ${classEvent.name}`}
-        description={`รอบวันที่ ${classEvent.date.toLocaleDateString("th-TH")} เวลา ${classEvent.startTime} - ${classEvent.endTime}`}
+        description={`วันที่ ${classEvent.date.toLocaleDateString("th-TH")} · เวลา ${classEvent.startTime}–${classEvent.endTime} · แตะวงกลมข้างชื่อเพื่อบันทึกว่าเข้าเรียนแล้ว`}
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -51,16 +50,21 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
           <div className="text-3xl font-bold text-green-600">{totalAttended}</div>
           <div className="text-sm text-[#6a5d50] mt-1">มาเข้าร่วมแล้ว</div>
         </div>
+        <div className="bg-white p-4 rounded-lg border border-[#ddd4c8] shadow-sm flex flex-col items-center justify-center">
+          <div className="text-3xl font-bold text-[#8a6d1f]">{totalPaidSeats - totalAttended}</div>
+          <div className="text-sm text-[#6a5d50] mt-1">ยังไม่ได้เช็คชื่อ</div>
+        </div>
       </div>
 
       <section className="bg-white border border-[#ddd4c8] rounded-lg shadow-sm overflow-hidden">
         <div className="border-b border-[#ddd4c8] px-5 py-4 bg-[#fbfaf8]">
-          <h2 className="font-semibold text-[#3d3229]">รายชื่อผู้เข้าร่วม (เฉพาะที่ชำระเงินแล้ว)</h2>
+          <h2 className="font-semibold text-[#3d3229]">รายชื่อผู้จองที่ชำระเงินแล้ว</h2>
+          <p className="mt-1 text-xs text-[#6a5d50]">กดวงกลมข้างชื่อเพื่อเช็คชื่อ หรือกดอีกครั้งเพื่อยกเลิก</p>
         </div>
         
         {classEvent.bookings.length === 0 ? (
           <div className="p-8 text-center text-[#6a5d50]">
-            ยังไม่มีผู้ชำระเงินสำหรับคอร์สนี้
+            ยังไม่มีผู้จองที่ชำระเงินแล้วสำหรับรอบนี้
           </div>
         ) : (
           <div className="divide-y divide-[#eee8e0]">
@@ -71,12 +75,11 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
                     <AttendanceToggle bookingId={booking.id} initialStatus={booking.attended} />
                   </div>
                   <div>
-                    <div className="font-medium text-[#3d3229] text-lg">{booking.user.name}</div>
-                    <div className="text-sm text-[#6a5d50] mt-1">
-                      {booking.user.email} {booking.user.phone && `• ${booking.user.phone}`}
-                    </div>
+                    <div className="font-medium text-[#3d3229] text-lg">ชื่อ LINE: {booking.user.lineName || "ยังไม่มีข้อมูล"}</div>
+                    <div className="text-sm text-[#6a5d50] mt-1">ชื่อ-นามสกุล: {booking.user.name}</div>
+                    <div className="text-sm text-[#6a5d50] mt-1">เบอร์โทร: {booking.user.phone || "ยังไม่มีข้อมูล"}</div>
                     <div className="text-sm font-semibold text-[#8a6d1f] mt-1">
-                      จอง {booking.seats} ที่นั่ง
+                      {booking.seats} ที่นั่ง
                     </div>
                   </div>
                 </div>

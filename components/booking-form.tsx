@@ -12,6 +12,7 @@ interface BookingFormProps {
   isPastClass?: boolean;
   defaultName: string;
   defaultEmail: string;
+  defaultPhone: string;
 }
 
 export default function BookingForm({ 
@@ -20,7 +21,8 @@ export default function BookingForm({
   totalAvailableSeats, 
   isPastClass = false,
   defaultName, 
-  defaultEmail 
+  defaultEmail,
+  defaultPhone
 }: BookingFormProps) {
   const [seats, setSeats] = useState(1);
   const [promoCodeInput, setPromoCodeInput] = useState("");
@@ -161,6 +163,20 @@ export default function BookingForm({
           />
         </div>
 
+        
+        <div className="flex flex-col gap-2">
+          <label htmlFor="phone" className="font-semibold text-sm text-gray-700">เบอร์โทรศัพท์</label>
+          <input 
+            type="tel" 
+            id="phone" 
+            name="phone" 
+            required
+            defaultValue={defaultPhone}
+            disabled={isFull || isPastClass}
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400"
+            placeholder="เบอร์โทรศัพท์"
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <label htmlFor="seats" className="font-semibold text-sm text-gray-700 flex justify-between">
             <span>จำนวนที่นั่งที่ต้องการ</span>

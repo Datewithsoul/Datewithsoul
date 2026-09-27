@@ -84,6 +84,7 @@ export async function GET(request: Request) {
         dbUser = await prisma.user.update({
           where: { id: dbUser.id },
           data: {
+            lineName: profile.displayName,
             name: profile.displayName,
             image: profile.pictureUrl,
           }
@@ -156,6 +157,7 @@ export async function GET(request: Request) {
         create: {
           id: authUserId,
           lineId: profile.userId,
+          lineName: profile.displayName,
           name: profile.displayName,
           email: dummyEmail,
           image: profile.pictureUrl,
@@ -163,6 +165,7 @@ export async function GET(request: Request) {
         },
         update: {
           lineId: profile.userId,
+          lineName: profile.displayName,
           name: profile.displayName,
           email: dummyEmail,
           image: profile.pictureUrl,

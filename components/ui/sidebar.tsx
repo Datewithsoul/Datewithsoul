@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/tooltip"
 import { PanelLeftIcon } from "lucide-react"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
+// Bump the key so existing users who had the old off-canvas state get the
+// restored admin navigation on their next visit.
+const SIDEBAR_COOKIE_NAME = "sidebar_state_v2"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"

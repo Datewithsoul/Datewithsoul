@@ -9,10 +9,8 @@ import {
 } from "@/components/ui/table";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
-import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { AdminBookingDialog } from "@/components/admin-booking-dialog";
 import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
-import Link from "next/link";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -65,14 +63,14 @@ export default async function AdminPayments(props: {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
         title="ตรวจสอบการชำระเงิน"
-        description="ตรวจสอบสลิปโอนเงินที่ลูกค้าอัปโหลดเข้ามา และยืนยันสถานะการจอง"
+        description="ตรวจสลิปที่ส่งเข้ามา แล้วอนุมัติหรือปฏิเสธรายการ"
       />
 
       <section className="border border-[#ddd4c8] bg-white shadow-sm">
         <div className="border-b border-[#ddd4c8] px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-base font-semibold text-[#3d3229]">รายการรอตรวจสอบ</h2>
-            <p className="mt-1 text-sm text-[#6a5d50]">พบ {bookings.length.toLocaleString("th-TH")} รายการ</p>
+            <p className="mt-1 text-sm text-[#6a5d50]">เหลือ {bookings.length.toLocaleString("th-TH")} รายการที่ต้องตรวจ</p>
           </div>
           
           <form className="relative w-full sm:w-72">
@@ -92,10 +90,10 @@ export default async function AdminPayments(props: {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="px-5 text-[#6a5d50]">ลูกค้า</TableHead>
                 <TableHead className="text-[#6a5d50]">คอร์สที่จอง</TableHead>
-                <TableHead className="text-[#6a5d50]">เวลาแจ้งโอน</TableHead>
+                <TableHead className="text-[#6a5d50]">แจ้งโอนเมื่อ</TableHead>
                 <TableHead className="text-right text-[#6a5d50]">ยอดโอน (บาท)</TableHead>
                 <TableHead className="text-[#6a5d50]">สถานะ</TableHead>
-                <TableHead className="text-[#6a5d50]">จัดการ</TableHead>
+                <TableHead className="text-[#6a5d50]">ถัดไป</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

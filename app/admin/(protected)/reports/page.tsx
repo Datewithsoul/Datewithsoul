@@ -70,8 +70,8 @@ export default async function AdminReports() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <AdminPageHeader
-        title="รายงานและสถิติการวิเคราะห์ (Analytics & Reports)"
-        description="เปรียบเทียบยอดจอง ยอดขาย และแนวโน้มของแต่ละคอร์สเรียน พร้อมตัวกรองแยกตามสัปดาห์ เดือน และปีแบบละเอียด"
+        title="รายงาน"
+        description="ดูยอดขาย การจอง และแนวโน้มของคอร์สในช่วงเวลาที่เลือก"
       />
 
       <AdminAnalyticsDashboard
