@@ -122,7 +122,7 @@ export function AdminChangeClassDialog({
                         )}
                       </div>
                       <div className="mt-0.5 text-xs text-[#6a5d50]">
-                        {ce.date.toLocaleDateString("th-TH", {
+                        {new Date(ce.date).toLocaleDateString("th-TH", {
                           day: "numeric",
                           month: "long",
                           year: "numeric",

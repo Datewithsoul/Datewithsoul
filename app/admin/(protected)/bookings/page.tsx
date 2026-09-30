@@ -108,8 +108,8 @@ export default async function AdminBookings(props: {
         user: booking.user,
         createdAt: booking.createdAt, // Group createdAt isn't fetched, fallback to booking
         totalSeats: booking.seats,
-        totalPrice: booking.bookingGroup!.totalPrice,
-        status: booking.bookingGroup!.status,
+        totalPrice: booking.bookingGroup?.totalPrice ?? booking.totalPrice,
+        status: booking.bookingGroup?.status ?? booking.status,
         items: [booking],
         slipUrl: booking.bookingGroup?.payment?.slipUrl ?? null,
         reviewLogs: booking.bookingGroup?.payment?.reviewLogs ?? [],

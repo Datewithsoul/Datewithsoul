@@ -1,6 +1,6 @@
 {
   "name": "datewithsoullove",
-  "version": "1.0.10.1",
+  "version": "1.0.10.2",
   "private": true,
   "scripts": {
     "dev": "next dev",

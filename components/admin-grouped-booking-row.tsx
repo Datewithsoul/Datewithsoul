@@ -96,7 +96,7 @@ export function AdminGroupedBookingRow({
           </div>
         </TableCell>
         <TableCell className="py-4 text-sm text-[#6a5d50] whitespace-nowrap">
-          {new Date(group.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
+          {new Date(group.createdAt || Date.now()).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
         </TableCell>
         <TableCell className="text-center tabular-nums py-4 font-semibold text-[#3d3229]">
           {group.totalSeats}
