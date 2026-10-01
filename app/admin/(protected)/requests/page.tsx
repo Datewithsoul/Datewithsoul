@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { SearchBar } from "@/components/search-bar";
 import { DataTablePagination } from "@/components/data-table-pagination";
 
+import { RequestActions } from "./request-actions";
+
 export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
   await requireAdmin();
   
@@ -20,7 +22,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
     ];
   }
 
-  const [requests, totalItems] = await Promise.all([
+  const [requests, totalItems, upcomingEvents] = await Promise.all([
     prisma.changeRequest.findMany({
       where,
       include: {
@@ -32,7 +34,11 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
       skip: (currentPage - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.changeRequest.count({ where })
+    prisma.changeRequest.count({ where }),
+    prisma.classEvent.findMany({
+      where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, status: "PUBLISHED" },
+      orderBy: { date: "asc" }
+    })
   ]);
   
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -71,26 +77,12 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                 {req.customerReason && <p><strong>เหตุผล:</strong> {req.customerReason}</p>}
               </div>
 
-              <div className="flex gap-2">
-                <form action={async () => {
-                  "use server";
-                  const { approveRequest } = await import("../bookings/requests");
-                  await approveRequest(req.id);
-                }}>
-                  <button className="bg-[#4A3B32] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#3A2D25] transition-colors border-2 border-[#4A3B32]">
-                    อนุมัติ
-                  </button>
-                </form>
-                <form action={async () => {
-                  "use server";
-                  const { rejectRequest } = await import("../bookings/requests");
-                  await rejectRequest(req.id, "พิจารณาแล้วไม่สามารถอนุมัติได้");
-                }}>
-                  <button className="bg-white border-2 border-[#4A3B32] text-[#4A3B32] px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-                    ปฏิเสธ
-                  </button>
-                </form>
-              </div>
+              <RequestActions 
+                requestId={req.id} 
+                events={upcomingEvents} 
+                requestedSeats={req.booking.seats}
+                requestedEventId={req.requestedEventId}
+              />
             </div>
           ))}
         </div>

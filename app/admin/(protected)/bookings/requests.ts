@@ -1,10 +1,12 @@
+"use server";
+
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus, RequestStatus, RequestType } from "@/app/generated/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendTemplatedLineMessage } from "@/lib/line";
 
-export async function approveRequest(requestId: string) {
+export async function approveRequest(requestId: string, overrideEventId?: string) {
   const admin = await requireAdmin();
   const request = await prisma.changeRequest.findUnique({
     where: { id: requestId },
@@ -19,46 +21,57 @@ export async function approveRequest(requestId: string) {
     return { success: false, error: "ไม่รองรับคำขอประเภทนี้" };
   }
 
-  await prisma.$transaction(async (tx) => {
-    if (request.type === RequestType.COURSE_CHANGE) {
-      if (!request.requestedEventId) throw new Error("Missing requested event ID");
-      // Check availability
-      const requestedEvent = await tx.classEvent.findUnique({ where: { id: request.requestedEventId } });
-      if (!requestedEvent || requestedEvent.totalSeats < request.booking.seats) {
-        throw new Error("ที่นั่งในรอบใหม่ไม่เพียงพอ");
-      }
-      // Lock both the original and requested sessions by updating them
-      // Release seat in original
-      await tx.classEvent.update({
-        where: { id: request.booking.classEventId },
-        data: { totalSeats: { increment: request.booking.seats } }
-      });
-      // Reduce seat in new
-      await tx.classEvent.update({
-        where: { id: request.requestedEventId },
-        data: { totalSeats: { decrement: request.booking.seats } }
-      });
-      // Update booking session
-      await tx.booking.update({
-        where: { id: request.bookingId },
-        data: {
-          classEventId: request.requestedEventId,
-          changeCount: { increment: 1 },
-          status: BookingStatus.CONFIRMED // reset status if it was CHANGE_REQUESTED
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (request.type === RequestType.COURSE_CHANGE) {
+        const finalEventId = overrideEventId || request.requestedEventId;
+        if (!finalEventId) throw new Error("Missing requested event ID");
+        // Check availability
+        const requestedEvent = await tx.classEvent.findUnique({ where: { id: finalEventId } });
+        if (!requestedEvent || requestedEvent.totalSeats < request.booking.seats) {
+          throw new Error("ที่นั่งในรอบที่เลือกไม่เพียงพอ");
         }
-      });
-    }
+        // Lock both the original and requested sessions by updating them
+        // Release seat in original
+        await tx.classEvent.update({
+          where: { id: request.booking.classEventId },
+          data: { totalSeats: { increment: request.booking.seats } }
+        });
+        // Reduce seat in new
+        await tx.classEvent.update({
+          where: { id: finalEventId },
+          data: { totalSeats: { decrement: request.booking.seats } }
+        });
+        // Update booking session
+        await tx.booking.update({
+          where: { id: request.bookingId },
+          data: {
+            classEventId: finalEventId,
+            changeCount: { increment: 1 },
+            status: BookingStatus.CONFIRMED // reset status if it was CHANGE_REQUESTED
+          }
+        });
+      }
 
-    // Complete request
-    await tx.changeRequest.update({
-      where: { id: requestId },
-      data: {
+      // Complete request
+      const updateData: any = {
         status: RequestStatus.APPROVED,
         approvedById: admin.id,
         completedAt: new Date()
+      };
+      if (overrideEventId && request.type === RequestType.COURSE_CHANGE) {
+        updateData.requestedEventId = overrideEventId;
       }
+
+      await tx.changeRequest.update({
+        where: { id: requestId },
+        data: updateData
+      });
     });
-  });
+  } catch (error: any) {
+    return { success: false, error: error.message || "เกิดข้อผิดพลาดในการอนุมัติคำขอ" };
+  }
+
 
   // Notify customer
   if (request.booking.user.lineId) {
