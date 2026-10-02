@@ -257,12 +257,16 @@ export async function confirmGroupPayment(groupId: string) {
   
   if (groupWithDetails?.user?.lineId) {
     const classNames = groupWithDetails.bookings.map((b: any) => `• ${b.classEvent.name} (${new Date(b.classEvent.date).toLocaleDateString("th-TH")} ${b.classEvent.startTime}-${b.classEvent.endTime})`).join('\n');
+    const firstClass = groupWithDetails.bookings[0]?.classEvent;
+    
     await sendTemplatedLineMessage(
       groupWithDetails.user.lineId,
       "PAYMENT_GROUP_VERIFIED_USER",
       {
         userName: groupWithDetails.user.name,
         classNames,
+        location: firstClass?.locationName || "Date with Soul Love",
+        mapUrl: firstClass?.googleMapUrl ? `แผนที่: ${firstClass.googleMapUrl}` : "",
       },
       {
         userId: groupWithDetails.userId,

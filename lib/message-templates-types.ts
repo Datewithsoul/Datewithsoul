@@ -89,6 +89,26 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     ],
   },
   {
+    key: "PAYMENT_GROUP_VERIFIED_USER",
+    title: "ยืนยันการชำระเงินแบบกลุ่มสำเร็จ (ส่งให้ลูกค้า)",
+    description: "ส่งหาลูกค้าเมื่อแอดมินอนุมัติสลิปแบบกลุ่มและยืนยันการจองเรียบร้อย",
+    category: "CUSTOMER",
+    defaultContent: `การชำระเงินสำหรับการจองแบบกลุ่มได้รับการตรวจสอบและยืนยันแล้ว!
+รายการคลาส:
+{{classNames}}
+
+สถานที่: {{location}}
+{{mapUrl}}
+
+แล้วพบกันนะคะ ✨`,
+    variables: [
+      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
+      { name: "classNames", label: "รายการคลาส", example: "• Ceramic Workshop\n• Painting Workshop" },
+      { name: "location", label: "สถานที่เรียน", example: "Date with Soul Love" },
+      { name: "mapUrl", label: "ลิงก์แผนที่", example: "แผนที่: https://maps.google.com/..." },
+    ],
+  },
+  {
     key: "PAYMENT_REJECTED_USER",
     title: "แจ้งเตือนสลิปไม่ผ่าน/ถูกปฏิเสธ (ส่งให้ลูกค้า)",
     description: "ส่งหาลูกค้าเมื่อแอดมินตรวจสอบสลิปแล้วไม่อนุมัติ",
