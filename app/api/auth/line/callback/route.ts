@@ -85,7 +85,6 @@ export async function GET(request: Request) {
           where: { id: dbUser.id },
           data: {
             lineName: profile.displayName,
-            name: profile.displayName,
             image: profile.pictureUrl,
           }
         });
@@ -166,7 +165,6 @@ export async function GET(request: Request) {
         update: {
           lineId: profile.userId,
           lineName: profile.displayName,
-          name: profile.displayName,
           email: dummyEmail,
           image: profile.pictureUrl,
           ...(roleToAssign ? { role: roleToAssign } : {}),

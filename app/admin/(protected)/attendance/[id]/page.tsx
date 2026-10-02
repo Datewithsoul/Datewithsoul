@@ -5,6 +5,7 @@ import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AttendanceToggle } from "./attendance-toggle";
+import { SendReminderButton } from "./send-reminder-button";
 
 export default async function AttendancePage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -36,10 +37,15 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
         </Link>
       </div>
 
-      <AdminPageHeader
-        title={`เช็คชื่อ: ${classEvent.name}`}
-        description={`วันที่ ${classEvent.date.toLocaleDateString("th-TH")} · เวลา ${classEvent.startTime}–${classEvent.endTime} · แตะวงกลมข้างชื่อเพื่อบันทึกว่าเข้าเรียนแล้ว`}
-      />
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <AdminPageHeader
+          title={`เช็คชื่อ: ${classEvent.name}`}
+          description={`วันที่ ${classEvent.date.toLocaleDateString("th-TH")} · เวลา ${classEvent.startTime}–${classEvent.endTime} · แตะวงกลมข้างชื่อเพื่อบันทึกว่าเข้าเรียนแล้ว`}
+        />
+        <div className="shrink-0 pt-2 md:pt-0">
+          <SendReminderButton classEventId={classEvent.id} totalSeats={totalPaidSeats} />
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-[#ddd4c8] shadow-sm flex flex-col items-center justify-center">
@@ -75,7 +81,7 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
                     <AttendanceToggle bookingId={booking.id} initialStatus={booking.attended} />
                   </div>
                   <div>
-                    <div className="font-medium text-[#3d3229] text-lg">ชื่อ LINE: {booking.user.lineName || "ยังไม่มีข้อมูล"}</div>
+                    <div className="font-medium text-[#3d3229] text-lg">ชื่อ LINE: {booking.user.lineName || booking.user.name}</div>
                     <div className="text-sm text-[#6a5d50] mt-1">ชื่อ-นามสกุล: {booking.user.name}</div>
                     <div className="text-sm text-[#6a5d50] mt-1">เบอร์โทร: {booking.user.phone || "ยังไม่มีข้อมูล"}</div>
                     <div className="text-sm font-semibold text-[#8a6d1f] mt-1">

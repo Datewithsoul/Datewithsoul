@@ -113,7 +113,7 @@ export default async function AttendanceListPage({ searchParams }: { searchParam
                                 {c.bookings.map(b => (
                                   <div key={b.id} className="flex items-center justify-between gap-2 text-sm bg-white p-2 rounded border border-[#eee8e0]">
                                     <div className="flex flex-col truncate">
-                                      <span className="font-semibold text-[#3d3229] truncate">ชื่อ LINE: {b.user.lineName || "ยังไม่มีข้อมูล"}</span>
+                                      <span className="font-semibold text-[#3d3229] truncate">ชื่อ LINE: {b.user.lineName || b.user.name}</span>
                                       <span className="text-xs text-[#6a5d50] truncate">ชื่อ-นามสกุล: {b.user.name}</span>
                                       <span className="text-xs text-[#6a5d50] truncate">เบอร์โทร: {b.user.phone || "ยังไม่มีข้อมูล"}</span>
                                       <span className="text-[10px] text-[#8a6d1f] font-medium mt-0.5">{b.seats} ที่นั่ง</span>
