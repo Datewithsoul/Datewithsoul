@@ -161,6 +161,7 @@ export async function submitBooking(formData: FormData) {
         className: classEvent.name,
         seats,
         totalPrice: finalPrice.toLocaleString("th-TH"),
+        details: classEvent.description || "",
       },
       {
         userId: user.id,

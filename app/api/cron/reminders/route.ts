@@ -75,6 +75,7 @@ async function sendReminderForOffset(
           time: `${cls.startTime} - ${cls.endTime}`,
           location: cls.locationName || "Date with Soul Love",
           mapUrl: cls.googleMapUrl ? `แผนที่: ${cls.googleMapUrl}` : "",
+          details: cls.description || "",
         },
         {
           bookingId: booking.id,

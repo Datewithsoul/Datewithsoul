@@ -117,6 +117,7 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
           location: booking.classEvent.locationName || "Date with Soul Love",
           mapUrl: booking.classEvent.googleMapUrl ? `แผนที่: ${booking.classEvent.googleMapUrl}` : "",
           seats: booking.seats,
+          details: booking.classEvent.description || "",
         },
         {
           userId: booking.userId,
@@ -479,6 +480,7 @@ export async function adminCreateBooking(formData: FormData) {
           location: classEvent.locationName || "Date with Soul Love",
           mapUrl: classEvent.googleMapUrl ? `แผนที่: ${classEvent.googleMapUrl}` : "",
           seats: seats,
+          details: classEvent.description || "",
         },
         {
           userId: user.id,
@@ -495,6 +497,7 @@ export async function adminCreateBooking(formData: FormData) {
           className: classEvent.name,
           seats: seats,
           totalPrice: totalPrice.toLocaleString("th-TH"),
+          details: classEvent.description || "",
         },
         {
           userId: user.id,

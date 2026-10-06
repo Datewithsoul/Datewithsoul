@@ -16,12 +16,15 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     title: "รับคำสั่งจองคลาสใหม่ (ส่งให้ลูกค้า)",
     description: "ส่งหาลูกค้าทันทีเมื่อทำการกดจองคลาสเดี่ยวสำเร็จ และรอชำระเงิน",
     category: "CUSTOMER",
-    defaultContent: `ระบบได้รับคำสั่งจองคลาส "{{className}}" ของคุณแล้ว (สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ`,
+    defaultContent: `ระบบได้รับคำสั่งจองคลาส "{{className}}" ของคุณแล้ว (สถานะ: กำลังจอง) กรุณาชำระเงินเพื่อยืนยันที่นั่งค่ะ
+
+{{details}}`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
       { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
       { name: "seats", label: "จำนวนที่นั่ง", example: "1" },
       { name: "totalPrice", label: "ยอดเงินรวม (บาท)", example: "1,500" },
+      { name: "details", label: "รายละเอียดคลาส", example: "รายละเอียดการเตรียมตัว..." },
     ],
   },
   {
@@ -77,6 +80,8 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
 สถานที่: {{location}}
 {{mapUrl}}
 
+{{details}}
+
 แล้วพบกันนะคะ ✨`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
@@ -86,6 +91,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { name: "location", label: "สถานที่เรียน", example: "Date with Soul Love" },
       { name: "mapUrl", label: "ลิงก์แผนที่", example: "แผนที่: https://maps.google.com/..." },
       { name: "seats", label: "จำนวนที่นั่ง", example: "1" },
+      { name: "details", label: "รายละเอียดคลาส", example: "รายละเอียดการเตรียมตัว..." },
     ],
   },
   {
@@ -194,6 +200,8 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
 สถานที่: {{location}}
 {{mapUrl}}
 
+{{details}}
+
 เตรียมตัวให้พร้อม แล้วพบกันนะคะ!`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
@@ -202,6 +210,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { name: "time", label: "เวลาเรียน", example: "10:00 - 12:00" },
       { name: "location", label: "สถานที่เรียน", example: "Date with Soul Love" },
       { name: "mapUrl", label: "ลิงก์แผนที่", example: "แผนที่: https://maps.google.com/..." },
+      { name: "details", label: "รายละเอียดคลาส", example: "รายละเอียดการเตรียมตัว..." },
     ],
   },
   {
@@ -216,6 +225,8 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
 สถานที่: {{location}}
 {{mapUrl}}
 
+{{details}}
+
 เตรียมตัวให้พร้อม แล้วพบกันนะคะ!`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
@@ -224,6 +235,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { name: "time", label: "เวลาเรียน", example: "10:00 - 12:00" },
       { name: "location", label: "สถานที่เรียน", example: "Date with Soul Love" },
       { name: "mapUrl", label: "ลิงก์แผนที่", example: "แผนที่: https://maps.google.com/..." },
+      { name: "details", label: "รายละเอียดคลาส", example: "รายละเอียดการเตรียมตัว..." },
     ],
   },
   {
@@ -237,6 +249,8 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
 สถานที่: {{location}}
 {{mapUrl}}
 
+{{details}}
+
 แล้วพบกันในคลาสนะคะ!`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
@@ -244,6 +258,7 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
       { name: "time", label: "เวลาเรียน", example: "10:00 - 12:00" },
       { name: "location", label: "สถานที่เรียน", example: "Date with Soul Love" },
       { name: "mapUrl", label: "ลิงก์แผนที่", example: "แผนที่: https://maps.google.com/..." },
+      { name: "details", label: "รายละเอียดคลาส", example: "รายละเอียดการเตรียมตัว..." },
     ],
   },
   {
