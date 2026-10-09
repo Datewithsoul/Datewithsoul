@@ -15,9 +15,26 @@ const siteUrl = new URL(
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
-  title: "Date with Soul Love — คลาสทำความรู้จักตัวเอง",
+  title: "Date with Soul Love — คลาสทำความรู้จักตัวเอง ความสัมพันธ์ จิตวิทยา",
   description:
-    "จองคลาสสำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น",
+    "จองคลาสพัฒนาตัวเอง Date with Soul Love สำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น สอนเรื่องจิตวิทยาความสัมพันธ์ ความรัก และการเข้าใจตนเอง",
+  keywords: [
+    "ความสัมพันธ์",
+    "พัฒนาตัวเอง",
+    "จิตวิทยา",
+    "รู้จักตัวเอง",
+    "เวิร์คช็อป",
+    "ความรัก",
+    "ซึมเศร้า",
+    "ฮีลใจ",
+    "ดูแลจิตใจ",
+    "Date with Soul Love"
+  ],
+  authors: [{ name: "Date with Soul Love" }],
+  robots: "index, follow",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "th_TH",
