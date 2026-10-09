@@ -49,8 +49,8 @@ export function AdminGroupedBookingRow({
           <AdminBookingControls
             bookingId={b.id}
             status={b.status}
-            slipUrl={group.slipUrl}
-            reviewLogs={group.reviewLogs}
+            slipUrl={b.payment?.slipUrl ?? b.bookingGroup?.payment?.slipUrl ?? null}
+            reviewLogs={b.payment?.reviewLogs ?? b.bookingGroup?.payment?.reviewLogs ?? []}
           />
         </TableCell>
         <TableCell className="px-5 py-4 flex flex-col items-start gap-2">
