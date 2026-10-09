@@ -88,7 +88,7 @@ interface AdminAnalyticsDashboardProps {
   classes: RawClass[];
 }
 
-type PeriodType = "7d" | "30d" | "3m" | "6m" | "1y" | "all";
+type PeriodType = "7d" | "15d" | "30d" | "3m" | "6m" | "1y" | "all";
 type GranularityType = "day" | "week" | "month";
 type MetricType = "revenue" | "bookings" | "seats";
 
@@ -153,6 +153,9 @@ export function AdminAnalyticsDashboard({
       case "7d":
         start.setDate(now.getDate() - 7);
         break;
+      case "15d":
+        start.setDate(now.getDate() - 15);
+        break;
       case "30d":
         start.setDate(now.getDate() - 30);
         break;
@@ -176,7 +179,7 @@ export function AdminAnalyticsDashboard({
 
   // Determine auto-granularity
   const granularity: GranularityType = useMemo(() => {
-    if (period === "7d" || period === "30d") return "day";
+    if (period === "7d" || period === "15d" || period === "30d") return "day";
     if (period === "3m" || period === "6m") return "week";
     return "month";
   }, [period]);
@@ -521,7 +524,8 @@ export function AdminAnalyticsDashboard({
             {(
               [
                 { key: "7d", label: "7 วัน" },
-                { key: "30d", label: "30 วัน" },
+                { key: "15d", label: "15 วัน" },
+                { key: "30d", label: "1 เดือน" },
                 { key: "3m", label: "3 เดือน" },
                 { key: "6m", label: "6 เดือน" },
                 { key: "1y", label: "1 ปี" },
