@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getClassesForMonth } from "@/app/actions/calendar";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import Link from "next/link";
+import { Sk } from "@/components/skeletons";
 
 interface ClassEvent {
   id: string;
@@ -111,7 +112,7 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
             </div>
 
             {/* Calendar Cells */}
-            <div key={`${year}-${month}`} className={`relative z-10 grid grid-cols-7 gap-2 md:gap-4 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+            <div key={`${year}-${month}`} className="relative z-10 grid grid-cols-7 gap-2 md:gap-4">
               {days.map((day, index) => {
                 if (day === null) {
                   return <div key={`empty-${index}`} className="animate-fade-up min-h-[70px] md:min-h-[120px] bg-gray-50 border-2 md:border-4 border-gray-200/50 rounded-lg md:rounded-xl"></div>;
@@ -141,7 +142,8 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
                 </div>
                 
                 <div className="flex flex-col gap-1.5 md:gap-2 flex-grow overflow-y-auto no-scrollbar">
-                  {dayClasses.slice(0, 2).map(c => (
+                  {isLoading && (day % 3 === 1 || day % 5 === 0) && <Sk className="h-10 w-full rounded md:h-14 md:rounded-lg" />}
+                  {!isLoading && dayClasses.slice(0, 2).map(c => (
                     <Link href={`/classes/${c.id}`} key={c.id}>
                       <div className="bg-brand-brown text-white p-1.5 md:p-2 border border-brand-brown md:border-2 rounded md:rounded-lg hover:bg-brand-red transition-colors cursor-pointer group">
                         <div className="flex items-center gap-1 text-[10px] md:text-xs text-gray-300 group-hover:text-white mb-0.5 md:mb-1 font-bold">

@@ -1,68 +1,95 @@
 import Navbar from "@/components/navbar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingScreen, MapSkeleton, SectionHeadingSkeleton, Sk } from "@/components/skeletons";
 
 export default function Loading() {
   return (
-    <main className="min-h-screen bg-white text-[#222222] font-sans pb-24">
-      <Navbar />
-
-      <div className="max-w-[1180px] mx-auto px-6 mt-6 mb-8 relative">
-        
-        {/* Title Section Skeleton */}
-        <div className="mb-6">
-          <Skeleton className="w-3/4 md:w-1/2 h-10 rounded-md mb-4 bg-orange-100" />
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <Skeleton className="w-32 h-5 rounded-md bg-gray-100" />
-              <Skeleton className="w-40 h-5 rounded-md bg-gray-100" />
-            </div>
-            <div className="flex gap-4">
-              <Skeleton className="w-24 h-5 rounded-md bg-gray-100" />
-              <Skeleton className="w-24 h-5 rounded-md bg-gray-100" />
-            </div>
+    <LoadingScreen label="กำลังโหลดรายละเอียดคลาส">
+      <main className="min-h-screen bg-white pb-28 font-sans lg:pb-0">
+        <Navbar />
+        <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-6 md:pt-10">
+          {/* Breadcrumb */}
+          <div className="mb-6 flex items-center gap-2">
+            <Sk className="h-4 w-16 rounded-full" />
+            <Sk className="h-4 w-14 rounded-full" />
+            <Sk className="h-4 w-28 rounded-full" />
           </div>
-        </div>
 
-        {/* Media Skeleton */}
-        <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden mb-10 border border-gray-100 shadow-sm">
-          <Skeleton className="w-full h-full rounded-none bg-gray-200" />
-        </div>
+          {/* Title */}
+          <header className="mb-8">
+            <Sk className="h-3 w-20 rounded-full" />
+            <Sk className="mt-4 h-10 w-3/4 max-w-2xl rounded-xl sm:h-12" />
+            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-4">
+                <Sk className="h-4 w-44 rounded-full" />
+                <Sk className="h-4 w-24 rounded-full" />
+                <Sk className="h-4 w-32 rounded-full" />
+              </div>
+              <Sk className="h-9 w-24 rounded-full" />
+            </div>
+          </header>
 
-        {/* Content Section Skeleton */}
-        <div className="flex flex-col lg:flex-row gap-12">
-          {/* Main Info */}
-          <div className="w-full lg:w-[65%]">
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
-              <Skeleton className="w-14 h-14 rounded-full bg-gray-200" />
-              <div className="flex flex-col gap-2">
-                <Skeleton className="w-40 h-6 rounded-md bg-gray-100" />
-                <Skeleton className="w-32 h-5 rounded-md bg-gray-100" />
+          {/* Gallery */}
+          <Sk className="mb-12 aspect-video w-full rounded-2xl" />
+
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16">
+            <div className="min-w-0">
+              {/* Key facts */}
+              <div className="grid grid-cols-2 gap-3 border-b border-lux-line pb-10 sm:grid-cols-3 sm:gap-4">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className={`rounded-2xl border border-lux-line p-4 sm:p-5 ${i === 2 ? "col-span-2 sm:col-span-1" : ""}`}>
+                    <Sk className="h-5 w-5 rounded-md" />
+                    <Sk className="mt-3 h-3 w-14 rounded-full" />
+                    <Sk className="mt-2 h-5 w-24" />
+                  </div>
+                ))}
+              </div>
+
+              {/* About */}
+              <div className="border-b border-lux-line py-10">
+                <SectionHeadingSkeleton className="mb-6" />
+                <div className="flex flex-col gap-3">
+                  {["100%", "96%", "92%", "98%", "70%"].map((w, i) => (
+                    <Sk key={i} className="h-4 rounded-full" style={{ width: w }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="py-10">
+                <SectionHeadingSkeleton className="mb-6" />
+                <MapSkeleton />
               </div>
             </div>
-            
-            <div className="mb-10 flex flex-col gap-3">
-              <Skeleton className="w-full h-5 rounded-md bg-gray-100" />
-              <Skeleton className="w-11/12 h-5 rounded-md bg-gray-100" />
-              <Skeleton className="w-4/5 h-5 rounded-md bg-gray-100" />
-              <Skeleton className="w-full h-5 rounded-md bg-gray-100" />
-            </div>
-          </div>
 
-          {/* Sticky Booking Box Skeleton */}
-          <div className="w-full lg:w-[35%] relative">
-            <div className="sticky top-24 bg-white p-6 rounded-2xl border border-gray-200 shadow-xl shadow-black/5">
-              <Skeleton className="w-32 h-8 rounded-md mb-6 bg-yellow-200" />
-              <Skeleton className="w-full h-[60px] rounded-xl mb-4 bg-gray-100" />
-              <Skeleton className="w-full h-[50px] rounded-xl mb-6 bg-[#ff385c]/20" />
-              <Skeleton className="w-full h-[40px] rounded-xl mb-4 bg-gray-100" />
-              <div className="flex justify-between pt-4 border-t border-gray-200 mt-4">
-                <Skeleton className="w-20 h-6 rounded-md bg-gray-100" />
-                <Skeleton className="w-24 h-6 rounded-md bg-gray-200" />
+            {/* Booking card */}
+            <aside>
+              <div className="rounded-3xl border border-lux-line bg-white p-6 shadow-[0_30px_60px_-30px_oklch(0.35_0.065_55/0.4)] sm:p-7">
+                <Sk className="h-9 w-36" />
+                <div className="mt-5">
+                  <div className="mb-2 flex justify-between">
+                    <Sk className="h-3 w-28 rounded-full" />
+                    <Sk className="h-3 w-14 rounded-full" />
+                  </div>
+                  <Sk className="h-2 w-full rounded-full" />
+                </div>
+                <div className="my-6 h-px bg-lux-line" />
+                <Sk className="h-3 w-24 rounded-full" />
+                <Sk className="mt-3 h-16 w-full rounded-2xl" />
+                <Sk className="mt-6 h-14 w-full rounded-full" />
+                <Sk className="mt-3 h-12 w-full rounded-full" />
+                <div className="mt-6 flex flex-col gap-3 border-t border-lux-line pt-5">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <Sk className="h-4 w-4 rounded-full" />
+                      <Sk className="h-3.5 w-52 rounded-full" />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </aside>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </LoadingScreen>
   );
 }

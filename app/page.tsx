@@ -97,7 +97,7 @@ export default async function Home() {
       {/* Member area */}
       {dbUser && (
         <section className="mx-auto max-w-[1340px] px-4 py-10 sm:px-6">
-          <Reveal className="rounded-3xl border border-lux-line bg-lux-cream/60 p-6 sm:p-8">
+          <Reveal className="rounded-3xl border border-lux-line bg-lux-cream/60 p-4 sm:p-8">
             <div className="mb-8 flex items-center gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
                 {dbUser.image ? (
@@ -112,12 +112,12 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               {/* Upcoming */}
-              <div>
-                <div className="mb-4 flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <h3 className="text-lg font-semibold">คลาสที่กำลังจะมาถึง</h3>
-                  <Link href="/bookings" className="text-sm font-semibold text-lux-gold underline-offset-4 hover:underline">
+                  <Link href="/bookings" className="shrink-0 text-sm font-semibold text-lux-gold underline-offset-4 hover:underline">
                     ดูทั้งหมด
                   </Link>
                 </div>
@@ -137,7 +137,7 @@ export default async function Home() {
                       <Link
                         key={b.id}
                         href={`/classes/${b.classEvent.id}`}
-                        className="group flex items-center gap-4 rounded-2xl border border-lux-line bg-white p-3 transition-all hover:-translate-y-0.5 hover:border-lux-gold-soft hover:shadow-md"
+                        className="group flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-lux-line bg-white p-3 transition-all hover:-translate-y-0.5 hover:border-lux-gold-soft hover:shadow-md"
                       >
                         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-lux-cream sm:h-20 sm:w-20">
                           {b.classEvent.media[0] && (
@@ -158,7 +158,7 @@ export default async function Home() {
               </div>
 
               {/* Recent */}
-              <div>
+              <div className="min-w-0">
                 <h3 className="mb-4 text-lg font-semibold">รายการจองล่าสุด</h3>
                 {recentBookings.length === 0 ? (
                   <div className="flex flex-col items-center rounded-2xl border border-lux-line bg-white p-8 text-center">
@@ -171,7 +171,7 @@ export default async function Home() {
                       <Link
                         key={b.id}
                         href="/bookings"
-                        className="flex items-center justify-between gap-4 rounded-2xl border border-lux-line bg-white p-4 transition-colors hover:border-lux-gold-soft"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-lux-line bg-white p-3.5 transition-colors hover:border-lux-gold-soft sm:p-4"
                       >
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{b.classEvent.name}</p>

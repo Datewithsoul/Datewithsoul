@@ -2,34 +2,42 @@
 
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CartDrawer from "./cart-drawer";
+import { CART_BUMP_EVENT } from "@/lib/fly-to-cart";
+import { cn } from "@/lib/utils";
 
 export default function CartButton() {
   const { totalItems } = useCart();
   const [isOpen, setIsOpen] = useState(false);
+  // Incremented on every "item landed" event; used as a key to restart the bump animation
+  const [bumps, setBumps] = useState(0);
+
+  useEffect(() => {
+    const onBump = () => setBumps((n) => n + 1);
+    window.addEventListener(CART_BUMP_EVENT, onBump);
+    return () => window.removeEventListener(CART_BUMP_EVENT, onBump);
+  }, []);
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="relative flex items-center justify-center bg-[var(--brand-yellow)] rounded-full border-[1.5px] border-[var(--brand-brown)] hover:shadow-md transition-all text-[var(--brand-brown)] w-9 h-9"
-        style={{
-          boxShadow: "2px 2px 0 var(--brand-brown)",
-        }}
-        aria-label="ตะกร้าสินค้า"
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.transform = "translate(-1px,-1px)";
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = "3px 3px 0 var(--brand-brown)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.transform = "";
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = "2px 2px 0 var(--brand-brown)";
-        }}
+        data-cart-target
+        className="group relative flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-brand-brown bg-brand-yellow text-brand-brown shadow-[2px_2px_0_var(--brand-brown)] transition-all duration-200 hover:-translate-x-px hover:-translate-y-px hover:shadow-[3px_3px_0_var(--brand-brown)] active:translate-x-px active:translate-y-px active:shadow-none"
+        aria-label={`ตะกร้าสินค้า${totalItems > 0 ? ` (${totalItems} รายการ)` : ""}`}
       >
-        <ShoppingBag size={18} />
+        <span key={bumps} className={cn("flex", bumps > 0 && "animate-cart-bump")}>
+          <ShoppingBag size={18} className="transition-transform duration-300 group-hover:-rotate-12" />
+        </span>
+
+        {bumps > 0 && <span key={`ring-${bumps}`} className="pointer-events-none absolute inset-0 rounded-full border-2 border-brand-red animate-cart-ring" aria-hidden />}
+
         {totalItems > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#E51D53] text-[10px] font-bold text-white border border-white">
+          <span
+            key={`badge-${totalItems}`}
+            className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#E51D53] px-1 text-[10px] font-bold text-white animate-pop-in"
+          >
             {totalItems > 9 ? "9+" : totalItems}
           </span>
         )}

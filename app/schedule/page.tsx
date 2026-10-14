@@ -6,6 +6,7 @@ import { CalendarDays, Clock, MapPin, ArrowUpRight } from "lucide-react";
 import { PageHero, Eyebrow } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
+import { Sk } from "@/components/skeletons";
 
 export const metadata = {
   title: "ตารางเรียน | Date with Soul Love",
@@ -127,7 +128,10 @@ export default async function SchedulePage() {
                         >
                           <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-xl bg-lux-cream sm:h-24 sm:w-32">
                             {c.media[0] ? (
-                              <img src={c.media[0].url} alt={c.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                              <>
+                                <Sk className="absolute inset-0 rounded-none" />
+                                <img src={c.media[0].url} alt={c.name} loading="lazy" className="relative h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                              </>
                             ) : (
                               <div className="flex h-full items-center justify-center font-display text-sm italic text-lux-gold">Soul Love</div>
                             )}

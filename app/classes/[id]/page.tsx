@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -28,6 +29,7 @@ import { expireStaleBookings } from "@/lib/expire-bookings";
 import { RoundPicker } from "./round-picker";
 import { MobileBookBar } from "./mobile-book-bar";
 import { ReadMore } from "./read-more";
+import { MapSkeleton } from "@/components/skeletons";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
 
@@ -340,7 +342,9 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
               <Reveal className="border-b border-lux-line py-10">
                 <div id="location" className="scroll-mt-28">
                   <SectionHeading align="left" eyebrow="Location" title="สถานที่จัดคลาส" className="mb-6" />
-                  <ClassLocationMap locationName={classEvent.locationName} googleMapUrl={classEvent.googleMapUrl} />
+                  <Suspense fallback={<MapSkeleton />}>
+                    <ClassLocationMap locationName={classEvent.locationName} googleMapUrl={classEvent.googleMapUrl} />
+                  </Suspense>
                 </div>
               </Reveal>
             )}
