@@ -12,7 +12,6 @@ import { Reveal } from "@/components/motion/reveal";
 import { StatusBadge } from "@/components/motion/status-badge";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { cn } from "@/lib/utils";
-import { Sk } from "@/components/skeletons";
 
 const IN_PROGRESS: BookingStatus[] = [
   BookingStatus.PENDING_PAYMENT,
@@ -145,10 +144,7 @@ export default async function BookingsPage() {
                           {/* Image */}
                           <Link href={`/classes/${c.id}`} className="relative h-48 shrink-0 overflow-hidden bg-lux-cream sm:h-auto sm:w-60">
                             {c.media[0] ? (
-                              <>
-                              <Sk className="absolute inset-0 rounded-none" />
-                              <img src={c.media[0].url} alt={c.name} loading="lazy" className={cn("relative h-full w-full object-cover transition-transform duration-700 group-hover:scale-105", muted && "grayscale-40")} />
-                              </>
+                              <img src={c.media[0].url} alt={c.name} className={cn("h-full w-full object-cover transition-transform duration-700 group-hover:scale-105", muted && "grayscale-40")} />
                             ) : (
                               <div className="flex h-full items-center justify-center font-display italic text-lux-gold">Soul Love</div>
                             )}

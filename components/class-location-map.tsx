@@ -1,6 +1,5 @@
 import { MapPin, Navigation, ExternalLink } from "lucide-react";
 import { resolveMapQuery, mapEmbedUrl, mapDirectionsUrl } from "@/lib/google-maps";
-import { Sk } from "@/components/skeletons";
 
 export async function ClassLocationMap({
   locationName,
@@ -17,7 +16,6 @@ export async function ClassLocationMap({
     <div className="overflow-hidden rounded-2xl border border-[#eadfca] bg-white">
       {query && (
         <div className="relative aspect-[16/10] sm:aspect-[16/8] w-full bg-[#fff9e8]">
-          <Sk className="absolute inset-0 rounded-none" />
           <iframe
             src={mapEmbedUrl(query)}
             title={`แผนที่ ${name}`}

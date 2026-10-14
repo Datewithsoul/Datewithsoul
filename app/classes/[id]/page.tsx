@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -29,7 +28,6 @@ import { expireStaleBookings } from "@/lib/expire-bookings";
 import { RoundPicker } from "./round-picker";
 import { MobileBookBar } from "./mobile-book-bar";
 import { ReadMore } from "./read-more";
-import { MapSkeleton } from "@/components/skeletons";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
 
@@ -193,7 +191,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
 
   const facts = [
     { icon: Hourglass, label: "ระยะเวลา", value: durationLabel(classEvent.startTime, classEvent.endTime, classEvent.date, classEvent.endDate) },
-    ...(hasInstructor ? [{ icon: User, label: "ผู้สอน", value: classEvent.instructor }] : []),
+    { icon: User, label: "ผู้สอน", value: hasInstructor ? classEvent.instructor : "ทีม Date with Soul Love" },
     { icon: MapPin, label: "สถานที่", value: classEvent.locationName || "แจ้งหลังยืนยันการจอง" },
     { icon: Users, label: "ขนาดกลุ่ม", value: `สูงสุด ${capacity} ท่าน` },
   ];
@@ -282,11 +280,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           {/* Details */}
           <div className="min-w-0">
             {/* Key facts */}
-            <div
-              className={`grid grid-cols-2 gap-3 border-b border-lux-line pb-10 sm:gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 ${
-                facts.length === 3 ? "sm:grid-cols-3 sm:[&>*:last-child:nth-child(odd)]:col-span-1" : ""
-              }`}
-            >
+            <div className="grid grid-cols-2 gap-3 border-b border-lux-line pb-10 sm:gap-4">
               {facts.map(({ icon: Icon, label, value }, i) => (
                 <Reveal key={label} delay={i * 80} className="rounded-2xl border border-lux-line bg-lux-cream/60 p-4 sm:p-5">
                   <Icon className="h-5 w-5 text-lux-gold" strokeWidth={1.5} />
@@ -342,9 +336,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
               <Reveal className="border-b border-lux-line py-10">
                 <div id="location" className="scroll-mt-28">
                   <SectionHeading align="left" eyebrow="Location" title="สถานที่จัดคลาส" className="mb-6" />
-                  <Suspense fallback={<MapSkeleton />}>
-                    <ClassLocationMap locationName={classEvent.locationName} googleMapUrl={classEvent.googleMapUrl} />
-                  </Suspense>
+                  <ClassLocationMap locationName={classEvent.locationName} googleMapUrl={classEvent.googleMapUrl} />
                 </div>
               </Reveal>
             )}

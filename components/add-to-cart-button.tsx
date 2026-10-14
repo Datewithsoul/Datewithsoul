@@ -2,9 +2,7 @@
 
 import { useCart } from "@/hooks/use-cart";
 import { toast } from "sonner";
-import { useEffect, useRef, useState } from "react";
-import { ShoppingBag, Check } from "lucide-react";
-import { flyToCart } from "@/lib/fly-to-cart";
+import { ShoppingBag } from "lucide-react";
 import { ClassEvent } from "@/app/generated/prisma";
 
 interface AddToCartButtonProps {
@@ -17,12 +15,8 @@ interface AddToCartButtonProps {
 
 export default function AddToCartButton({ classEvent, mediaUrl, className = "", variant = "pop" }: AddToCartButtonProps) {
   const { addToCart } = useCart();
-  const [added, setAdded] = useState(false);
-  const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(resetTimer.current), []);
 
-  const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const button = e.currentTarget;
+  const handleAdd = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (new Date(classEvent.date) < today) {
@@ -41,11 +35,6 @@ export default function AddToCartButton({ classEvent, mediaUrl, className = "", 
       mediaUrl,
     });
     
-    flyToCart(button, mediaUrl);
-    setAdded(true);
-    clearTimeout(resetTimer.current);
-    resetTimer.current = setTimeout(() => setAdded(false), 1800);
-
     toast.success("เพิ่มลงตะกร้าแล้ว", {
       description: classEvent.name,
       duration: 3000,
@@ -57,19 +46,10 @@ export default function AddToCartButton({ classEvent, mediaUrl, className = "", 
       <button
         type="button"
         onClick={handleAdd}
-        className={`flex items-center justify-center gap-2 rounded-full border py-3.5 font-semibold transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] ${
-          added ? "border-[#22a35a] bg-[#effaf1] text-[#16673a]" : "border-brand-brown bg-white text-brand-brown hover:bg-lux-cream"
-        } ${className}`}
+        className={`flex items-center justify-center gap-2 rounded-full border border-brand-brown bg-white py-3.5 font-semibold text-brand-brown transition-all duration-200 hover:-translate-y-0.5 hover:bg-lux-cream active:translate-y-0 ${className}`}
       >
-        {added ? (
-          <span key="added" className="flex items-center gap-2 animate-pop-in">
-            <Check size={18} strokeWidth={3} /> เพิ่มลงตะกร้าแล้ว
-          </span>
-        ) : (
-          <span key="idle" className="flex items-center gap-2">
-            <ShoppingBag size={18} /> เพิ่มลงตะกร้า
-          </span>
-        )}
+        <ShoppingBag size={18} />
+        เพิ่มลงตะกร้า
       </button>
     );
   }
@@ -88,15 +68,8 @@ export default function AddToCartButton({ classEvent, mediaUrl, className = "", 
         (e.currentTarget as HTMLButtonElement).style.boxShadow = "3px 3px 0 var(--brand-brown)";
       }}
     >
-      {added ? (
-        <span key="added" className="flex items-center gap-2 animate-pop-in">
-          <Check size={20} strokeWidth={3} /> เพิ่มแล้ว
-        </span>
-      ) : (
-        <span key="idle" className="flex items-center gap-2">
-          <ShoppingBag size={20} /> เพิ่มลงตะกร้า
-        </span>
-      )}
+      <ShoppingBag size={20} />
+      เพิ่มลงตะกร้า
     </button>
   );
 }
