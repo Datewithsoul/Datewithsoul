@@ -191,7 +191,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
 
   const facts = [
     { icon: Hourglass, label: "ระยะเวลา", value: durationLabel(classEvent.startTime, classEvent.endTime, classEvent.date, classEvent.endDate) },
-    { icon: User, label: "ผู้สอน", value: hasInstructor ? classEvent.instructor : "ทีม Date with Soul Love" },
+    ...(hasInstructor ? [{ icon: User, label: "ผู้สอน", value: classEvent.instructor }] : []),
     { icon: MapPin, label: "สถานที่", value: classEvent.locationName || "แจ้งหลังยืนยันการจอง" },
     { icon: Users, label: "ขนาดกลุ่ม", value: `สูงสุด ${capacity} ท่าน` },
   ];
@@ -280,7 +280,11 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           {/* Details */}
           <div className="min-w-0">
             {/* Key facts */}
-            <div className="grid grid-cols-2 gap-3 border-b border-lux-line pb-10 sm:gap-4">
+            <div
+              className={`grid grid-cols-2 gap-3 border-b border-lux-line pb-10 sm:gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 ${
+                facts.length === 3 ? "sm:grid-cols-3 sm:[&>*:last-child:nth-child(odd)]:col-span-1" : ""
+              }`}
+            >
               {facts.map(({ icon: Icon, label, value }, i) => (
                 <Reveal key={label} delay={i * 80} className="rounded-2xl border border-lux-line bg-lux-cream/60 p-4 sm:p-5">
                   <Icon className="h-5 w-5 text-lux-gold" strokeWidth={1.5} />
