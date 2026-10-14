@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { ClassEventStatus, BookingStatus } from "@/app/generated/prisma";
 import Navbar from "@/components/navbar";
 import Link from "next/link";
-import { Calendar, Clock, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, ArrowUpRight } from "lucide-react";
+import { PageHero, Eyebrow } from "@/components/site/page-hero";
+import { Reveal } from "@/components/motion/reveal";
+import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: "ตารางเรียน | Date with Soul Love",
@@ -18,7 +21,7 @@ export default async function SchedulePage() {
       date: { gte: today },
       status: { notIn: [ClassEventStatus.CANCELLED, ClassEventStatus.DRAFT] },
     },
-    orderBy: { date: "asc" },
+    orderBy: [{ date: "asc" }, { startTime: "asc" }],
     include: {
       media: { take: 1, orderBy: { order: "asc" } },
       bookings: {
@@ -28,155 +31,160 @@ export default async function SchedulePage() {
     },
   });
 
-  // Group by month
   const grouped = classes.reduce(
     (acc, c) => {
-      const key = c.date.toLocaleDateString("th-TH", {
-        year: "numeric",
-        month: "long",
-      });
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(c);
+      const key = c.date.toLocaleDateString("th-TH", { year: "numeric", month: "long" });
+      (acc[key] ??= []).push(c);
       return acc;
     },
     {} as Record<string, typeof classes>
   );
+  const months = Object.entries(grouped);
+  const openCount = classes.filter((c) => c.totalSeats > 0 && c.status !== "COMPLETED").length;
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans text-brand-brown">
       <Navbar />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full font-black text-sm mb-4"
-            style={{
-              backgroundColor: "var(--brand-yellow)",
-              border: "var(--pop-outline)",
-              boxShadow: "3px 3px 0 var(--brand-brown)",
-              color: "var(--brand-brown)",
-            }}
-          >
-            <Calendar className="w-4 h-4" />
-            ตารางคลาสเรียน
-          </div>
-          <h1
-            className="text-4xl md:text-5xl font-black leading-tight mb-3"
-            style={{ color: "var(--brand-brown)" }}
-          >
-            ตารางเรียน<span style={{ color: "var(--brand-red)" }}>รายเดือน</span>
-          </h1>
-          <p className="text-base font-medium" style={{ color: "var(--brand-brown-mid)" }}>
-            ดูคลาสที่กำลังจะมาถึงและเลือกจองที่นั่งของคุณได้เลย
-          </p>
+      <PageHero
+        eyebrow="Schedule"
+        title="ตารางเรียน"
+        highlight="รายเดือน"
+        description="ดูรอบคลาสที่กำลังจะมาถึง เลือกวันที่สะดวก แล้วจองที่นั่งของคุณได้เลย"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-3 divide-x divide-lux-line rounded-2xl border border-lux-line bg-white/80 py-4 backdrop-blur">
+          {[
+            { value: classes.length, label: "รอบทั้งหมด" },
+            { value: openCount, label: "เปิดรับสมัคร" },
+            { value: months.length, label: "เดือน" },
+          ].map((s) => (
+            <div key={s.label}>
+              <p className="font-heading text-3xl font-semibold">{s.value}</p>
+              <p className="mt-0.5 text-xs text-lux-muted">{s.label}</p>
+            </div>
+          ))}
         </div>
+      </PageHero>
 
-        {/* Schedule list */}
-        {Object.keys(grouped).length === 0 ? (
-          <div
-            className="rounded-2xl p-12 text-center"
-            style={{ border: "var(--pop-outline)", boxShadow: "var(--pop-shadow)" }}
-          >
-            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" style={{ color: "var(--brand-brown)" }} />
-            <p className="font-bold text-lg" style={{ color: "var(--brand-brown)" }}>
-              ยังไม่มีคลาสที่กำหนดการไว้ในขณะนี้
-            </p>
-            <p className="text-sm mt-2" style={{ color: "var(--brand-brown-mid)" }}>
-              ติดตามตารางใหม่ได้ที่ LINE Official Account ของเรา
-            </p>
-          </div>
+      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 md:py-24">
+        {months.length === 0 ? (
+          <Reveal className="mx-auto max-w-lg rounded-3xl border border-lux-line bg-lux-cream p-12 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm animate-float">
+              <CalendarDays className="h-7 w-7 text-lux-gold" />
+            </div>
+            <h2 className="text-xl font-semibold">ยังไม่มีคลาสที่กำหนดการไว้</h2>
+            <p className="mt-2 text-lux-muted">ติดตามตารางใหม่ได้ที่ LINE Official Account ของเรา</p>
+          </Reveal>
         ) : (
-          <div className="flex flex-col gap-12">
-            {Object.entries(grouped).map(([month, items]) => (
-              <div key={month}>
-                {/* Month header */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div
-                    className="px-4 py-1.5 rounded-full font-black text-sm"
-                    style={{ backgroundColor: "var(--brand-brown)", color: "white" }}
-                  >
-                    {month}
+          <div className="flex flex-col gap-20">
+            {months.map(([month, items]) => (
+              <section key={month}>
+                <Reveal className="mb-10 flex items-end justify-between gap-4 border-b border-lux-line pb-5">
+                  <div>
+                    <Eyebrow>Month</Eyebrow>
+                    <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">{month}</h2>
                   </div>
-                  <div className="flex-1 h-px" style={{ backgroundColor: "var(--brand-brown)", opacity: 0.15 }} />
-                </div>
+                  <span className="shrink-0 text-sm text-lux-muted">{items.length} รอบ</span>
+                </Reveal>
 
-                {/* Class list */}
-                <div className="flex flex-col gap-4">
-                  {items.map((c) => {
-                    const bookedSeats = c.bookings.reduce((sum, b) => sum + b.seats, 0);
-                    const totalSeats = c.totalSeats + bookedSeats;
-                    const isFull = c.totalSeats <= 0;
+                {/* Timeline */}
+                <ol className="relative ml-3 border-l border-lux-line sm:ml-[5.5rem]">
+                  {items.map((c, i) => {
+                    const booked = c.bookings.reduce((sum, b) => sum + b.seats, 0);
+                    const capacity = c.totalSeats + booked;
                     const isCompleted = c.status === "COMPLETED";
+                    const isFull = c.totalSeats <= 0;
+                    const isUrgent = !isFull && !isCompleted && c.totalSeats <= 3;
+                    const closed = isCompleted || isFull;
 
                     return (
-                      <Link key={c.id} href={`/classes/${c.id}`} className="block group">
-                        <div
-                          className="rounded-2xl bg-white p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-transform hover:-translate-y-0.5"
-                          style={{ border: "var(--pop-outline)", boxShadow: "var(--pop-shadow)" }}
+                      <Reveal as="li" key={c.id} delay={Math.min(i, 4) * 80} className="relative pb-6 pl-8 last:pb-0 sm:pl-10">
+                        {/* Date — beside the line on desktop */}
+                        <div className="absolute -left-[5.5rem] top-1 hidden w-16 text-right sm:block">
+                          <p className="font-heading text-3xl font-semibold leading-none">{c.date.getDate()}</p>
+                          <p className="mt-1 text-xs text-lux-muted">
+                            {c.date.toLocaleDateString("th-TH", { weekday: "short" })}
+                          </p>
+                        </div>
+
+                        {/* Node */}
+                        <span
+                          className={cn(
+                            "absolute -left-[7px] top-2 h-3.5 w-3.5 rounded-full border-2 border-white ring-1",
+                            closed ? "bg-lux-line ring-lux-line" : "bg-lux-gold ring-lux-gold"
+                          )}
+                          aria-hidden
                         >
-                          {/* Date block */}
-                          <div
-                            className="shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center text-center"
-                            style={{ backgroundColor: "var(--brand-yellow)", border: "var(--pop-outline)" }}
-                          >
-                            <span className="text-xl font-black leading-none" style={{ color: "var(--brand-brown)" }}>
-                              {c.date.getDate()}
-                            </span>
-                            <span className="text-[10px] font-bold uppercase" style={{ color: "var(--brand-brown)" }}>
-                              {c.date.toLocaleDateString("th-TH", { month: "short" })}
+                          {!closed && <span className="absolute inset-0 rounded-full bg-lux-gold animate-status-ping" />}
+                        </span>
+
+                        <Link
+                          href={`/classes/${c.id}`}
+                          className={cn(
+                            "group flex flex-col gap-4 rounded-2xl border border-lux-line bg-white p-4 transition-all duration-500 sm:flex-row sm:items-center sm:p-5",
+                            closed ? "opacity-70" : "hover:-translate-y-1 hover:border-lux-gold-soft hover:shadow-[0_20px_40px_-24px_oklch(0.35_0.065_55/0.35)]"
+                          )}
+                        >
+                          <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-xl bg-lux-cream sm:h-24 sm:w-32">
+                            {c.media[0] ? (
+                              <img src={c.media[0].url} alt={c.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center font-display text-sm italic text-lux-gold">Soul Love</div>
+                            )}
+                            {/* Date chip on mobile */}
+                            <span className="absolute left-2 top-2 rounded-lg bg-white/90 px-2 py-1 text-xs font-semibold backdrop-blur sm:hidden">
+                              {c.date.toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
                             </span>
                           </div>
 
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <h3 className="font-black text-base leading-snug group-hover:underline" style={{ color: "var(--brand-brown)" }}>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-heading text-lg font-semibold leading-snug transition-colors group-hover:text-brand-red">
                                 {c.name}
                               </h3>
                               {isCompleted ? (
-                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">ปิดรับสมัคร</span>
+                                <span className="rounded-full bg-lux-cream px-2.5 py-0.5 text-[11px] font-semibold text-lux-muted">ปิดรับสมัคร</span>
                               ) : isFull ? (
-                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">เต็มแล้ว</span>
-                              ) : (
-                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">เปิดรับสมัคร</span>
-                              )}
+                                <span className="rounded-full bg-lux-cream px-2.5 py-0.5 text-[11px] font-semibold text-lux-muted">เต็มแล้ว</span>
+                              ) : isUrgent ? (
+                                <span className="rounded-full bg-brand-red px-2.5 py-0.5 text-[11px] font-semibold text-white">เหลือ {c.totalSeats} ที่</span>
+                              ) : null}
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium" style={{ color: "var(--brand-brown-mid)" }}>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />{c.startTime} – {c.endTime}
+                            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-lux-muted">
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5 text-lux-gold" />
+                                {c.startTime} – {c.endTime}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3.5 h-3.5" />จองแล้ว {bookedSeats}/{totalSeats} ที่นั่ง
+                              {c.locationName && (
+                                <span className="flex items-center gap-1.5">
+                                  <MapPin className="h-3.5 w-3.5 text-lux-gold" />
+                                  <span className="truncate">{c.locationName}</span>
+                                </span>
+                              )}
+                              <span>
+                                จองแล้ว {booked}/{capacity}
                               </span>
                             </div>
                           </div>
 
-                          {/* Price */}
-                          <div className="shrink-0 flex flex-col items-end gap-2">
-                            <span className="font-black text-lg" style={{ color: "var(--brand-brown)" }}>
-                              ฿{c.price.toLocaleString()}
-                            </span>
-                            {!isCompleted && !isFull && (
-                              <span
-                                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                                style={{ backgroundColor: "var(--brand-red)", color: "white" }}
-                              >
-                                จองเลย →
+                          <div className="flex shrink-0 items-center justify-between gap-4 sm:flex-col sm:items-end">
+                            <p className="font-heading text-xl font-semibold">฿{c.price.toLocaleString()}</p>
+                            {!closed && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand-brown px-4 py-1.5 text-xs font-semibold text-white transition-colors group-hover:bg-brand-red">
+                                จองเลย <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:rotate-45" />
                               </span>
                             )}
                           </div>
-                        </div>
-                      </Link>
+                        </Link>
+                      </Reveal>
                     );
                   })}
-                </div>
-              </div>
+                </ol>
+              </section>
             ))}
           </div>
         )}
       </main>
-
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { logout } from "./login/actions";
 import Navbar from "@/components/navbar";
 import ClassCalendar from "@/components/class-calendar";
+import { Reveal } from "@/components/motion/reveal";
 
 function ClassCarousel({ classes }: { classes: any[] }) {
   if (!classes || classes.length === 0) return null;
@@ -58,10 +59,10 @@ function ClassCarousel({ classes }: { classes: any[] }) {
           return (
             <CarouselItem key={c.id} className="pl-4 basis-[60%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
               <Link href={`/classes/${c.id}`} className="block h-full">
-                <div className="bg-white rounded-2xl overflow-hidden flex flex-col h-full shadow-sm border border-gray-100">
+                <div className="group bg-white rounded-2xl overflow-hidden flex flex-col h-full shadow-sm border border-gray-100 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
                   <div className="relative aspect-video overflow-hidden bg-gray-100">
                     {c.media && c.media.length > 0 ? (
-                      <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover" />
+                      <img src={c.media[0].url} alt={c.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-xs">
                         ไม่มีรูปภาพ
@@ -271,7 +272,7 @@ export default async function Home() {
 
       {/* User Dashboard Section */}
       {dbUser && (
-        <section className="max-w-[1340px] mx-auto px-6 py-8 border-b border-gray-100">
+        <section className="max-w-[1340px] mx-auto px-6 py-8 border-b border-gray-100 animate-fade-up" style={{ "--delay": "150ms" } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200">
               {dbUser.image ? <img src={dbUser.image} alt={dbUser.name} className="w-full h-full object-cover" /> : <UserIcon size={20} className="text-gray-500" />}
@@ -366,34 +367,34 @@ export default async function Home() {
         
         {/* Popular / Almost Full */}
         {popularClasses.length > 0 && (
-          <div>
+          <Reveal>
             <div className="flex items-center gap-3 mb-6">
               <h2 className="text-2xl font-bold text-[#F44336]">🔥 รายการยอดนิยม (ใกล้เต็มแล้ว รีบจองเลย!)</h2>
             </div>
             <div className="relative px-12">
               <ClassCarousel classes={popularClasses} />
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* This Week */}
         {thisWeekClasses.length > 0 && (
-          <div>
+          <Reveal>
             <h2 className="text-2xl font-bold mb-6">📅 รายการสอนสัปดาห์นี้</h2>
             <div className="relative px-12">
               <ClassCarousel classes={thisWeekClasses} />
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* This Month */}
         {thisMonthClasses.length > 0 && (
-          <div>
+          <Reveal>
             <h2 className="text-2xl font-bold mb-6">🗓️ รายการสอนเดือนนี้</h2>
             <div className="relative px-12">
               <ClassCarousel classes={thisMonthClasses} />
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* Grouped by Category */}
@@ -407,12 +408,12 @@ export default async function Home() {
                 return acc;
               }, {} as Record<string, typeof upcomingClasses>)
             ).map(([category, classes]) => (
-              <div key={category}>
+              <Reveal key={category}>
                 <h2 className="text-2xl font-bold mb-6">🏷️ หมวดหมู่: {category}</h2>
                 <div className="relative px-12">
                   <ClassCarousel classes={classes} />
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         )}

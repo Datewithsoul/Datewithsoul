@@ -68,7 +68,7 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
 
   return (
     <div className="w-full max-w-[1340px] mx-auto px-2 md:px-6 py-6 md:py-12">
-      <div className="bg-white border-2 md:border-4 border-black rounded-xl md:rounded-2xl p-3 md:p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
+      <div className="animate-fade-up bg-white border-2 md:border-4 border-black rounded-xl md:rounded-2xl p-3 md:p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden">
         
         {/* Pop Art Decorative Dots (Halftone effect) */}
         <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 2px)', backgroundSize: '16px 16px' }}></div>
@@ -111,10 +111,10 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
             </div>
 
             {/* Calendar Cells */}
-            <div className={`relative z-10 grid grid-cols-7 gap-2 md:gap-4 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+            <div key={`${year}-${month}`} className={`relative z-10 grid grid-cols-7 gap-2 md:gap-4 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
               {days.map((day, index) => {
                 if (day === null) {
-                  return <div key={`empty-${index}`} className="min-h-[70px] md:min-h-[120px] bg-gray-50 border-2 md:border-4 border-gray-200/50 rounded-lg md:rounded-xl"></div>;
+                  return <div key={`empty-${index}`} className="animate-fade-up min-h-[70px] md:min-h-[120px] bg-gray-50 border-2 md:border-4 border-gray-200/50 rounded-lg md:rounded-xl"></div>;
                 }
 
             const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
@@ -131,7 +131,8 @@ export default function ClassCalendar({ initialClasses, initialYear, initialMont
             return (
               <div 
                 key={`day-${day}`} 
-                className={`min-h-[100px] md:min-h-[140px] border-2 md:border-4 border-black rounded-lg md:rounded-xl p-1.5 md:p-2 flex flex-col transition-transform hover:-translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${isToday ? 'bg-[#FFC107]' : 'bg-white'}`}
+                style={{ "--delay": `${Math.min(index, 34) * 14}ms` } as React.CSSProperties}
+                className={`animate-fade-up min-h-[100px] md:min-h-[140px] border-2 md:border-4 border-black rounded-lg md:rounded-xl p-1.5 md:p-2 flex flex-col transition-transform hover:-translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${isToday ? 'bg-[#FFC107]' : 'bg-white'}`}
               >
                 <div className="flex justify-between items-start mb-1 md:mb-2">
                   <span className={`font-black text-sm md:text-xl w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-black text-white' : ''}`}>

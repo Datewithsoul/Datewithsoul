@@ -1,30 +1,32 @@
 import { prisma } from "@/lib/prisma";
-import { BookingStatus, ClassEventStatus } from "@/app/generated/prisma";
+import { BookingStatus, ClassEventStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
-import ClassCarousel from "@/components/class-carousel";
+import { CalendarDays, X } from "lucide-react";
 import Navbar from "@/components/navbar";
+import { PageHero, SectionHeading } from "@/components/site/page-hero";
+import { ClassCard } from "@/components/site/class-card";
+import { Reveal } from "@/components/motion/reveal";
+
+export const metadata = {
+  title: "คลาสเรียน | Date with Soul Love",
+  description: "คลาสและเวิร์กชอปทำความรู้จักตัวเองของ Date with Soul Love",
+};
 
 export default async function ClassesPage(props: { searchParams: Promise<{ date?: string }> }) {
   const searchParams = await props.searchParams;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  let dateFilter: any = { gte: today };
-  let title = "คลาสเรียนและเวิร์กชอป";
-  let subtitle = "ค้นหาแรงบันดาลใจและสร้างสรรค์ผลงานศิลปะในแบบของคุณ";
+  let dateFilter: Prisma.DateTimeFilter = { gte: today };
+  let filterDate: Date | null = null;
 
   if (searchParams?.date) {
     const d = new Date(searchParams.date);
     if (!isNaN(d.getTime())) {
       const nextDay = new Date(d);
       nextDay.setDate(d.getDate() + 1);
-      dateFilter = {
-        gte: d,
-        lt: nextDay
-      };
-      title = `รายการสอนวันที่ ${d.toLocaleDateString("th-TH")}`;
-      subtitle = "";
+      dateFilter = { gte: d, lt: nextDay };
+      filterDate = d;
     }
   }
 
@@ -32,20 +34,16 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
     where: { date: dateFilter, status: { notIn: [ClassEventStatus.CANCELLED, ClassEventStatus.DRAFT] } },
     orderBy: { date: "asc" },
     include: {
-      media: {
-        orderBy: { order: 'asc' }
-      },
+      media: { orderBy: { order: "asc" } },
       bookings: {
-        where: {
-          status: { notIn: [BookingStatus.CANCELLED] }
-        },
-        select: { seats: true }
-      }
-    }
+        where: { status: { notIn: [BookingStatus.CANCELLED] } },
+        select: { seats: true },
+      },
+    },
   });
 
-  // Group by name so we only show one card per class name
-  const seenNames = new Set();
+  // One card per class name (the detail page lets people pick the round)
+  const seenNames = new Set<string>();
   const upcomingClasses = [];
   for (const c of rawUpcomingClasses) {
     if (!seenNames.has(c.name)) {
@@ -54,130 +52,96 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
     }
   }
 
+  const byCategory = upcomingClasses.reduce(
+    (acc, c) => {
+      const cat = c.category || "เวิร์กชอป";
+      (acc[cat] ??= []).push(c);
+      return acc;
+    },
+    {} as Record<string, typeof upcomingClasses>
+  );
+  const categories = Object.keys(byCategory);
+
   return (
-    <div className="min-h-screen bg-white text-brand-brown font-sans pb-24 halftone-bg">
+    <div className="min-h-screen bg-white font-sans text-brand-brown">
       <Navbar />
 
-      <section className="pt-12 pb-6 px-6 max-w-[1280px] mx-auto">
-        <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-gray-100 mb-12 text-center max-w-3xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3 text-gray-900">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-gray-600 text-lg">
-              {subtitle}
-            </p>
-          )}
-        </div>
+      <PageHero
+        eyebrow={filterDate ? "Classes on this day" : "Our classes"}
+        title={filterDate ? `คลาสวันที่ ${filterDate.toLocaleDateString("th-TH", { day: "numeric", month: "long" })}` : "คลาสเรียน"}
+        highlight={filterDate ? undefined : "& Workshops"}
+        description={
+          filterDate
+            ? "รายการคลาสที่เปิดสอนในวันที่คุณเลือก"
+            : "คลาสกลุ่มเล็กในบรรยากาศอบอุ่น ออกแบบมาเพื่อให้คุณได้กลับมาเข้าใจตัวเองและความสัมพันธ์อย่างแท้จริง"
+        }
+      >
+        {filterDate ? (
+          <Link
+            href="/classes"
+            className="inline-flex items-center gap-2 rounded-full border border-lux-line bg-white px-5 py-2.5 text-sm font-medium transition-colors hover:border-brand-brown"
+          >
+            <X className="h-4 w-4" /> ดูคลาสทั้งหมด
+          </Link>
+        ) : (
+          categories.length > 1 && (
+            <nav aria-label="หมวดหมู่คลาส" className="flex flex-wrap justify-center gap-2">
+              {categories.map((cat, i) => (
+                <a
+                  key={cat}
+                  href={`#cat-${i}`}
+                  className="rounded-full border border-lux-line bg-white/80 px-5 py-2 text-sm font-medium backdrop-blur transition-all hover:-translate-y-0.5 hover:border-lux-gold hover:text-lux-gold"
+                >
+                  {cat}
+                  <span className="ml-1.5 text-xs text-lux-muted">{byCategory[cat].length}</span>
+                </a>
+              ))}
+            </nav>
+          )
+        )}
+      </PageHero>
 
-        <div className="flex flex-col gap-16">
-          {upcomingClasses.length === 0 ? (
-            <div className="text-center p-12 bg-white rounded-2xl shadow-sm border border-gray-100">
-              <p className="text-xl font-medium text-gray-500">ยังไม่มีคลาสเรียนที่จัดตารางไว้ในขณะนี้</p>
+      <main className="mx-auto max-w-[1280px] px-4 py-16 sm:px-6 md:py-24">
+        {upcomingClasses.length === 0 ? (
+          <Reveal className="mx-auto max-w-lg rounded-3xl border border-lux-line bg-lux-cream p-12 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm animate-float">
+              <CalendarDays className="h-7 w-7 text-lux-gold" />
             </div>
-          ) : (
-            Object.entries(
-              upcomingClasses.reduce((acc, c) => {
-                const cat = c.category || "เวิร์กชอป";
-                if (!acc[cat]) acc[cat] = [];
-                acc[cat].push(c);
-                return acc;
-              }, {} as Record<string, typeof upcomingClasses>)
-            ).map(([category, classes]) => (
-              <div key={category}>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2">
-                  {category}
-                </h2>
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
-                  {classes.map((c) => {
-                    const bookedSeats = c.bookings.reduce((sum, b) => sum + b.seats, 0);
-                    const totalCapacity = c.totalSeats + bookedSeats;
-
-                    return (
-                      <div key={c.id} className="bg-white rounded-2xl overflow-hidden flex flex-col shadow-sm border border-gray-100">
-                        {/* Image Section */}
-                        <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                          {c.media && c.media.length > 0 ? (
-                            <ClassCarousel classId={c.id} classNameTitle={c.name} media={c.media} />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium text-sm">
-                              ไม่มีรูปภาพ
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Details Section */}
-                        <Link href={`/classes/${c.id}`} className="flex flex-col flex-1 p-5">
-                          {/* Badges Row */}
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {c.status === "COMPLETED" ? (
-                              <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-gray-200">
-                                ปิดรับสมัคร
-                              </span>
-                            ) : c.totalSeats > 0 ? (
-                              <span className="bg-green-50 text-green-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-green-200">
-                                เปิดรับสมัคร
-                              </span>
-                            ) : (
-                              <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-gray-200">
-                                เต็มแล้ว
-                              </span>
-                            )}
-                            <span className="bg-blue-50 text-blue-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-blue-200">
-                              {c.category || "เวิร์กชอป"}
-                            </span>
-                          </div>
-
-                          {/* Title */}
-                          <h3 className="font-bold text-lg leading-snug text-gray-900 mb-1.5 line-clamp-2">
-                            {c.name}
-                          </h3>
-                          
-                          {/* Subtitle / Instructor */}
-                          {c.instructor && c.instructor !== "ไม่ระบุผู้สอน" && (
-                            <p className="text-gray-500 text-sm mb-4">
-                              ผู้สอน: {c.instructor}
-                            </p>
-                          )}
-
-                          {/* Footer */}
-                          <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-3">
-                            <div className="flex justify-between items-start text-sm">
-                              <div className="flex items-start gap-1.5">
-                                <Calendar className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-gray-900">
-                                    {c.date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}
-                                    {c.endDate && c.endDate.getTime() !== c.date.getTime() && (
-                                      <> - {c.endDate.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}</>
-                                    )}
-                                  </span>
-                                  <span className="text-xs text-gray-500 mt-0.5">
-                                    {c.startTime} - {c.endTime}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right flex flex-col items-end">
-                                 <span className={c.totalSeats > 0 ? "text-green-600 font-medium text-[11px] bg-green-50 px-2 py-0.5 rounded border border-green-100" : "text-gray-500 font-medium text-[11px] bg-gray-50 px-2 py-0.5 rounded border border-gray-200"}>
-                                   จองแล้ว {bookedSeats}/{totalCapacity}
-                                 </span>
-                              </div>
-                            </div>
-                            
-                            <div className="font-bold text-xl text-gray-900 mt-1">
-                              ฿{c.price.toLocaleString()}
-                            </div>
-                          </div>
-                        </Link>
-                      </div>
-                    );
-                  })}
+            <h2 className="text-xl font-semibold">ยังไม่มีคลาสในช่วงนี้</h2>
+            <p className="mt-2 text-lux-muted">ติดตามรอบใหม่ได้ทาง LINE Official Account ของเรา</p>
+            <Link href="/schedule" className="mt-6 inline-block rounded-full bg-brand-brown px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+              ดูตารางเรียน
+            </Link>
+          </Reveal>
+        ) : (
+          <div className="flex flex-col gap-20 md:gap-28">
+            {categories.map((cat, ci) => (
+              <section key={cat} id={`cat-${ci}`} className="scroll-mt-24">
+                <Reveal>
+                  <SectionHeading
+                    align="left"
+                    eyebrow={`Collection ${String(ci + 1).padStart(2, "0")}`}
+                    title={cat}
+                    className="mb-10 border-b border-lux-line pb-6"
+                  />
+                </Reveal>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 xl:grid-cols-4">
+                  {byCategory[cat].map((c, i) => (
+                    <Reveal key={c.id} delay={(i % 4) * 90} className="h-full">
+                      <ClassCard
+                        c={{
+                          ...c,
+                          bookedSeats: c.bookings.reduce((sum, b) => sum + b.seats, 0),
+                        }}
+                      />
+                    </Reveal>
+                  ))}
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+              </section>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

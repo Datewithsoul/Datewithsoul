@@ -1,6 +1,8 @@
 import Navbar from "@/components/navbar";
 import Link from "next/link";
-import { MessageCircle, HelpCircle, ChevronDown } from "lucide-react";
+import { MessageCircle, Plus, ArrowUpRight } from "lucide-react";
+import { PageHero, SectionHeading } from "@/components/site/page-hero";
+import { Reveal } from "@/components/motion/reveal";
 
 export const metadata = {
   title: "คำถามที่พบบ่อย (FAQ) | Date with Soul Love",
@@ -80,77 +82,79 @@ const faqCategories = [
 
 export default function FaqPage() {
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans text-brand-brown">
       <Navbar />
 
-      <main>
-        {/* Hero */}
-        <section className="py-14 text-center px-4" style={{ backgroundColor: "var(--brand-yellow)" }}>
-          <div
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full font-black text-sm mb-4 bg-white"
-            style={{ border: "var(--pop-outline)", color: "var(--brand-brown)" }}
-          >
-            <HelpCircle className="w-4 h-4" />
-            FAQ
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black leading-tight mb-3" style={{ color: "var(--brand-brown)" }}>
-            คำถามที่<span style={{ color: "var(--brand-red)" }}>พบบ่อย</span>
-          </h1>
-          <p className="text-base font-medium max-w-md mx-auto" style={{ color: "var(--brand-brown)" }}>
-            หาคำตอบที่ต้องการได้ที่นี่ หรือติดต่อเราโดยตรงหากยังสงสัย
-          </p>
-        </section>
+      <PageHero
+        eyebrow="Help center"
+        title="คำถามที่พบบ่อย"
+        highlight="FAQ"
+        description="หาคำตอบที่ต้องการได้ที่นี่ หรือติดต่อเราโดยตรงหากยังสงสัย"
+      >
+        <nav aria-label="หมวดคำถาม" className="flex flex-wrap justify-center gap-2">
+          {faqCategories.map((cat, i) => (
+            <a
+              key={cat.category}
+              href={`#faq-${i}`}
+              className="rounded-full border border-lux-line bg-white/80 px-5 py-2 text-sm font-medium backdrop-blur transition-all hover:-translate-y-0.5 hover:border-lux-gold hover:text-lux-gold"
+            >
+              {cat.category}
+            </a>
+          ))}
+        </nav>
+      </PageHero>
 
-        {/* FAQ list */}
-        <section className="py-14 px-4">
-          <div className="max-w-3xl mx-auto flex flex-col gap-10">
-            {faqCategories.map((cat) => (
-              <div key={cat.category}>
-                <h2 className="text-2xl font-black mb-5" style={{ color: "var(--brand-brown)" }}>
-                  {cat.category}
-                </h2>
-                <div className="flex flex-col gap-3">
-                  {cat.items.map((item, i) => (
-                    <details
-                      key={i}
-                      className="group rounded-2xl bg-white overflow-hidden"
-                      style={{ border: "var(--pop-outline)", boxShadow: "3px 3px 0 var(--brand-brown)" }}
-                    >
-                      <summary className="flex items-center justify-between gap-3 p-5 cursor-pointer list-none font-black" style={{ color: "var(--brand-brown)" }}>
-                        <span>{item.q}</span>
-                        <ChevronDown className="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" style={{ color: "var(--brand-brown)" }} />
+      <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24">
+        <div className="flex flex-col gap-16">
+          {faqCategories.map((cat, ci) => (
+            <section key={cat.category} id={`faq-${ci}`} className="scroll-mt-28">
+              <Reveal>
+                <SectionHeading align="left" eyebrow={`Topic ${String(ci + 1).padStart(2, "0")}`} title={cat.category} className="mb-6" />
+              </Reveal>
+              <div className="divide-y divide-lux-line border-y border-lux-line">
+                {cat.items.map((item, i) => (
+                  <Reveal key={item.q} delay={i * 60}>
+                    <details className="faq group py-1">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left font-semibold transition-colors hover:text-lux-gold [&::-webkit-details-marker]:hidden">
+                        {item.q}
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-lux-line transition-all duration-300 group-open:rotate-45 group-open:border-lux-gold group-open:text-lux-gold">
+                          <Plus className="h-4 w-4" />
+                        </span>
                       </summary>
-                      <div className="px-5 pb-5 text-sm font-medium leading-relaxed" style={{ color: "var(--brand-brown-mid)" }}>
-                        {item.a}
-                      </div>
+                      <p className="faq-body pb-6 pr-12 leading-relaxed text-lux-muted">{item.a}</p>
                     </details>
-                  ))}
-                </div>
+                  </Reveal>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+          ))}
+        </div>
 
         {/* CTA */}
-        <section
-          className="py-12 px-4 text-center"
-          style={{ backgroundColor: "var(--brand-brown)" }}
-        >
-          <h2 className="text-2xl font-black text-white mb-3">ยังไม่พบคำตอบที่ต้องการ?</h2>
-          <p className="text-white/70 font-medium mb-6">ติดต่อเราโดยตรง ทีมงานยินดีช่วยเหลือเสมอ</p>
-          <a
-            href="https://line.me/R/ti/p/@073wlzuq"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-black text-white"
-            style={{ backgroundColor: "#06C755" }}
-          >
-            <MessageCircle className="w-5 h-5" />
-            ติดต่อผ่าน LINE
-          </a>
-        </section>
+        <Reveal className="relative mt-20 overflow-hidden rounded-[2rem] bg-brand-brown p-10 text-center text-white sm:p-12">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand-yellow opacity-25 blur-3xl" aria-hidden />
+          <p className="relative font-display text-lg italic text-brand-yellow">Still curious?</p>
+          <h2 className="relative mt-2 text-2xl font-semibold sm:text-3xl">ยังไม่พบคำตอบที่ต้องการ?</h2>
+          <p className="relative mt-3 text-white/70">ติดต่อเราโดยตรง ทีมงานยินดีช่วยเหลือเสมอ</p>
+          <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href="https://line.me/R/ti/p/@073wlzuq"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-[#06C755] px-7 py-3.5 font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-12px_#06C755]"
+            >
+              <MessageCircle className="h-5 w-5" />
+              ติดต่อผ่าน LINE
+            </a>
+            <Link
+              href="/how-it-works"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-white/25 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              ดูวิธีการจอง <ArrowUpRight className="h-4 w-4 transition-transform group-hover:rotate-45" />
+            </Link>
+          </div>
+        </Reveal>
       </main>
-
     </div>
   );
 }

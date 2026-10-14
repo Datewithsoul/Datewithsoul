@@ -8,6 +8,7 @@ import Navbar from "@/components/navbar";
 import AddToCartButton from "@/components/add-to-cart-button";
 import MediaGallery from "@/components/media-gallery";
 import { ClassLocationMap } from "@/components/class-location-map";
+import { Reveal } from "@/components/motion/reveal";
 import { ClassEvent } from "@/app/generated/prisma";
 import type { Metadata } from "next";
 import { expireStaleBookings } from "@/lib/expire-bookings";
@@ -143,7 +144,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
       <div className="max-w-[1180px] mx-auto px-6 mt-6 mb-8 relative">
         
         {/* Title Section */}
-        <div className="mb-6">
+        <div className="mb-6 stagger">
           <h1 className="text-3xl md:text-4xl font-bold mb-3 text-[#222222]">
             {classEvent.name}
           </h1>
@@ -183,7 +184,9 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           </div>
         </div>
 
-        <MediaGallery media={classEvent.media} classNameTitle={classEvent.name} />
+        <div className="animate-fade-up" style={{ "--delay": "200ms" } as React.CSSProperties}>
+          <MediaGallery media={classEvent.media} classNameTitle={classEvent.name} />
+        </div>
 
         {/* Main Content Split */}
         <div className="flex flex-col lg:flex-row gap-16">
@@ -191,61 +194,65 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
           {/* Left Column (Details) */}
           <div className="lg:w-2/3">
             
-            <div className="pb-8 border-b border-gray-200 mb-8">
+            <Reveal className="pb-8 border-b border-gray-200 mb-8">
               <h2 className="text-2xl font-semibold mb-2">{classEvent.name}</h2>
               <p className="text-gray-600 text-lg font-medium">รับสมัครสูงสุด {currentMaxSeats} ที่นั่ง · รวมอุปกรณ์พื้นฐานแล้ว</p>
-            </div>
+            </Reveal>
             
             {/* Description */}
-            <div className="pb-8 border-b border-gray-200 mb-8">
+            <Reveal className="pb-8 border-b border-gray-200 mb-8">
               <div className="prose prose-sm md:prose-base max-w-none text-[#222222]">
                 <p className="whitespace-pre-wrap leading-relaxed">{classEvent.description || "ไม่มีรายละเอียด"}</p>
               </div>
-            </div>
+            </Reveal>
 
             {/* Location */}
             {(classEvent.locationName || classEvent.googleMapUrl) && (
-              <div className="pb-8 border-b border-gray-200 mb-8">
+              <Reveal className="pb-8 border-b border-gray-200 mb-8">
                 <h2 className="text-2xl font-semibold mb-5">สถานที่จัดคลาส</h2>
                 <ClassLocationMap
                   locationName={classEvent.locationName}
                   googleMapUrl={classEvent.googleMapUrl}
                 />
-              </div>
+              </Reveal>
             )}
 
             {/* What you'll learn */}
             {classEvent.learningOutcomes && classEvent.learningOutcomes.length > 0 && (
               <div className="pb-8 border-b border-gray-200 mb-8">
-                <h2 className="text-2xl font-semibold mb-6">สิ่งที่คุณจะได้เรียนรู้</h2>
+                <Reveal>
+                  <h2 className="text-2xl font-semibold mb-6">สิ่งที่คุณจะได้เรียนรู้</h2>
+                </Reveal>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-[#222222]">
                   {classEvent.learningOutcomes.map((outcome, idx) => (
-                    <div key={idx} className="flex gap-4 items-start">
-                      <Check size={24} className="text-[#222222] shrink-0" />
+                    <Reveal key={idx} delay={Math.min(idx, 7) * 70} className="flex gap-4 items-start">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-brand-brown">
+                        <Check size={15} strokeWidth={3} />
+                      </span>
                       <span className="leading-relaxed">{outcome}</span>
-                    </div>
+                    </Reveal>
                   ))}
                 </div>
               </div>
             )}
-            
+
             {/* Requirements */}
             {classEvent.requirements && classEvent.requirements.length > 0 && (
-              <div className="pb-8 mb-8">
+              <Reveal className="pb-8 mb-8">
                 <h2 className="text-2xl font-semibold mb-6">ข้อกำหนดในการเข้าเรียน</h2>
                 <ul className="list-disc pl-5 space-y-3 text-[#222222]">
                   {classEvent.requirements.map((req, idx) => (
                     <li key={idx} className="leading-relaxed pl-2">{req}</li>
                   ))}
                 </ul>
-              </div>
+              </Reveal>
             )}
-            
+
           </div>
-          
+
           {/* Right Column (Floating Booking Card) */}
           <div className="lg:w-1/3 relative">
-            <div className="bg-white border border-gray-300 rounded-2xl shadow-xl sticky top-28 p-6 flex flex-col">
+            <div className="bg-white border border-gray-300 rounded-2xl shadow-xl sticky top-28 p-6 flex flex-col animate-slide-in-right" style={{ "--delay": "300ms" } as React.CSSProperties}>
               <div className="mb-6 flex items-end gap-1">
                 <span className="text-2xl font-bold">฿{classEvent.price.toLocaleString()}</span>
                 <span className="text-gray-500 text-sm mb-1">/ ท่าน</span>
@@ -273,7 +280,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
                 ) : (
                   <>
                     <Link href={`/book/${classEvent.id}`} className="block w-full">
-                      <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-colors">
+                      <button className="w-full bg-[#E51D53] hover:bg-[#D70444] text-white font-bold py-3.5 rounded-lg text-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98]">
                         จองที่นั่ง
                       </button>
                     </Link>

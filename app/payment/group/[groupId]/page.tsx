@@ -5,6 +5,8 @@ import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
 import { createClient } from "@/utils/supabase/server";
 import { SlipUploadForm } from "@/components/slip-upload-form";
+import { StatusHero } from "@/components/motion/status-hero";
+import { BookingProgress } from "@/components/motion/booking-progress";
 import { uploadGroupSlip } from "./actions";
 import { BookingGroupStatus } from "@/app/generated/prisma";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
@@ -92,8 +94,13 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
 
       <section className="pt-12 px-6 max-w-4xl mx-auto">
         <div className="mb-8 text-center border-b border-gray-200 pb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">ชำระเงิน (รายการกลุ่ม)</h1>
-          <p className="text-gray-500">รหัสการจอง: {bookingGroup.id.split("-")[0].toUpperCase()}</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2 animate-fade-up">ชำระเงิน (รายการกลุ่ม)</h1>
+          <p className="text-gray-500 animate-fade-up" style={{ "--delay": "80ms" } as React.CSSProperties}>
+            รหัสการจอง: {bookingGroup.id.split("-")[0].toUpperCase()}
+          </p>
+          {bookingGroup.status !== BookingGroupStatus.CANCELLED && (
+            <BookingProgress status={bookingGroup.status} className="mt-8" />
+          )}
         </div>
 
         {error && (
@@ -106,46 +113,45 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
         )}
 
         {bookingGroup.status === BookingGroupStatus.CANCELLED ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
-            <div className="text-red-500 mb-6 flex justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-            </div>
-            <h2 className="text-2xl font-bold mb-3">หมดเวลาชำระเงิน</h2>
-            <p className="text-gray-600 mb-8">รายการจองนี้ถูกยกเลิกแล้ว เนื่องจากเกินเวลาที่กำหนด (10 นาที)</p>
-            <Link href="/classes">
-              <button className="bg-[#222222] hover:bg-black text-white px-8 py-3.5 rounded-full font-bold transition-colors">
-                กลับไปหน้าคลาสเรียน
-              </button>
+          <StatusHero
+            variant="cancelled"
+            title="หมดเวลาชำระเงิน"
+            description="รายการจองนี้ถูกยกเลิกแล้ว เนื่องจากเกินเวลาที่กำหนด (10 นาที)"
+          >
+            <Link
+              href="/classes"
+              className="inline-block bg-[#222222] hover:bg-black text-white px-8 py-3.5 rounded-full font-bold transition-all hover:-translate-y-0.5"
+            >
+              กลับไปหน้าคลาสเรียน
             </Link>
-          </div>
+          </StatusHero>
         ) : (bookingGroup.status === BookingGroupStatus.PAYMENT_REVIEW || bookingGroup.status === BookingGroupStatus.CONFIRMED) ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
-            <div className="text-green-500 mb-6 flex justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            </div>
-            <h2 className="text-2xl font-bold mb-3">
-              {bookingGroup.status === BookingGroupStatus.CONFIRMED ? "ชำระเงินสำเร็จ" : "กำลังตรวจสอบการชำระเงิน"}
-            </h2>
-            <p className="text-gray-600 mb-8">
-              {bookingGroup.status === BookingGroupStatus.CONFIRMED 
-                ? "เราได้รับการชำระเงินของคุณแล้ว ขอบคุณที่จองคลาสกับเรา!" 
-                : "เราได้รับหลักฐานการโอนเงินของคุณแล้ว ทีมงานจะทำการตรวจสอบภายใน 24 ชั่วโมง"}
-            </p>
-            <Link href="/bookings">
-              <button className="bg-[#222222] hover:bg-black text-white px-8 py-3.5 rounded-full font-bold transition-colors">
-                ดูประวัติการจองทั้งหมด
-              </button>
+          <StatusHero
+            variant={bookingGroup.status === BookingGroupStatus.CONFIRMED ? "success" : "review"}
+            title={bookingGroup.status === BookingGroupStatus.CONFIRMED ? "ชำระเงินสำเร็จ" : "กำลังตรวจสอบการชำระเงิน"}
+            description={
+              bookingGroup.status === BookingGroupStatus.CONFIRMED
+                ? "เราได้รับการชำระเงินของคุณแล้ว ขอบคุณที่จองคลาสกับเรา!"
+                : "เราได้รับหลักฐานการโอนเงินของคุณแล้ว ทีมงานจะทำการตรวจสอบภายใน 24 ชั่วโมง"
+            }
+            confettiKey={bookingGroup.id}
+          >
+            <Link
+              href="/bookings"
+              className="inline-block bg-[#222222] hover:bg-black text-white px-8 py-3.5 rounded-full font-bold transition-all hover:-translate-y-0.5"
+            >
+              ดูประวัติการจองทั้งหมด
             </Link>
-          </div>
+          </StatusHero>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto stagger">
             {/* Left: Summary */}
             <div>
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 mb-6 relative overflow-hidden">
                  <PaymentTimer createdAt={bookingGroup.createdAt.toISOString()} groupId={bookingGroup.id} />
                 
                 <h2 className="text-xl font-bold mb-4 mt-6">สรุปรายการจอง</h2>
-                <div className="flex flex-col gap-4 mb-6">
+                <div className="flex flex-col gap-4 mb-6 stagger">
                   {bookingGroup.bookings.map((b) => (
                     <div key={b.id} className="border-b border-gray-200 pb-4">
                       <h3 className="font-semibold text-gray-900">{b.classEvent.name}</h3>
@@ -174,7 +180,7 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
                   <div className="bg-[#113566] text-white px-3 py-1 rounded-md font-semibold text-xs mb-6 w-max">
                     PromptPay
                   </div>
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 w-64 h-64 flex items-center justify-center mb-6 shadow-sm">
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 w-64 h-64 flex items-center justify-center mb-6 shadow-sm animate-pop-in" style={{ "--delay": "400ms" } as React.CSSProperties}>
                     <img src="/qrcode.jpg" alt="PromptPay QR Code" className="w-full h-full object-contain" />
                   </div>
                   <div className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 font-medium">

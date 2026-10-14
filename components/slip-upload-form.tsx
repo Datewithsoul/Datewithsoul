@@ -99,9 +99,9 @@ export function SlipUploadForm({
         {!previewUrl ? (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer border-2 border-dashed border-[#d4c7b8] hover:border-[#8f3b2c] bg-[#faf8f5] hover:bg-[#f5efe6] rounded-xl p-6 text-center transition-all flex flex-col items-center justify-center gap-2"
+            className="group cursor-pointer border-2 border-dashed border-[#d4c7b8] hover:border-[#8f3b2c] bg-[#faf8f5] hover:bg-[#f5efe6] rounded-xl p-6 text-center transition-all duration-300 hover:scale-[1.01] flex flex-col items-center justify-center gap-2"
           >
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#8f3b2c] shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#8f3b2c] shadow-sm transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-md animate-float">
               <Upload size={22} />
             </div>
             <p className="text-sm font-semibold text-[#4a3b32]">
@@ -112,7 +112,7 @@ export function SlipUploadForm({
             </p>
           </div>
         ) : (
-          <div className="relative border border-[#d4c7b8] rounded-xl p-3 bg-[#faf8f5] flex items-center gap-4">
+          <div className="relative border border-[#d4c7b8] rounded-xl p-3 bg-[#faf8f5] flex items-center gap-4 animate-pop-in">
             <div className="w-20 h-20 bg-white rounded-lg border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
               <img
                 src={previewUrl}
@@ -162,7 +162,7 @@ export function SlipUploadForm({
       <button
         type="submit"
         disabled={!selectedFile || isCompressing || isPending}
-        className="mt-2 pop-btn-red text-white py-3.5 rounded-xl font-bold transition-all w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-base"
+        className={`relative overflow-hidden mt-2 pop-btn-red text-white py-3.5 rounded-xl font-bold transition-all w-full flex items-center justify-center gap-2 disabled:cursor-not-allowed shadow-md text-base ${isPending ? "animate-shimmer" : "disabled:opacity-50"}`}
       >
         {isPending ? (
           <>

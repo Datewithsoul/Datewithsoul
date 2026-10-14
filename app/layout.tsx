@@ -75,19 +75,22 @@ import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/footer";
 import { SiteFooterGate } from "@/components/site-footer-gate";
+import { SmoothScroll } from "@/components/motion/smooth-scroll";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className={`${bodySans.variable} ${headingSerif.variable} ${display.variable} h-full antialiased`} data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">
-        <CartProvider>
-          <TooltipProvider>
-            {children}
-            <SiteFooterGate>
-              <Footer />
-            </SiteFooterGate>
-          </TooltipProvider>
-        </CartProvider>
+        <SmoothScroll>
+          <CartProvider>
+            <TooltipProvider>
+              {children}
+              <SiteFooterGate>
+                <Footer />
+              </SiteFooterGate>
+            </TooltipProvider>
+          </CartProvider>
+        </SmoothScroll>
         <Toaster position="top-center" richColors />
         <Analytics />
       </body>
