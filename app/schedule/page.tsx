@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ClassEventStatus, BookingStatus } from "@/app/generated/prisma";
 import Navbar from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import Link from "next/link";
 import { Calendar, Clock, Users } from "lucide-react";
 
@@ -178,7 +177,6 @@ export default async function SchedulePage() {
         )}
       </main>
 
-      <Footer />
     </div>
   );
 }

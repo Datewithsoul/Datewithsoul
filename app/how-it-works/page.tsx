@@ -1,5 +1,4 @@
 import Navbar from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import { HowToBook } from "@/components/how-to-book";
 import Link from "next/link";
 import { MessageCircle, Calendar, CreditCard, HelpCircle, ChevronRight } from "lucide-react";
@@ -128,7 +127,6 @@ export default function HowItWorksPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }

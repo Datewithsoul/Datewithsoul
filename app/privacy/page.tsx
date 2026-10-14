@@ -1,5 +1,4 @@
 import Navbar from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import Link from "next/link";
 import { Shield, MessageCircle } from "lucide-react";
 
@@ -142,7 +141,6 @@ export default function PrivacyPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }

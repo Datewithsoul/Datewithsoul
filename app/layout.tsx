@@ -57,6 +57,8 @@ export const metadata: Metadata = {
 import { CartProvider } from "@/hooks/use-cart";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
+import { Footer } from "@/components/footer";
+import { SiteFooterGate } from "@/components/site-footer-gate";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -65,6 +67,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <CartProvider>
           <TooltipProvider>
             {children}
+            <SiteFooterGate>
+              <Footer />
+            </SiteFooterGate>
           </TooltipProvider>
         </CartProvider>
         <Toaster position="top-center" richColors />
