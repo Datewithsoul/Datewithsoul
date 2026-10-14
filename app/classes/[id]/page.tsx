@@ -7,6 +7,7 @@ import ScheduleSelector from "./schedule-selector";
 import Navbar from "@/components/navbar";
 import AddToCartButton from "@/components/add-to-cart-button";
 import MediaGallery from "@/components/media-gallery";
+import { ClassLocationMap } from "@/components/class-location-map";
 import { ClassEvent } from "@/app/generated/prisma";
 import type { Metadata } from "next";
 import { expireStaleBookings } from "@/lib/expire-bookings";
@@ -206,26 +207,10 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
             {(classEvent.locationName || classEvent.googleMapUrl) && (
               <div className="pb-8 border-b border-gray-200 mb-8">
                 <h2 className="text-2xl font-semibold mb-5">สถานที่จัดคลาส</h2>
-                <div className="flex items-center gap-4 rounded-2xl border border-[#eadfca] bg-[#fff9e8] p-5">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#E51D53] text-white shadow-sm">
-                    <MapPin size={27} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold text-[#3d3229]">
-                      {classEvent.locationName || "สถานที่จัดคลาส"}
-                    </p>
-                    {classEvent.googleMapUrl && (
-                      <a
-                        href={classEvent.googleMapUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-1 inline-block font-semibold text-[#E51D53] underline underline-offset-4 hover:text-[#b9143f]"
-                      >
-                        เปิดลิงก์ Google Maps
-                      </a>
-                    )}
-                  </div>
-                </div>
+                <ClassLocationMap
+                  locationName={classEvent.locationName}
+                  googleMapUrl={classEvent.googleMapUrl}
+                />
               </div>
             )}
 

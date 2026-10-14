@@ -1,9 +1,5 @@
 import Link from "next/link";
-import { Noto_Serif_Thai, Playfair_Display } from "next/font/google";
 import { Heart, MessageCircle, ArrowUpRight } from "lucide-react";
-
-const serifThai = Noto_Serif_Thai({ subsets: ["thai", "latin"], weight: ["400", "500", "600"] });
-const display = Playfair_Display({ subsets: ["latin"], style: ["normal", "italic"], weight: ["400", "500"] });
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
 
@@ -72,7 +68,7 @@ export function Footer() {
         <p className="mt-6 text-[11px] tracking-[0.35em] uppercase" style={{ color: GOLD }}>
           Begin your journey
         </p>
-        <h2 className={`${serifThai.className} mt-4 text-3xl sm:text-4xl leading-snug font-medium`}>
+        <h2 className="font-heading mt-4 text-3xl sm:text-4xl leading-snug font-medium">
           พร้อมมีเดตกับหัวใจตัวเองหรือยัง?
         </h2>
         <p className="mt-4 text-sm sm:text-base leading-relaxed opacity-70">
@@ -107,7 +103,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-5">
             <Link href="/" className="w-fit">
-              <span className={`${display.className} text-2xl tracking-wide`}>
+              <span className="font-display text-2xl tracking-wide">
                 Date with <em className="italic" style={{ color: GOLD }}>Soul Love</em>
               </span>
             </Link>
@@ -132,7 +128,7 @@ export function Footer() {
           {/* Link groups */}
           {linkGroups.map((group) => (
             <nav key={group.title} aria-label={group.title} className="flex flex-col gap-5">
-              <h3 className={`${serifThai.className} text-sm font-medium tracking-wide`} style={{ color: GOLD }}>
+              <h3 className="font-heading text-sm font-medium tracking-wide" style={{ color: GOLD }}>
                 {group.title}
               </h3>
               <ul className="flex flex-col gap-3">
@@ -163,7 +159,7 @@ export function Footer() {
               </Link>
             ))}
           </nav>
-          <p className={`${display.className} italic text-sm`} style={{ color: GOLD_SOFT }}>
+          <p className="font-display italic text-sm" style={{ color: GOLD_SOFT }}>
             for every soul
           </p>
         </div>

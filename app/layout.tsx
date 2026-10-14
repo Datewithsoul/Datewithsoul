@@ -1,12 +1,28 @@
 import type { Metadata } from "next";
-import { Sarabun } from "next/font/google";
+import { IBM_Plex_Sans_Thai_Looped, Noto_Serif_Thai, Playfair_Display } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const sarabun = Sarabun({
+// Body text: looped Thai sans for readability
+const bodySans = IBM_Plex_Sans_Thai_Looped({
   variable: "--font-sans",
   subsets: ["thai", "latin"],
   weight: ["300", "400", "500", "600", "700"],
+});
+
+// Headings: Thai serif
+const headingSerif = Noto_Serif_Thai({
+  variable: "--font-serif-thai",
+  subsets: ["thai", "latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+// Brand wordmark / small English accents only
+const display = Playfair_Display({
+  variable: "--font-display",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  weight: ["400", "500"],
 });
 
 const siteUrl = new URL(
@@ -62,7 +78,7 @@ import { SiteFooterGate } from "@/components/site-footer-gate";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="th" className={`${sarabun.variable} h-full antialiased`} data-scroll-behavior="smooth">
+    <html lang="th" className={`${bodySans.variable} ${headingSerif.variable} ${display.variable} h-full antialiased`} data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">
         <CartProvider>
           <TooltipProvider>
