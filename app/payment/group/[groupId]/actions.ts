@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { BookingGroupStatus } from "@/app/generated/prisma";
+import { uploadPaymentSlip, removeSlip } from "@/lib/slips";
 
 function redirectWithError(groupId: string, message: string): never {
   redirect(`/payment/group/${groupId}?error=${encodeURIComponent(message)}`);
@@ -26,10 +27,9 @@ export async function uploadGroupSlip(formData: FormData) {
     redirectWithError(groupId, "รองรับเฉพาะไฟล์รูปภาพ JPEG, PNG หรือ WEBP เท่านั้น");
   }
 
-  // Generate a unique filename
-  const fileExt = slipFile.name.split('.').pop();
+  // Derive the extension from the validated MIME type, not the user-supplied name
+  const fileExt = slipFile.type.split('/')[1];
   const fileName = `group-${groupId}-${Date.now()}.${fileExt}`;
-  const filePath = `slips/${fileName}`;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -55,34 +55,25 @@ export async function uploadGroupSlip(formData: FormData) {
     throw new Error("Unauthorized");
   }
   
-  // Use the server key so customers do not need direct Storage insert policy access.
-  const { createAdminClient } = await import('@/utils/supabase/admin');
-  const supabaseAdmin = createAdminClient();
-
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from('class-media')
-    .upload(filePath, Buffer.from(await slipFile.arrayBuffer()), {
-      contentType: slipFile.type,
-      upsert: false
-    });
-
-  if (uploadError) {
-    console.error("Upload error:", uploadError);
+  const slipRef = await uploadPaymentSlip(slipFile, fileName);
+  if (!slipRef) {
     redirectWithError(groupId, "ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง");
   }
 
-  // Get public URL
-  const { data: { publicUrl } } = supabaseAdmin.storage
-    .from('class-media')
-    .getPublicUrl(filePath);
-
   // Update payment and booking statuses in transaction
   const bookingGroup = await prisma.$transaction(async (tx) => {
+    // 0. Bail out if the group was cancelled/expired while the file was uploading
+    const stillPending = await tx.bookingGroup.updateMany({
+      where: { id: groupId, status: BookingGroupStatus.PENDING_PAYMENT },
+      data: { status: BookingGroupStatus.PAYMENT_REVIEW },
+    });
+    if (stillPending.count === 0) return null;
+
     // 1. Update Payment status
     await tx.payment.update({
       where: { bookingGroupId: groupId },
       data: {
-        slipUrl: publicUrl,
+        slipUrl: slipRef,
         status: "UNDER_REVIEW",
       },
     });
@@ -102,6 +93,11 @@ export async function uploadGroupSlip(formData: FormData) {
 
     return group;
   });
+
+  if (!bookingGroup) {
+    await removeSlip(slipRef);
+    redirectWithError(groupId, "รายการจองนี้ไม่สามารถอัปโหลดสลิปได้");
+  }
 
   try {
     const classNames = bookingGroup.bookings.map(b => `• ${b.classEvent.name}`).join('\n');

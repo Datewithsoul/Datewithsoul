@@ -18,6 +18,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { AdminGroupedBookingRow } from "@/components/admin-grouped-booking-row";
+import { maskSlipUrl } from "@/lib/slips";
 
 export default async function AdminBookings(props: {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
@@ -92,6 +93,12 @@ export default async function AdminBookings(props: {
     prisma.booking.count({ where: whereCondition })
   ]);
   
+  // Never send raw storage references to the client; slips go through /api/slips
+  for (const b of bookings) {
+    maskSlipUrl(b.payment);
+    maskSlipUrl(b.bookingGroup?.payment);
+  }
+
   const totalPages = Math.ceil(totalItems / pageSize);
 
   const groupedBookings = bookings.reduce((acc: any[], booking) => {

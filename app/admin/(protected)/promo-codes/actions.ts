@@ -3,8 +3,10 @@
 import { prisma } from "@/lib/prisma";
 import { DiscountType } from "@/app/generated/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function getPromoCodes() {
+  await requireAdmin();
   return await prisma.promoCode.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -14,6 +16,7 @@ export async function getPromoCodes() {
 }
 
 export async function getPromoCode(id: string) {
+  await requireAdmin();
   return await prisma.promoCode.findUnique({
     where: { id },
     include: {
@@ -34,6 +37,7 @@ export async function createPromoCode(data: {
   isActive: boolean;
   applicableEventIds?: string[];
 }) {
+  await requireAdmin();
   try {
     const existing = await prisma.promoCode.findUnique({
       where: { code: data.code.toUpperCase() }
@@ -69,6 +73,7 @@ export async function createPromoCode(data: {
 }
 
 export async function togglePromoCodeStatus(id: string, isActive: boolean) {
+  await requireAdmin();
   try {
     await prisma.promoCode.update({
       where: { id },
@@ -82,6 +87,7 @@ export async function togglePromoCodeStatus(id: string, isActive: boolean) {
 }
 
 export async function deletePromoCode(id: string) {
+  await requireAdmin();
   try {
     await prisma.promoCode.delete({
       where: { id }

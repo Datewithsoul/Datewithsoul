@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 
 function redirectWithError(path: string, message: string): never {
   const params = new URLSearchParams({ error: message });
@@ -20,6 +21,9 @@ export async function submitBooking(formData: FormData) {
   if (isNaN(seats) || seats <= 0) {
     throw new Error("จำนวนที่นั่งต้องเป็นจำนวนเต็มบวก");
   }
+
+  // Release seats held by unpaid bookings before checking availability
+  await expireStaleBookings();
 
   const classEvent = await prisma.classEvent.findUnique({
     where: { id: classEventId }
@@ -128,10 +132,23 @@ export async function submitBooking(formData: FormData) {
             discountSaved: discountAmount
           }
         });
-        await tx.promoCode.update({
-          where: { id: appliedPromo.id },
+        // Re-check limits inside the transaction so concurrent checkouts can't overuse the code
+        const userUsage = await tx.promoUsage.count({
+          where: { promoCodeId: appliedPromo.id, userId: user.id }
+        });
+        if (userUsage >= appliedPromo.perUserLimit) {
+          throw new Error("PROMO_LIMIT_REACHED");
+        }
+        const claimed = await tx.promoCode.updateMany({
+          where: {
+            id: appliedPromo.id,
+            ...(appliedPromo.maxUses !== null ? { usedCount: { lt: appliedPromo.maxUses } } : {})
+          },
           data: { usedCount: { increment: 1 } }
         });
+        if (claimed.count === 0) {
+          throw new Error("PROMO_LIMIT_REACHED");
+        }
       }
 
       await tx.payment.create({
@@ -146,6 +163,9 @@ export async function submitBooking(formData: FormData) {
   } catch (error: any) {
     if (error.message === "NOT_ENOUGH_SEATS") {
       redirectWithError(`/classes/${classEventId}`, "ขออภัย ที่นั่งไม่เพียงพอ กรุณาลองใหม่อีกครั้ง");
+    }
+    if (error.message === "PROMO_LIMIT_REACHED") {
+      redirectWithError(`/book/${classEventId}`, "รหัสส่วนลดนี้ถูกใช้ครบจำนวนแล้ว");
     }
     throw error;
   }

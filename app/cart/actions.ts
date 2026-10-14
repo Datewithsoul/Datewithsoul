@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 import { BookingStatus, BookingGroupStatus, PaymentStatus } from "@/app/generated/prisma";
 
 interface BookingItemInput {
@@ -68,6 +69,9 @@ export async function createCartBookings(items: BookingItemInput[], name: string
       });
     }
 
+    // Release seats held by unpaid bookings before checking availability
+    await expireStaleBookings();
+
     let totalPrice = 0;
     const classEvents = await Promise.all(
       items.map(async (item) => {
@@ -129,10 +133,23 @@ export async function createCartBookings(items: BookingItemInput[], name: string
             discountSaved: discountAmount
           }
         });
-        await tx.promoCode.update({
-          where: { id: appliedPromo.id },
+        // Re-check limits inside the transaction so concurrent checkouts can't overuse the code
+        const userUsage = await tx.promoUsage.count({
+          where: { promoCodeId: appliedPromo.id, userId: user.id }
+        });
+        if (userUsage >= appliedPromo.perUserLimit) {
+          throw new Error("PROMO_LIMIT_REACHED");
+        }
+        const claimed = await tx.promoCode.updateMany({
+          where: {
+            id: appliedPromo.id,
+            ...(appliedPromo.maxUses !== null ? { usedCount: { lt: appliedPromo.maxUses } } : {})
+          },
           data: { usedCount: { increment: 1 } }
         });
+        if (claimed.count === 0) {
+          throw new Error("PROMO_LIMIT_REACHED");
+        }
       }
 
       for (const item of classEvents) {
@@ -202,6 +219,9 @@ export async function createCartBookings(items: BookingItemInput[], name: string
     return { groupId: bookingGroup.id };
   } catch (error: any) {
     console.error("Cart checkout error:", error);
+    if (error.message === "PROMO_LIMIT_REACHED") {
+      return { error: "รหัสส่วนลดนี้ถูกใช้ครบจำนวนแล้ว" };
+    }
     return { error: error.message || "Unknown error" };
   }
 }

@@ -7,6 +7,7 @@ import Navbar from "@/components/navbar";
 import PaymentTimer from "@/components/payment-timer";
 import { SlipUploadForm } from "@/components/slip-upload-form";
 import { uploadSlip } from "./actions";
+import { slipViewUrl } from "@/lib/slips";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
@@ -147,7 +148,7 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
             <h2 className="text-2xl font-bold mb-3 text-yellow-900">การตรวจสอบชำระเงิน</h2>
             <p className="text-yellow-800 mb-8">เราได้รับสลิปของคุณแล้ว กำลังรอแอดมินตรวจสอบว่าชำระเงินจริง เมื่อยืนยันแล้วสถานะจะเป็นชำระเงินแล้ว</p>
             {booking.payment?.slipUrl ? (
-              <img src={booking.payment.slipUrl} alt="สลิปที่ส่งแล้ว" className="mx-auto mb-8 max-h-64 rounded-lg border border-yellow-200" />
+              <img src={slipViewUrl(booking.payment)!} alt="สลิปที่ส่งแล้ว" className="mx-auto mb-8 max-h-64 rounded-lg border border-yellow-200" />
             ) : null}
             <Link 
               href="/bookings"

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { PAYABLE_BOOKING_STATUSES } from "@/lib/booking-status";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
+import { uploadPaymentSlip, removeSlip } from "@/lib/slips";
 
 function redirectWithError(path: string, message: string): never {
   const params = new URLSearchParams({ error: message });
@@ -55,26 +56,35 @@ export async function uploadSlip(formData: FormData) {
     throw new Error("Unauthorized");
   }
 
+  if (!isPayable(booking.status)) {
+    redirectWithError(`/payment/${bookingId}`, "รายการจองนี้ไม่สามารถอัปโหลดสลิปได้");
+  }
+
   const now = new Date();
   const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
 
-  if (now > expiryTime && isPayable(booking.status)) {
-    await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: "CANCELLED" },
+  if (now > expiryTime) {
+    // Conditional update so a concurrent cron/cancel can't release the seats twice
+    const expired = await prisma.$transaction(async (tx) => {
+      const updated = await tx.booking.updateMany({
+        where: { id: bookingId, status: "PENDING_PAYMENT" },
+        data: { status: "CANCELLED" },
+      });
+      if (updated.count === 0) return false;
+
+      await tx.classEvent.update({
+        where: { id: booking.classEventId },
+        data: { totalSeats: { increment: booking.seats } },
+      });
+
+      await tx.payment.updateMany({
+        where: { bookingId },
+        data: { status: "REJECTED" },
+      });
+      return true;
     });
 
-    await prisma.classEvent.update({
-      where: { id: booking.classEventId },
-      data: { totalSeats: { increment: booking.seats } },
-    });
-
-    await prisma.payment.updateMany({
-      where: { bookingId },
-      data: { status: "REJECTED" },
-    });
-
-    if (booking.user.lineId) {
+    if (expired && booking.user.lineId) {
       await sendTemplatedLineMessage(
         booking.user.lineId,
         "BOOKING_EXPIRED_USER",
@@ -93,47 +103,38 @@ export async function uploadSlip(formData: FormData) {
     redirect(`/payment/${bookingId}?error=expired`);
   }
 
-  const fileExt = slipImage.name.split('.').pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const filePath = `slips/${fileName}`;
+  // Derive the extension from the validated MIME type, not the user-supplied name
+  const fileExt = slipImage.type.split('/')[1];
+  const fileName = `${bookingId}-${Date.now()}.${fileExt}`;
 
-  const { createAdminClient } = await import('@/utils/supabase/admin');
-  const supabaseAdmin = createAdminClient();
-
-  const buffer = await slipImage.arrayBuffer();
-
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from('class-media')
-    .upload(filePath, buffer, {
-      contentType: slipImage.type,
-      upsert: false
-    });
-
-  if (uploadError) {
-    console.error("Upload error:", uploadError);
+  const slipUrl = await uploadPaymentSlip(slipImage, fileName);
+  if (!slipUrl) {
     redirect(`/payment/${bookingId}?error=upload_failed`);
   }
 
-  const { data: publicUrlData } = supabaseAdmin.storage
-    .from('class-media')
-    .getPublicUrl(filePath);
+  // Only move to review if the booking is still awaiting payment (it may have
+  // been cancelled or expired while the file was uploading)
+  const moved = await prisma.$transaction(async (tx) => {
+    const updated = await tx.booking.updateMany({
+      where: { id: bookingId, status: "PENDING_PAYMENT" },
+      data: { status: "PAYMENT_REVIEW" },
+    });
+    if (updated.count === 0) return false;
 
-  const slipUrl = publicUrlData.publicUrl;
-
-  await prisma.payment.updateMany({
-    where: { bookingId: bookingId },
-    data: {
-      slipUrl: slipUrl,
-      status: "UNDER_REVIEW",
-    },
+    await tx.payment.updateMany({
+      where: { bookingId: bookingId },
+      data: {
+        slipUrl: slipUrl,
+        status: "UNDER_REVIEW",
+      },
+    });
+    return true;
   });
 
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: {
-      status: "PAYMENT_REVIEW",
-    },
-  });
+  if (!moved) {
+    await removeSlip(slipUrl);
+    redirectWithError(`/payment/${bookingId}`, "รายการจองนี้ไม่สามารถอัปโหลดสลิปได้");
+  }
 
   if (booking.user.lineId) {
     await sendTemplatedLineMessage(

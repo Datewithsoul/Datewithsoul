@@ -13,6 +13,7 @@ import { AdminBookingDialog } from "@/components/admin-booking-dialog";
 import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { maskSlipUrl } from "@/lib/slips";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,6 +59,9 @@ export default async function AdminPayments(props: {
     },
     orderBy: { createdAt: "asc" }, // Oldest first for review queue
   });
+
+  // Never send raw storage references to the client; slips go through /api/slips
+  for (const b of bookings) maskSlipUrl(b.payment);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">

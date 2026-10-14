@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createAdminClient } from "@/utils/supabase/admin";
+import { removeSlip } from "@/lib/slips";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,8 +11,6 @@ export async function GET(request: Request) {
     if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-
-    const supabaseAdmin = createAdminClient();
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -33,25 +31,11 @@ export async function GET(request: Request) {
       if (!payment.slipUrl) continue;
 
       try {
-        let bucketName = "class-media"; // default but usually 'slips'
-        let filePath = "";
-        
-        const matches = payment.slipUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
-        if (matches) {
-            bucketName = matches[1];
-            filePath = decodeURIComponent(matches[2]);
-        }
-        
-        if (bucketName && filePath) {
-            const { error: deleteError } = await supabaseAdmin.storage
-            .from(bucketName)
-            .remove([filePath]);
-
-            if (deleteError) {
-                console.error(`Failed to delete ${filePath} from ${bucketName}:`, deleteError);
-                errors.push(`Failed to delete ${filePath}: ${deleteError.message}`);
-                continue; // don't update db if it failed
-            }
+        const { error: deleteError } = await removeSlip(payment.slipUrl);
+        if (deleteError) {
+          console.error(`Failed to delete slip for payment ${payment.id}:`, deleteError);
+          errors.push(`Failed to delete slip for payment ${payment.id}: ${deleteError.message}`);
+          continue; // don't update db if it failed
         }
 
         // Remove the slipUrl from the payment record so we don't try again

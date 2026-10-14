@@ -9,6 +9,7 @@ import AddToCartButton from "@/components/add-to-cart-button";
 import MediaGallery from "@/components/media-gallery";
 import { ClassEvent } from "@/app/generated/prisma";
 import type { Metadata } from "next";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
 
@@ -70,6 +71,8 @@ export async function generateMetadata({
 
 export default async function ClassDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: classId } = await params;
+  // Release seats from unpaid bookings so the seat count shown is current
+  await expireStaleBookings().catch((error) => console.error("Failed to expire bookings", error));
   const classEvent = await prisma.classEvent.findUnique({
     where: { id: classId },
     include: {
