@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CalendarDays, X } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
-import { ClassCard } from "@/components/site/class-card";
+import { ClassCard, categoryAnchorId } from "@/components/site/class-card";
 import { Reveal } from "@/components/motion/reveal";
 
 export const metadata = {
@@ -86,10 +86,10 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
         ) : (
           categories.length > 1 && (
             <nav aria-label="หมวดหมู่คลาส" className="flex flex-wrap justify-center gap-2">
-              {categories.map((cat, i) => (
+              {categories.map((cat) => (
                 <a
                   key={cat}
-                  href={`#cat-${i}`}
+                  href={`#${categoryAnchorId(cat)}`}
                   className="rounded-full border border-lux-line bg-white/80 px-5 py-2 text-sm font-medium backdrop-blur transition-all hover:-translate-y-0.5 hover:border-lux-gold hover:text-lux-gold"
                 >
                   {cat}
@@ -116,7 +116,7 @@ export default async function ClassesPage(props: { searchParams: Promise<{ date?
         ) : (
           <div className="flex flex-col gap-20 md:gap-28">
             {categories.map((cat, ci) => (
-              <section key={cat} id={`cat-${ci}`} className="scroll-mt-24">
+              <section key={cat} id={categoryAnchorId(cat)} className="scroll-mt-24">
                 <Reveal>
                   <SectionHeading
                     align="left"

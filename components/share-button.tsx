@@ -3,7 +3,7 @@
 import { Share2 } from "lucide-react";
 import { useState } from "react";
 
-export default function ShareButton({ url, title }: { url?: string, title?: string }) {
+export default function ShareButton({ url, title, className }: { url?: string, title?: string, className?: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
@@ -31,7 +31,7 @@ export default function ShareButton({ url, title }: { url?: string, title?: stri
   return (
     <button 
       onClick={handleShare}
-      className="flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors relative"
+      className={className ?? "flex items-center gap-2 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors relative"}
     >
       <Share2 size={16} /> 
       <span className="underline">{copied ? "คัดลอกลิงก์แล้ว!" : "แชร์"}</span>

@@ -9,9 +9,11 @@ interface AddToCartButtonProps {
   classEvent: Pick<ClassEvent, "id" | "name" | "date" | "startTime" | "endTime" | "price" | "totalSeats">;
   mediaUrl?: string;
   className?: string;
+  /** "pop" = original comic style, "lux" = outline style used on the luxury class page */
+  variant?: "pop" | "lux";
 }
 
-export default function AddToCartButton({ classEvent, mediaUrl, className = "" }: AddToCartButtonProps) {
+export default function AddToCartButton({ classEvent, mediaUrl, className = "", variant = "pop" }: AddToCartButtonProps) {
   const { addToCart } = useCart();
 
   const handleAdd = () => {
@@ -38,6 +40,19 @@ export default function AddToCartButton({ classEvent, mediaUrl, className = "" }
       duration: 3000,
     });
   };
+
+  if (variant === "lux") {
+    return (
+      <button
+        type="button"
+        onClick={handleAdd}
+        className={`flex items-center justify-center gap-2 rounded-full border border-brand-brown bg-white py-3.5 font-semibold text-brand-brown transition-all duration-200 hover:-translate-y-0.5 hover:bg-lux-cream active:translate-y-0 ${className}`}
+      >
+        <ShoppingBag size={18} />
+        เพิ่มลงตะกร้า
+      </button>
+    );
+  }
 
   return (
     <button

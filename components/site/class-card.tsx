@@ -20,6 +20,11 @@ export type ClassCardData = {
   media: { id: string; url: string; type: string }[];
 };
 
+/** Stable, selector-safe anchor id for a category section on /classes. */
+export function categoryAnchorId(category: string) {
+  return "cat-" + Array.from(category).map((ch) => ch.codePointAt(0)!.toString(36)).join("");
+}
+
 function availability(c: ClassCardData) {
   if (c.status === "COMPLETED") return { label: "ปิดรับสมัคร", tone: "closed" as const };
   if (c.totalSeats <= 0) return { label: "เต็มแล้ว", tone: "closed" as const };

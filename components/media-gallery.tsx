@@ -1,6 +1,6 @@
 "use client";
 
-import { PlayCircle, X, Maximize2 } from "lucide-react";
+import { X, Maximize2, Heart } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { useState } from "react";
@@ -21,9 +21,9 @@ export default function MediaGallery({ media, classNameTitle }: MediaGalleryProp
 
   if (!media || media.length === 0) {
     return (
-      <div className="w-full aspect-video rounded-2xl overflow-hidden mb-12 bg-gray-100 relative group flex flex-col items-center justify-center text-gray-400">
-        <PlayCircle size={48} className="mb-2" />
-        <span className="font-bold">ไม่มีรูปภาพประกอบ</span>
+      <div className="w-full aspect-[21/9] rounded-3xl overflow-hidden mb-12 bg-lux-cream border border-lux-line relative flex flex-col items-center justify-center">
+        <Heart size={28} strokeWidth={1.25} className="mb-3 text-lux-gold" />
+        <span className="font-display text-2xl italic text-lux-gold">Date with Soul Love</span>
       </div>
     );
   }
