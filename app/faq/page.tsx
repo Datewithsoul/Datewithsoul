@@ -3,11 +3,14 @@ import Link from "next/link";
 import { MessageCircle, Plus, ArrowUpRight } from "lucide-react";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "คำถามที่พบบ่อย (FAQ) | Date with Soul Love",
-  description: "คำถามที่พบบ่อยเกี่ยวกับการจองคลาส การชำระเงิน และการยกเลิก",
-};
+export const metadata = pageMetadata({
+  title: "คำถามที่พบบ่อย (FAQ)",
+  description:
+    "คำถามที่พบบ่อยเกี่ยวกับการจองคลาส การชำระเงิน และการยกเลิก",
+  path: "/faq",
+});
 
 const faqCategories = [
   {

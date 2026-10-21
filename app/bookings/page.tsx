@@ -12,6 +12,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { StatusBadge } from "@/components/motion/status-badge";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { cn } from "@/lib/utils";
+import { noIndexMetadata } from "@/lib/seo";
 
 const IN_PROGRESS: BookingStatus[] = [
   BookingStatus.PENDING_PAYMENT,
@@ -19,6 +20,8 @@ const IN_PROGRESS: BookingStatus[] = [
   BookingStatus.CHANGE_REQUESTED,
   BookingStatus.CANCELLATION_REQUESTED,
 ];
+
+export const metadata = { title: "การจองของฉัน", ...noIndexMetadata };
 
 export default async function BookingsPage() {
   const supabase = await createClient();

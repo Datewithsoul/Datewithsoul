@@ -1,228 +1,208 @@
 "use client";
 
+import Link from "next/link";
 import { useCart } from "@/hooks/use-cart";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { createCartBookings } from "./actions";
 import { toast } from "sonner";
-import { CalendarDays, Clock, Trash2, Plus, Minus } from "lucide-react";
+import { ArrowRight, Loader2, Plus, ShoppingBag } from "lucide-react";
 import CartItemRow from "@/components/cart-item-row";
+import { Eyebrow } from "@/components/site/page-hero";
+import { Reveal } from "@/components/motion/reveal";
+import { BookerFields, CheckoutNotes, PromoCodeField, checkoutButtonClass } from "@/components/checkout/checkout-ui";
+import { baht, discountFor, type AppliedPromo } from "@/lib/promo";
 
-interface CheckoutClientProps {
-  user: any;
-  authUserEmail?: string;
-}
+type CheckoutClientProps = {
+  isLoggedIn: boolean;
+  defaultName: string;
+  defaultEmail: string;
+  defaultPhone: string;
+};
 
-export default function CheckoutClient({ user, authUserEmail }: CheckoutClientProps) {
-  const { items, updateSeats, removeFromCart, totalPrice, clearCart } = useCart();
+export default function CheckoutClient({ isLoggedIn, defaultName, defaultEmail, defaultPhone }: CheckoutClientProps) {
+  const { items, totalPrice, totalItems, clearCart, isLoaded } = useCart();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [promoCodeInput, setPromoCodeInput] = useState("");
-  const [promoCode, setPromoCode] = useState("");
-  const [discountAmount, setDiscountAmount] = useState(0);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
 
-  // If not logged in, redirect to login, but keep the redirect URL to cart
   useEffect(() => {
-    if (!user && !authUserEmail) {
+    if (!isLoggedIn) {
       toast.info("กรุณาเข้าสู่ระบบก่อนชำระเงิน");
       router.push("/login?redirectTo=/cart");
     }
-  }, [user, authUserEmail, router]);
+  }, [isLoggedIn, router]);
 
-  const handleApplyPromo = async () => {
-    if (!promoCodeInput) return;
-    try {
-      const classEventIds = items.map(item => item.classEventId);
-      const res = await fetch("/api/validate-promo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: promoCodeInput, classEventIds })
-      });
-      const data = await res.json();
-      
-      if (data.error) {
-        toast.error(data.error);
-        setPromoCode("");
-        setDiscountAmount(0);
-      } else {
-        toast.success("ใช้โค้ดส่วนลดสำเร็จ!");
-        setPromoCode(data.promo.code);
-        let discount = 0;
-        if (data.promo.discountType === "PERCENTAGE") {
-          discount = (totalPrice * data.promo.discountValue) / 100;
-        } else if (data.promo.discountType === "FIXED_AMOUNT") {
-          discount = data.promo.discountValue;
-        } else if (data.promo.discountType === "FREE") {
-          discount = totalPrice;
-        }
-        setDiscountAmount(discount > totalPrice ? totalPrice : discount);
-      }
-    } catch (e) {
-      toast.error("ตรวจสอบโค้ดส่วนลดไม่สำเร็จ");
-    }
-  };
-
-  if (!user && !authUserEmail) {
-    return <div className="p-8 text-center text-gray-500">กำลังตรวจสอบสิทธิ์...</div>;
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="bg-gray-50 rounded-2xl p-12 text-center border border-gray-200">
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
-          <Trash2 size={32} className="text-gray-300" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-700 mb-2">ตะกร้าว่างเปล่า</h2>
-        <p className="text-gray-500 mb-6">คุณยังไม่ได้เลือกคลาสใดๆ</p>
-        <button 
-          onClick={() => router.push("/classes")}
-          className="bg-[#222222] hover:bg-black text-white px-6 py-2.5 rounded-full font-semibold transition-colors"
-        >
-          ดูคลาสทั้งหมด
-        </button>
-      </div>
-    );
-  }
+  const discountAmount = discountFor(promo, totalPrice);
+  const finalPrice = totalPrice - discountAmount;
+  const isFree = finalPrice <= 0;
 
   const handleCheckout = (formData: FormData) => {
     startTransition(async () => {
       try {
-        const name = formData.get("name") as string;
-        const email = formData.get("email") as string;
-        
-        // Items formatted for action
-        const bookingItems = items.map(item => ({
-          classEventId: item.classEventId,
-          seats: item.seats
-        }));
+        const booker = {
+          name: formData.get("name") as string,
+          email: formData.get("email") as string,
+          phone: formData.get("phone") as string,
+          note: (formData.get("note") as string) || undefined,
+        };
+        const bookingItems = items.map((item) => ({ classEventId: item.classEventId, seats: item.seats }));
 
-        const result = await createCartBookings(bookingItems, name, email, promoCode || undefined);
-        
+        const result = await createCartBookings(bookingItems, booker, promo?.code);
+
         if (result.error) {
           toast.error("เกิดข้อผิดพลาด: " + result.error);
-        } else if (result.groupId) {
-          clearCart(); // Clear cart after successful checkout!
-          toast.success("สร้างรายการจองสำเร็จ!");
-          if (finalPrice <= 0) {
-            router.push('/bookings');
-          } else {
-            router.push(`/payment/group/${result.groupId}`);
-          }
+          return;
         }
-      } catch (err) {
+        if (result.groupId) {
+          clearCart();
+          toast.success("สร้างรายการจองสำเร็จ!");
+          router.push(isFree ? "/bookings" : `/payment/group/${result.groupId}`);
+        }
+      } catch {
         toast.error("เกิดข้อผิดพลาดที่ไม่รู้จัก กรุณาลองใหม่");
       }
     });
   };
 
-  const finalPrice = totalPrice - discountAmount;
+  if (!isLoggedIn || !isLoaded) return <CheckoutSkeleton />;
+  if (items.length === 0) return <EmptyCart />;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-      {/* Items Summary */}
-      <div>
-        <h2 className="text-xl font-semibold mb-6">รายการคลาสในตะกร้า</h2>
-        <div className="flex flex-col gap-4">
-          {items.map((item) => (
-            <CartItemRow key={item.classEventId} item={item} />
-          ))}
-        </div>
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
+      <div className="flex flex-col gap-12">
+        {/* Items */}
+        <section aria-labelledby="cart-items-heading">
+          <div className="mb-6 flex items-end justify-between gap-4 border-b border-lux-line pb-4">
+            <div>
+              <Eyebrow>Your classes</Eyebrow>
+              <h2 id="cart-items-heading" className="mt-2 text-2xl font-semibold">
+                รายการคลาส <span className="text-lux-muted">({items.length})</span>
+              </h2>
+            </div>
+            <Link
+              href="/classes"
+              className="flex shrink-0 items-center gap-1 text-sm font-medium text-lux-muted transition-colors hover:text-brand-brown"
+            >
+              <Plus className="h-4 w-4" />
+              เลือกคลาสเพิ่ม
+            </Link>
+          </div>
+          <div className="flex flex-col gap-4">
+            {items.map((item) => (
+              <CartItemRow key={item.classEventId} item={item} />
+            ))}
+          </div>
+        </section>
+
+        {/* Booker details */}
+        <section aria-labelledby="booker-heading">
+          <div className="mb-6 border-b border-lux-line pb-4">
+            <Eyebrow>Your details</Eyebrow>
+            <h2 id="booker-heading" className="mt-2 text-2xl font-semibold">ข้อมูลผู้จอง</h2>
+          </div>
+          <form id="checkout-form" action={handleCheckout} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <BookerFields defaultName={defaultName} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
+          </form>
+        </section>
       </div>
 
-      {/* Checkout Form */}
-      <div>
-        <h2 className="text-xl font-semibold mb-6">ข้อมูลผู้จอง & ชำระเงิน</h2>
-        
-        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center text-gray-600">
-              <span>ราคารวม ({items.reduce((s, i) => s + i.seats, 0)} ที่นั่ง)</span>
-              <span>฿{totalPrice.toLocaleString()}</span>
+      {/* Summary */}
+      <aside className="lg:sticky lg:top-24 lg:self-start" aria-labelledby="summary-heading">
+        <div className="rounded-3xl border border-lux-line bg-lux-cream p-6 sm:p-7">
+          <Eyebrow>Summary</Eyebrow>
+          <h2 id="summary-heading" className="mt-2 text-xl font-semibold">สรุปคำสั่งจอง</h2>
+
+          <ul className="mt-5 flex flex-col gap-2.5 border-b border-lux-line pb-5 text-sm">
+            {items.map((item) => (
+              <li key={item.classEventId} className="flex justify-between gap-4">
+                <span className="min-w-0 truncate text-lux-muted">
+                  {item.className} <span className="whitespace-nowrap">× {item.seats}</span>
+                </span>
+                <span className="shrink-0 tabular-nums">{baht(item.price * item.seats)}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Promo code */}
+          <div className="border-b border-lux-line py-5">
+            <PromoCodeField classEventIds={items.map((item) => item.classEventId)} promo={promo} onChange={setPromo} />
+          </div>
+
+          {/* Totals */}
+          <dl className="flex flex-col gap-2 pt-5 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-lux-muted">ราคารวม ({totalItems} ที่นั่ง)</dt>
+              <dd className="tabular-nums">{baht(totalPrice)}</dd>
             </div>
-            
             {discountAmount > 0 && (
-              <div className="flex justify-between items-center text-green-600">
-                <span>ส่วนลด (โค้ด: {promoCode})</span>
-                <span>-฿{discountAmount.toLocaleString()}</span>
+              <div className="flex justify-between text-brand-red">
+                <dt>ส่วนลด</dt>
+                <dd className="tabular-nums">−{baht(discountAmount)}</dd>
               </div>
             )}
-            
-            <div className="pt-2 border-t border-gray-200 mt-2 flex justify-between items-center text-lg">
-              <span className="font-bold">ยอดสุทธิ</span>
-              <span className="text-2xl font-bold text-[#E51D53]">฿{finalPrice.toLocaleString()}</span>
+            <div className="mt-3 flex items-end justify-between border-t border-lux-line pt-4">
+              <dt className="font-semibold">ยอดชำระสุทธิ</dt>
+              <dd className="font-heading text-3xl font-semibold leading-none tabular-nums">{baht(finalPrice)}</dd>
             </div>
-          </div>
-        </div>
+          </dl>
 
-        <div className="mb-6">
-          <label htmlFor="promo" className="font-semibold text-sm text-gray-700 mb-2 block">โค้ดส่วนลด (ถ้ามี)</label>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              id="promo" 
-              value={promoCodeInput}
-              onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-              disabled={!!promoCode}
-              className="p-3 flex-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all uppercase"
-              placeholder="กรอกโค้ดส่วนลด"
-            />
-            {promoCode ? (
-              <button 
-                type="button"
-                onClick={() => { setPromoCode(""); setPromoCodeInput(""); setDiscountAmount(0); }}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 rounded-lg font-semibold transition-colors"
-              >
-                ยกเลิกโค้ด
-              </button>
-            ) : (
-              <button 
-                type="button"
-                onClick={handleApplyPromo}
-                disabled={!promoCodeInput}
-                className="bg-[#222222] hover:bg-black disabled:bg-gray-300 text-white px-6 rounded-lg font-semibold transition-colors"
-              >
-                ใช้โค้ด
-              </button>
-            )}
-          </div>
-        </div>
-
-        <form action={handleCheckout} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="name" className="font-semibold text-sm text-gray-700">ชื่อ-นามสกุล</label>
-            <input 
-              type="text" 
-              id="name" 
-              name="name" 
-              required
-              defaultValue={user?.name || ""}
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-              placeholder="ชื่อ-นามสกุล"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="font-semibold text-sm text-gray-700">อีเมล</label>
-            <input 
-              type="email" 
-              id="email" 
-              name="email" 
-              required
-              defaultValue={authUserEmail || ""}
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-            />
-          </div>
-
-          <button 
-            type="submit"
-            disabled={isPending}
-            className="mt-6 bg-[#E51D53] hover:bg-[#D70444] disabled:bg-gray-400 text-white font-bold py-3.5 rounded-lg text-lg transition-colors w-full flex justify-center items-center gap-2"
-          >
-            {isPending ? "กำลังดำเนินการ..." : finalPrice <= 0 ? "ยืนยันการจอง (เรียนฟรี)" : "ยืนยันและไปหน้าชำระเงิน"}
+          <button type="submit" form="checkout-form" disabled={isPending} className={checkoutButtonClass}>
+            <SubmitLabel isPending={isPending} isFree={isFree} />
           </button>
-        </form>
+
+          <CheckoutNotes isFree={isFree} />
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function SubmitLabel({ isPending, isFree }: { isPending: boolean; isFree: boolean }) {
+  if (isPending) {
+    return (
+      <>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        กำลังดำเนินการ...
+      </>
+    );
+  }
+  return (
+    <>
+      {isFree ? "ยืนยันการจอง (เรียนฟรี)" : "ยืนยันและไปหน้าชำระเงิน"}
+      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+    </>
+  );
+}
+
+function EmptyCart() {
+  return (
+    <Reveal className="mx-auto max-w-lg rounded-3xl border border-lux-line bg-lux-cream p-12 text-center">
+      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm animate-float">
+        <ShoppingBag className="h-7 w-7 text-lux-gold" />
       </div>
+      <h2 className="text-xl font-semibold">ตะกร้ายังว่างอยู่</h2>
+      <p className="mt-2 text-lux-muted">เลือกคลาสที่ใช่สำหรับคุณ แล้วกลับมาจองที่นี่ได้เลย</p>
+      <Link
+        href="/classes"
+        className="mt-6 inline-block rounded-full bg-brand-brown px-7 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+      >
+        ดูคลาสเรียนทั้งหมด
+      </Link>
+    </Reveal>
+  );
+}
+
+function CheckoutSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12" aria-busy="true" aria-label="กำลังโหลดตะกร้า">
+      <div className="flex flex-col gap-4">
+        <div className="mb-2 h-8 w-48 animate-pulse rounded-lg bg-lux-cream" />
+        <div className="h-32 animate-pulse rounded-2xl bg-lux-cream" />
+        <div className="h-32 animate-pulse rounded-2xl bg-lux-cream" />
+      </div>
+      <div className="h-96 animate-pulse rounded-3xl bg-lux-cream" />
     </div>
   );
 }

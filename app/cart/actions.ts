@@ -10,6 +10,13 @@ interface BookingItemInput {
   seats: number;
 }
 
+interface BookerInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+}
+
 export async function validatePromoCode(code: string, userId: string, classEventIds: string[]) {
   const promo = await prisma.promoCode.findUnique({
     where: { code: code.toUpperCase() },
@@ -38,7 +45,9 @@ export async function validatePromoCode(code: string, userId: string, classEvent
   return { success: true, promo };
 }
 
-export async function createCartBookings(items: BookingItemInput[], name: string, email?: string, promoCode?: string) {
+export async function createCartBookings(items: BookingItemInput[], booker: BookerInput, promoCode?: string) {
+  const { name, email, phone } = booker;
+  const note = booker.note?.trim() || null;
   try {
     const supabase = await createClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -57,14 +66,15 @@ export async function createCartBookings(items: BookingItemInput[], name: string
 
     if (!user) {
       user = await prisma.user.create({
-        data: { id: authUser.id, name: name || authUser.email!, email: email || authUser.email! },
+        data: { id: authUser.id, name: name || authUser.email!, email: email || authUser.email!, phone: phone || null },
       });
-    } else if ((user.name !== name && name) || (email && user.email !== email)) {
+    } else if ((name && user.name !== name) || (email && user.email !== email) || (phone && user.phone !== phone)) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { 
+        data: {
           ...(name ? { name } : {}),
-          ...(email ? { email } : {})
+          ...(email ? { email } : {}),
+          ...(phone ? { phone } : {}),
         }
       });
     }
@@ -161,6 +171,7 @@ export async function createCartBookings(items: BookingItemInput[], name: string
             seats: item.requestedSeats,
             totalPrice: item.price * item.requestedSeats, // keep original price per booking or distribute discount? Kept original for now, group has the total
             status: isFree ? "CONFIRMED" : "PENDING_PAYMENT",
+            note,
           }
         });
 

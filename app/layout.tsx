@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { IBM_Plex_Sans_Thai_Looped, Noto_Serif_Thai, Playfair_Display } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -25,13 +26,12 @@ const display = Playfair_Display({
   weight: ["400", "500"],
 });
 
-const siteUrl = new URL(
-  process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app"
-);
-
 export const metadata: Metadata = {
-  metadataBase: siteUrl,
-  title: "Date with Soul Love — คลาสทำความรู้จักตัวเอง ความสัมพันธ์ จิตวิทยา",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Date with Soul Love — คลาสทำความรู้จักตัวเอง ความสัมพันธ์ จิตวิทยา",
+    template: `%s | ${SITE_NAME}`,
+  },
   description:
     "จองคลาสพัฒนาตัวเอง Date with Soul Love สำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น สอนเรื่องจิตวิทยาความสัมพันธ์ ความรัก และการเข้าใจตนเอง",
   keywords: [
@@ -46,23 +46,18 @@ export const metadata: Metadata = {
     "ดูแลจิตใจ",
     "Date with Soul Love"
   ],
-  authors: [{ name: "Date with Soul Love" }],
-  robots: "index, follow",
-  alternates: {
-    canonical: "/",
-  },
+  authors: [{ name: SITE_NAME }],
   openGraph: {
     type: "website",
     locale: "th_TH",
-    url: siteUrl,
-    siteName: "Date with Soul Love",
+    siteName: SITE_NAME,
     title: "Date with Soul Love — คลาสทำความรู้จักตัวเอง",
     description:
       "จองคลาสสำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น",
-    images: [{ url: "/logo.jpg", width: 1200, height: 630, alt: "Date with Soul Love" }],
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Date with Soul Love — คลาสทำความรู้จักตัวเอง",
     description:
       "จองคลาสสำหรับคนที่อยากมีความสัมพันธ์ที่ดีกับตัวเอง เรียนรู้ผ่านประสบการณ์จริง กลุ่มเล็ก บรรยากาศอบอุ่น",

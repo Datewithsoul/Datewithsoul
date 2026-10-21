@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Lock, User, LayoutDashboard, Wallet, BellRing } from "lucide-react";
 import { adminLogin } from "./actions";
+import { noIndexMetadata } from "@/lib/seo";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -12,6 +13,8 @@ const features = [
   { icon: Wallet, text: "ตรวจสอบสลิปและยืนยันการชำระเงิน" },
   { icon: BellRing, text: "แจ้งเตือนลูกค้าผ่าน LINE" },
 ];
+
+export const metadata = { title: "Admin", ...noIndexMetadata };
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;

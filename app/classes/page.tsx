@@ -6,11 +6,14 @@ import Navbar from "@/components/navbar";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { ClassCard, categoryAnchorId } from "@/components/site/class-card";
 import { Reveal } from "@/components/motion/reveal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "คลาสเรียน | Date with Soul Love",
-  description: "คลาสและเวิร์กชอปทำความรู้จักตัวเองของ Date with Soul Love",
-};
+export const metadata = pageMetadata({
+  title: "คลาสเรียน",
+  description:
+    "รวมคลาสและเวิร์กชอปทำความรู้จักตัวเอง ความสัมพันธ์ และจิตวิทยาความรักของ Date with Soul Love ดูรอบเรียน ที่นั่งว่าง และจองออนไลน์ได้ทันที",
+  path: "/classes",
+});
 
 export default async function ClassesPage(props: { searchParams: Promise<{ date?: string }> }) {
   const searchParams = await props.searchParams;

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Heart, Bell, CalendarCheck, ShieldCheck } from "lucide-react";
 import { Ornament } from "@/components/site/page-hero";
+import { noIndexMetadata } from "@/lib/seo";
+
+export const metadata = { title: "เข้าสู่ระบบ", ...noIndexMetadata };
 
 export default async function LoginPage({
   searchParams,

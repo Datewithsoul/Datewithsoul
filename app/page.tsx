@@ -8,6 +8,33 @@ import { logout } from "./login/actions";
 import Navbar from "@/components/navbar";
 import ClassCalendar from "@/components/class-calendar";
 import { Reveal } from "@/components/motion/reveal";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
+
+export const metadata = {
+  alternates: { canonical: "/" },
+};
+
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo.jpg`,
+      sameAs: ["https://line.me/R/ti/p/@073wlzuq"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      inLanguage: "th-TH",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
+};
 
 function ClassCarousel({ classes }: { classes: any[] }) {
   if (!classes || classes.length === 0) return null;
@@ -261,6 +288,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-white text-[#1c1d1f] font-sans overflow-x-hidden">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }} />
       <Navbar />
 
       {/* Pop Art Class Calendar Section */}

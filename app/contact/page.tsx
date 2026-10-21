@@ -3,11 +3,14 @@ import Link from "next/link";
 import { MessageCircle, Clock, Sparkles, HelpCircle, CreditCard, CalendarDays, ArrowUpRight } from "lucide-react";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "ติดต่อเรา | Date with Soul Love",
-  description: "ติดต่อ Date with Soul Love ผ่าน LINE Official Account",
-};
+export const metadata = pageMetadata({
+  title: "ติดต่อเรา",
+  description:
+    "ติดต่อ Date with Soul Love ผ่าน LINE Official Account สอบถามรายละเอียดคลาส การชำระเงิน หรือขอเปลี่ยนรอบและยกเลิกการจอง",
+  path: "/contact",
+});
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
 const LINE_ID = "@073wlzuq";

@@ -14,11 +14,14 @@ import {
 } from "lucide-react";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "วิธีการจอง | Date with Soul Love",
-  description: "ขั้นตอนการจองคลาสเรียนและเวิร์กชอปของ Date with Soul Love",
-};
+export const metadata = pageMetadata({
+  title: "วิธีการจอง",
+  description:
+    "ขั้นตอนการจองคลาสเรียนและเวิร์กชอปของ Date with Soul Love",
+  path: "/how-it-works",
+});
 
 const steps = [
   {

@@ -11,8 +11,11 @@ import { slipViewUrl } from "@/lib/slips";
 import { StatusHero } from "@/components/motion/status-hero";
 import { BookingProgress } from "@/components/motion/booking-progress";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
+import { noIndexMetadata } from "@/lib/seo";
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
+
+export const metadata = { title: "ชำระเงิน", ...noIndexMetadata };
 
 export default async function PaymentPage({ params, searchParams }: { params: Promise<{ bookingId: string }>, searchParams: Promise<{ error?: string }> }) {
   const { bookingId } = await params;

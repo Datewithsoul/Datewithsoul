@@ -28,8 +28,7 @@ import { expireStaleBookings } from "@/lib/expire-bookings";
 import { RoundPicker } from "./round-picker";
 import { MobileBookBar } from "./mobile-book-bar";
 import { ReadMore } from "./read-more";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://datewithsoul.vercel.app";
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL as siteUrl } from "@/lib/seo";
 
 function cleanDescription(value: string | null, fallback: string) {
   const description = value?.replace(/\s+/g, " ").trim();
@@ -48,6 +47,7 @@ export async function generateMetadata({
     select: {
       name: true,
       description: true,
+      status: true,
       media: {
         where: { type: "IMAGE" },
         orderBy: { order: "asc" },
@@ -63,26 +63,30 @@ export async function generateMetadata({
     classEvent.description,
     "ดูรายละเอียดและจองคลาสกับ Date with Soul Love"
   );
-  const imageUrl = classEvent.media[0]?.url || `${siteUrl}/`;
-  const pageUrl = `${siteUrl}/classes/${id}`;
+  const coverUrl = classEvent.media[0]?.url;
+  const image = coverUrl ? { url: coverUrl, alt: classEvent.name } : DEFAULT_OG_IMAGE;
+  const pagePath = `/classes/${id}`;
+  const isListed = classEvent.status === ClassEventStatus.PUBLISHED || classEvent.status === ClassEventStatus.COMPLETED;
 
   return {
-    title: `${classEvent.name} | Date with Soul Love`,
+    title: classEvent.name,
     description,
+    alternates: { canonical: pagePath },
+    ...(isListed ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       type: "website",
       locale: "th_TH",
-      url: pageUrl,
-      siteName: "Date with Soul Love",
+      url: pagePath,
+      siteName: SITE_NAME,
       title: classEvent.name,
       description,
-      images: [{ url: imageUrl, alt: classEvent.name }],
+      images: [image],
     },
     twitter: {
-      card: "summary_large_image",
+      card: coverUrl ? "summary_large_image" : "summary",
       title: classEvent.name,
       description,
-      images: [imageUrl],
+      images: [image.url],
     },
   };
 }
@@ -205,7 +209,10 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
     description: description.slice(0, 500) || undefined,
     startDate: toIso(classEvent.date, classEvent.startTime),
     endDate: toIso(classEndDate, classEvent.endTime),
-    eventStatus: "https://schema.org/EventScheduled",
+    eventStatus:
+      classEvent.status === ClassEventStatus.CANCELLED
+        ? "https://schema.org/EventCancelled"
+        : "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     image: classEvent.media.filter((m) => m.type === "IMAGE").map((m) => m.url).slice(0, 3),
     location: {
@@ -224,10 +231,20 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "คลาสเรียน", item: `${siteUrl}/classes` },
+      { "@type": "ListItem", position: 2, name: classEvent.name },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-white pb-28 font-sans text-brand-brown lg:pb-0">
       <Navbar />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }} />
 
       <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-6 md:pt-10">
         {/* Breadcrumb */}

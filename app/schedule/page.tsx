@@ -6,11 +6,14 @@ import { CalendarDays, Clock, MapPin, ArrowUpRight } from "lucide-react";
 import { PageHero, Eyebrow } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "ตารางเรียน | Date with Soul Love",
-  description: "ดูตารางคลาสเรียนและเวิร์กชอปทั้งหมดของเรา",
-};
+export const metadata = pageMetadata({
+  title: "ตารางเรียน",
+  description:
+    "ตารางคลาสเรียนและเวิร์กชอปรายเดือนของ Date with Soul Love เลือกวันและรอบเวลาที่สะดวก พร้อมดูจำนวนที่นั่งว่างก่อนจอง",
+  path: "/schedule",
+});
 
 export default async function SchedulePage() {
   const today = new Date();

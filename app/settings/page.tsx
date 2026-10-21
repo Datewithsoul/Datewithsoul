@@ -3,6 +3,9 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/navbar";
 import SettingsForm from "./settings-form";
+import { noIndexMetadata } from "@/lib/seo";
+
+export const metadata = { title: "ตั้งค่าผู้ใช้", ...noIndexMetadata };
 
 export default async function SettingsPage() {
   const supabase = await createClient();

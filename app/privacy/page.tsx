@@ -1,10 +1,13 @@
 import Navbar from "@/components/navbar";
 import { LegalPage, type LegalSection } from "@/components/site/legal-page";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "นโยบายความเป็นส่วนตัว | Date with Soul Love",
-  description: "นโยบายความเป็นส่วนตัวของ Date with Soul Love",
-};
+export const metadata = pageMetadata({
+  title: "นโยบายความเป็นส่วนตัว",
+  description:
+    "นโยบายความเป็นส่วนตัวของ Date with Soul Love",
+  path: "/privacy",
+});
 
 const sections: LegalSection[] = [
   {

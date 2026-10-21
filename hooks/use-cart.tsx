@@ -23,6 +23,8 @@ type CartContextType = {
   clearCart: () => void;
   totalPrice: number;
   totalItems: number;
+  /** False until the cart has been restored from localStorage */
+  isLoaded: boolean;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -122,6 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         totalPrice,
         totalItems,
+        isLoaded,
       }}
     >
       {children}

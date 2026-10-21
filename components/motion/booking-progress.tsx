@@ -3,19 +3,23 @@ import { cn } from "@/lib/utils";
 
 const STEPS = ["จองที่นั่ง", "ชำระเงิน", "ตรวจสอบสลิป", "ยืนยันแล้ว"];
 
+const PAYMENT_STEP = 1;
+const REVIEW_STEP = 2;
+const PERCENT = 100;
+const FIRST_STEP_DELAY_MS = 150;
+const STEP_STAGGER_MS = 180;
+
+const STEP_BY_STATUS: Record<string, number> = {
+  CART: 0,
+  PENDING_PAYMENT: PAYMENT_STEP,
+  PAYMENT_REVIEW: REVIEW_STEP,
+  CONFIRMED: STEPS.length,
+  COMPLETED: STEPS.length,
+};
+
 /** Index of the step currently in progress; STEPS.length means everything is done. */
-export function progressStepFor(status: string) {
-  switch (status) {
-    case "PENDING_PAYMENT":
-      return 1;
-    case "PAYMENT_REVIEW":
-      return 2;
-    case "CONFIRMED":
-    case "COMPLETED":
-      return STEPS.length;
-    default:
-      return 1;
-  }
+export function progressStepFor(status: string): number {
+  return STEP_BY_STATUS[status] ?? PAYMENT_STEP;
 }
 
 /** Animated booking progress: the line fills and each step pops in. */
@@ -31,7 +35,7 @@ export function BookingProgress({ status, className }: { status: string; classNa
           <div
             className="h-full rounded-full animate-grow-x"
             style={{
-              width: `${fill * 100}%`,
+              width: `${fill * PERCENT}%`,
               background: "linear-gradient(90deg, var(--brand-yellow), var(--brand-red))",
               "--delay": "200ms",
             } as React.CSSProperties}
@@ -51,7 +55,7 @@ export function BookingProgress({ status, className }: { status: string; classNa
                     active && "border-[var(--brand-yellow)] bg-white text-[var(--brand-brown)]",
                     !done && !active && "border-[#e2d8ca] bg-white text-[#b5a898]"
                   )}
-                  style={{ "--delay": `${150 + i * 180}ms` } as React.CSSProperties}
+                  style={{ "--delay": `${FIRST_STEP_DELAY_MS + i * STEP_STAGGER_MS}ms` } as React.CSSProperties}
                 >
                   {active && (
                     <span className="absolute inset-0 rounded-full bg-[var(--brand-yellow)] animate-status-ping" aria-hidden />

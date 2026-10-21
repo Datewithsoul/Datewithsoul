@@ -1,11 +1,14 @@
 import Navbar from "@/components/navbar";
 import Link from "next/link";
 import { FileText, MessageCircle } from "lucide-react";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "เงื่อนไขการจอง | Date with Soul Love",
-  description: "เงื่อนไขและข้อกำหนดในการจองคลาสเรียนของ Date with Soul Love",
-};
+export const metadata = pageMetadata({
+  title: "เงื่อนไขการจอง",
+  description:
+    "เงื่อนไขและข้อกำหนดในการจองคลาสเรียนของ Date with Soul Love",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (
