@@ -180,6 +180,7 @@ export default function ScheduleRepeater({
                       <SelectValue placeholder="สถานะคอร์ส">
                         {{
                           "PUBLISHED": "เปิดรับสมัคร",
+                          "PAUSED": "ปิดจองชั่วคราว",
                           "COMPLETED": "คอร์สเต็ม / ปิดรับสมัคร",
                           "DRAFT": "ซ่อน (ฉบับร่าง)",
                           "CANCELLED": "ยกเลิก"
@@ -188,6 +189,7 @@ export default function ScheduleRepeater({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PUBLISHED">เปิดรับสมัคร</SelectItem>
+                      <SelectItem value="PAUSED">ปิดจองชั่วคราว</SelectItem>
                       <SelectItem value="COMPLETED">คอร์สเต็ม / ปิดรับสมัคร</SelectItem>
                       <SelectItem value="DRAFT">ซ่อน (ฉบับร่าง)</SelectItem>
                       <SelectItem value="CANCELLED">ยกเลิก</SelectItem>

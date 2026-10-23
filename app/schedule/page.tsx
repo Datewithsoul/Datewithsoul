@@ -43,7 +43,7 @@ export default async function SchedulePage() {
     {} as Record<string, typeof classes>
   );
   const months = Object.entries(grouped);
-  const openCount = classes.filter((c) => c.totalSeats > 0 && c.status !== "COMPLETED").length;
+  const openCount = classes.filter((c) => c.totalSeats > 0 && c.status === "PUBLISHED").length;
 
   return (
     <div className="min-h-screen bg-white font-sans text-brand-brown">
@@ -96,9 +96,10 @@ export default async function SchedulePage() {
                     const booked = c.bookings.reduce((sum, b) => sum + b.seats, 0);
                     const capacity = c.totalSeats + booked;
                     const isCompleted = c.status === "COMPLETED";
+                    const isPaused = c.status === "PAUSED";
                     const isFull = c.totalSeats <= 0;
-                    const isUrgent = !isFull && !isCompleted && c.totalSeats <= 3;
-                    const closed = isCompleted || isFull;
+                    const isUrgent = !isFull && !isCompleted && !isPaused && c.totalSeats <= 3;
+                    const closed = isCompleted || isPaused || isFull;
 
                     return (
                       <Reveal as="li" key={c.id} delay={Math.min(i, 4) * 80} className="relative pb-6 pl-8 last:pb-0 sm:pl-10">
@@ -147,6 +148,8 @@ export default async function SchedulePage() {
                               </h3>
                               {isCompleted ? (
                                 <span className="rounded-full bg-lux-cream px-2.5 py-0.5 text-[11px] font-semibold text-lux-muted">ปิดรับสมัคร</span>
+                              ) : isPaused ? (
+                                <span className="rounded-full bg-lux-cream px-2.5 py-0.5 text-[11px] font-semibold text-lux-muted">ปิดรับจองชั่วคราว</span>
                               ) : isFull ? (
                                 <span className="rounded-full bg-lux-cream px-2.5 py-0.5 text-[11px] font-semibold text-lux-muted">เต็มแล้ว</span>
                               ) : isUrgent ? (

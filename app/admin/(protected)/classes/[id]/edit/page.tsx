@@ -107,6 +107,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
                     <SelectValue placeholder="สถานะ">
                       {{
                         "PUBLISHED": "เปิดให้จอง (เผยแพร่)",
+                        "PAUSED": "ปิดจองชั่วคราว",
                         "COMPLETED": "จบคอร์สแล้ว",
                         "DRAFT": "ฉบับร่าง (ซ่อนไว้)",
                         "CANCELLED": "ยกเลิกคอร์ส"
@@ -116,6 +117,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
                   <SelectContent>
                     <SelectItem value="DRAFT">ฉบับร่าง (ซ่อนไว้)</SelectItem>
                     <SelectItem value="PUBLISHED">เปิดให้จอง (เผยแพร่)</SelectItem>
+                    <SelectItem value="PAUSED">ปิดจองชั่วคราว</SelectItem>
                     <SelectItem value="COMPLETED">จบคอร์สแล้ว</SelectItem>
                     <SelectItem value="CANCELLED">ยกเลิกคอร์ส</SelectItem>
                   </SelectContent>

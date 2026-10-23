@@ -57,7 +57,7 @@ export async function generateMetadata({
     },
   });
 
-  if (!classEvent) return {};
+  if (!classEvent || classEvent.status === ClassEventStatus.DRAFT) return {};
 
   const description = cleanDescription(
     classEvent.description,
@@ -66,7 +66,10 @@ export async function generateMetadata({
   const coverUrl = classEvent.media[0]?.url;
   const image = coverUrl ? { url: coverUrl, alt: classEvent.name } : DEFAULT_OG_IMAGE;
   const pagePath = `/classes/${id}`;
-  const isListed = classEvent.status === ClassEventStatus.PUBLISHED || classEvent.status === ClassEventStatus.COMPLETED;
+  const isListed =
+    classEvent.status === ClassEventStatus.PUBLISHED ||
+    classEvent.status === ClassEventStatus.PAUSED ||
+    classEvent.status === ClassEventStatus.COMPLETED;
 
   return {
     title: classEvent.name,
@@ -119,7 +122,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
     },
   });
 
-  if (!classEvent) {
+  if (!classEvent || classEvent.status === ClassEventStatus.DRAFT) {
     notFound();
   }
 
@@ -176,13 +179,15 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
 
   const classEndDate = classEvent.endDate ?? classEvent.date;
   const isPastClass = classEndDate < today;
-  const unavailable = isPastClass
-    ? "ผ่านวันเรียนแล้ว"
-    : classEvent.status === "COMPLETED"
-      ? "ปิดรับสมัครแล้ว"
-      : classEvent.totalSeats <= 0
-        ? "ที่นั่งเต็มแล้ว"
-        : undefined;
+  const closedStatusReasons: Partial<Record<ClassEventStatus, string>> = {
+    [ClassEventStatus.COMPLETED]: "ปิดรับสมัครแล้ว",
+    [ClassEventStatus.PAUSED]: "ปิดรับจองชั่วคราว",
+  };
+  const unavailable =
+    (isPastClass && "ผ่านวันเรียนแล้ว") ||
+    closedStatusReasons[classEvent.status] ||
+    (classEvent.totalSeats <= 0 && "ที่นั่งเต็มแล้ว") ||
+    undefined;
 
   const category = classEvent.category || "เวิร์กชอป";
   const hasInstructor = !!classEvent.instructor && classEvent.instructor !== "ไม่ระบุผู้สอน";

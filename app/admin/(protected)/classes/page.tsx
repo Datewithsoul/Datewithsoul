@@ -13,6 +13,28 @@ import { Button } from "@/components/ui/button";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
 import { CancelClassButton } from "@/components/cancel-class-button";
 import { CloseClassButton } from "@/components/close-class-button";
+import { DeleteClassGroupButton } from "@/components/delete-class-group-button";
+import { PauseClassBookingButton } from "@/components/pause-class-booking-button";
+import { HideClassButton } from "@/components/hide-class-button";
+import { ClassEventStatus } from "@/app/generated/prisma";
+import { cn } from "@/lib/utils";
+
+const CLASS_STATUS_BADGES: Record<ClassEventStatus, { label: string; className: string }> = {
+  PUBLISHED: { label: "เปิดรับจอง", className: "bg-green-100 text-green-800" },
+  PAUSED: { label: "ปิดจองชั่วคราว", className: "bg-amber-100 text-amber-800" },
+  COMPLETED: { label: "ปิดรับสมัคร", className: "bg-blue-100 text-blue-800" },
+  DRAFT: { label: "ซ่อนอยู่", className: "bg-gray-100 text-gray-800" },
+  CANCELLED: { label: "ยกเลิก", className: "bg-red-100 text-red-800" },
+};
+
+function ClassStatusBadge({ status, className }: { status: ClassEventStatus; className?: string }) {
+  const badge = CLASS_STATUS_BADGES[status];
+  return (
+    <span className={cn("px-2 py-1 text-xs rounded-full font-semibold whitespace-nowrap", badge.className, className)}>
+      {badge.label}
+    </span>
+  );
+}
 
 import { SearchBar } from "@/components/search-bar";
 import { DataTablePagination } from "@/components/data-table-pagination";
@@ -22,9 +44,11 @@ export default async function AdminClasses({ searchParams }: { searchParams: Pro
   const currentPage = Number(page) || 1;
   const pageSize = 20;
 
-  const where = q ? {
-    name: { contains: q }
-  } : {};
+  // Deleted classes that had bookings are kept for history but not listed here
+  const where = {
+    deletedAt: null,
+    ...(q ? { name: { contains: q } } : {}),
+  };
 
   const allClasses = await prisma.classEvent.findMany({
     where,
@@ -36,6 +60,30 @@ export default async function AdminClasses({ searchParams }: { searchParams: Pro
     acc[c.name].push(c);
     return acc;
   }, {});
+
+  // Shown in the delete dialog: these bookings are kept when the class is deleted
+  const bookingCounts = await prisma.booking.groupBy({
+    by: ["classEventId"],
+    where: { classEventId: { in: allClasses.map((c) => c.id) } },
+    _count: { _all: true },
+  });
+  const bookingCountByEvent = new Map(bookingCounts.map((b) => [b.classEventId, b._count._all]));
+  const bookingCountOf = (group: typeof allClasses) =>
+    group.reduce((sum, c) => sum + (bookingCountByEvent.get(c.id) ?? 0), 0);
+
+  const countRounds = (group: typeof allClasses, status: ClassEventStatus) =>
+    group.filter((c) => c.status === status).length;
+  // A class reads as the most customer-facing status any of its rounds has
+  const GROUP_STATUS_PRIORITY: ClassEventStatus[] = [
+    ClassEventStatus.PUBLISHED,
+    ClassEventStatus.PAUSED,
+    ClassEventStatus.COMPLETED,
+    ClassEventStatus.DRAFT,
+  ];
+  const groupStatusOf = (group: typeof allClasses): ClassEventStatus =>
+    GROUP_STATUS_PRIORITY.find((status) => countRounds(group, status) > 0) ?? group[0].status;
+  const visibleRoundsOf = (group: typeof allClasses) =>
+    group.length - countRounds(group, ClassEventStatus.DRAFT) - countRounds(group, ClassEventStatus.CANCELLED);
 
   const groupedArray = Object.values(allGroupedClasses);
   const totalItems = groupedArray.length;
@@ -100,20 +148,28 @@ export default async function AdminClasses({ searchParams }: { searchParams: Pro
                       {group.reduce((acc: number, c: any) => acc + c.totalSeats, 0)}
                     </TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
-                        firstClass.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
-                        firstClass.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                        firstClass.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
-                        "bg-blue-100 text-blue-800"
-                      }`}>
-                        {firstClass.status}
-                      </span>
+                      <ClassStatusBadge status={groupStatusOf(group)} />
                     </TableCell>
                     <TableCell className="px-5 text-right">
                       <div className="flex justify-end gap-2">
+                        <PauseClassBookingButton
+                          className={firstClass.name}
+                          openRoundCount={countRounds(group, ClassEventStatus.PUBLISHED)}
+                          pausedRoundCount={countRounds(group, ClassEventStatus.PAUSED)}
+                        />
+                        <HideClassButton
+                          className={firstClass.name}
+                          visibleRoundCount={visibleRoundsOf(group)}
+                          hiddenRoundCount={countRounds(group, ClassEventStatus.DRAFT)}
+                        />
                         <Link href={`/admin/classes/group-edit/${encodeURIComponent(firstClass.name)}`}>
                           <Button variant="outline" size="sm">แก้ไขกลุ่มนี้</Button>
                         </Link>
+                        <DeleteClassGroupButton
+                          className={firstClass.name}
+                          roundCount={group.length}
+                          bookingCount={bookingCountOf(group)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -136,14 +192,7 @@ export default async function AdminClasses({ searchParams }: { searchParams: Pro
               <div key={firstClass.id} className="bg-white p-4 rounded-md border border-[#ddd4c8] shadow-sm flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-2 border-b border-[#ddd4c8] pb-3">
                   <div className="font-medium text-[#3d3229] text-base">{firstClass.name}</div>
-                  <span className={`px-2 py-1 text-xs rounded-full font-semibold shrink-0 ${
-                    firstClass.status === "PUBLISHED" ? "bg-green-100 text-green-800" :
-                    firstClass.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                    firstClass.status === "DRAFT" ? "bg-gray-100 text-gray-800" :
-                    "bg-blue-100 text-blue-800"
-                  }`}>
-                    {firstClass.status}
-                  </span>
+                  <ClassStatusBadge status={groupStatusOf(group)} className="shrink-0" />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -162,9 +211,27 @@ export default async function AdminClasses({ searchParams }: { searchParams: Pro
                 </div>
 
                 <div className="pt-3 border-t border-[#ddd4c8] flex flex-wrap justify-end gap-2">
+                  <PauseClassBookingButton
+                    className={firstClass.name}
+                    openRoundCount={countRounds(group, ClassEventStatus.PUBLISHED)}
+                    pausedRoundCount={countRounds(group, ClassEventStatus.PAUSED)}
+                    triggerClassName="flex-1 min-w-[45%]"
+                  />
+                  <HideClassButton
+                    className={firstClass.name}
+                    visibleRoundCount={visibleRoundsOf(group)}
+                    hiddenRoundCount={countRounds(group, ClassEventStatus.DRAFT)}
+                    triggerClassName="flex-1 min-w-[45%]"
+                  />
                   <Link href={`/admin/classes/group-edit/${encodeURIComponent(firstClass.name)}`} className="flex-1 min-w-[30%]">
                     <Button variant="outline" size="sm" className="w-full">แก้ไขกลุ่มนี้</Button>
                   </Link>
+                  <DeleteClassGroupButton
+                    className={firstClass.name}
+                    roundCount={group.length}
+                    bookingCount={bookingCountOf(group)}
+                    triggerClassName="flex-1 min-w-[30%]"
+                  />
                 </div>
               </div>
             )})

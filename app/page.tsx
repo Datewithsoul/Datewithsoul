@@ -50,7 +50,7 @@ function ClassCarousel({ classes }: { classes: any[] }) {
         totalBookedSeats: booked,
         totalMaxSeats: c.totalSeats + booked,
         anyAvailable: c.totalSeats > 0,
-        anyCompleted: c.status === "COMPLETED"
+        anyCompleted: c.status === "COMPLETED" || c.status === "PAUSED"
       });
     } else {
       const existing = groupedMap.get(c.name);
@@ -59,7 +59,7 @@ function ClassCarousel({ classes }: { classes: any[] }) {
       existing.totalBookedSeats += booked;
       existing.totalMaxSeats += (c.totalSeats + booked);
       if (c.totalSeats > 0) existing.anyAvailable = true;
-      if (c.status !== "COMPLETED") existing.anyCompleted = false;
+      if (c.status !== "COMPLETED" && c.status !== "PAUSED") existing.anyCompleted = false;
     }
   }
 
@@ -198,7 +198,7 @@ export default async function Home() {
     thisWeekClasses = await prisma.classEvent.findMany({
       where: { 
         date: { gte: today, lte: endOfWeek },
-        status: { not: "CANCELLED" }
+        status: { notIn: ["CANCELLED", "DRAFT"] }
       },
       orderBy: { date: "asc" },
       include: baseInclude
@@ -212,7 +212,7 @@ export default async function Home() {
   const thisMonthClasses = await prisma.classEvent.findMany({
     where: { 
       date: { gte: today, lte: endOfMonth },
-      status: { not: "CANCELLED" }
+      status: { notIn: ["CANCELLED", "DRAFT"] }
     },
     orderBy: { date: "asc" },
     include: baseInclude
@@ -222,7 +222,7 @@ export default async function Home() {
   const popularClasses = await prisma.classEvent.findMany({
     where: { 
       date: { gte: today },
-      status: { not: "CANCELLED" },
+      status: { notIn: ["CANCELLED", "DRAFT"] },
       totalSeats: { lte: 3, gt: 0 } // Only 1-3 seats remaining
     },
     orderBy: { totalSeats: "asc" },
@@ -232,7 +232,7 @@ export default async function Home() {
 
   // Fetch upcoming classes for category grouping
   const rawUpcomingClasses = await prisma.classEvent.findMany({
-    where: { date: { gte: today }, status: { not: "CANCELLED" } },
+    where: { date: { gte: today }, status: { notIn: ["CANCELLED", "DRAFT"] } },
     orderBy: { date: "asc" },
     include: baseInclude
   });

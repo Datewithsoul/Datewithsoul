@@ -27,6 +27,7 @@ export function categoryAnchorId(category: string) {
 
 function availability(c: ClassCardData) {
   if (c.status === "COMPLETED") return { label: "ปิดรับสมัคร", tone: "closed" as const };
+  if (c.status === "PAUSED") return { label: "ปิดรับจองชั่วคราว", tone: "closed" as const };
   if (c.totalSeats <= 0) return { label: "เต็มแล้ว", tone: "closed" as const };
   if (c.totalSeats <= 3) return { label: `เหลือ ${c.totalSeats} ที่สุดท้าย`, tone: "urgent" as const };
   return { label: "เปิดรับสมัคร", tone: "open" as const };

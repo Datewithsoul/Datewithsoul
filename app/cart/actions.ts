@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { expireStaleBookings } from "@/lib/expire-bookings";
-import { BookingStatus, BookingGroupStatus, PaymentStatus } from "@/app/generated/prisma";
+import { BookingStatus, BookingGroupStatus, PaymentStatus, ClassEventStatus } from "@/app/generated/prisma";
 
 interface BookingItemInput {
   classEventId: string;
@@ -90,6 +90,7 @@ export async function createCartBookings(items: BookingItemInput[], booker: Book
         }
         const ce = await prisma.classEvent.findUnique({ where: { id: item.classEventId } });
         if (!ce) throw new Error(`Class event ${item.classEventId} not found`);
+        if (ce.status !== ClassEventStatus.PUBLISHED) throw new Error(`${ce.name} ปิดรับจองอยู่ในขณะนี้`);
         if (ce.totalSeats < item.seats) throw new Error(`ที่นั่งสำหรับ ${ce.name} ไม่เพียงพอ`);
         totalPrice += ce.price * item.seats;
         return { ...ce, requestedSeats: item.seats };
@@ -178,13 +179,15 @@ export async function createCartBookings(items: BookingItemInput[], booker: Book
         const updatedClassEvent = await tx.classEvent.updateMany({
           where: { 
             id: item.id,
+            // Re-checked here so a class paused mid-checkout can't still take the booking
+            status: ClassEventStatus.PUBLISHED,
             totalSeats: { gte: item.requestedSeats }
           },
           data: { totalSeats: { decrement: item.requestedSeats } }
         });
         
         if (updatedClassEvent.count === 0) {
-          throw new Error(`ขออภัย ที่นั่งสำหรับ ${item.name} ไม่เพียงพอ หรือมีการจองพร้อมกัน`);
+          throw new Error(`ขออภัย ${item.name} ปิดรับจองแล้ว หรือที่นั่งไม่เพียงพอ`);
         }
       }
 
@@ -242,6 +245,7 @@ export async function getAlternativeSchedules(className: string) {
   const schedules = await prisma.classEvent.findMany({
     where: {
       name: className,
+      status: { notIn: [ClassEventStatus.CANCELLED, ClassEventStatus.DRAFT] },
       date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) }
     },
     orderBy: [

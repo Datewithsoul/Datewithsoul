@@ -46,6 +46,7 @@ model ClassEvent {
   status            ClassEventStatus @default(PUBLISHED)
   googleMapUrl      String?
   locationName      String?          @default("Date with Soul Love")
+  deletedAt         DateTime? // set when an admin deletes a class that has bookings; kept for history
   bookings          Booking[]
   originalRequests  ChangeRequest[]  @relation("OriginalEvent")
   requestedRequests ChangeRequest[]  @relation("RequestedEvent")
@@ -194,6 +195,8 @@ enum Role {
 enum ClassEventStatus {
   DRAFT
   PUBLISHED
+  PAUSED // listed, but bookings temporarily closed; admin can reopen
+
   CANCELLED
   COMPLETED
 }

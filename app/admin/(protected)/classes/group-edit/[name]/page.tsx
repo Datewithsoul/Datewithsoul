@@ -16,7 +16,7 @@ export default async function EditClassGroupPage({ params }: { params: Promise<{
   const decodedName = decodeURIComponent(name);
   
   const classEvents = await prisma.classEvent.findMany({
-    where: { name: decodedName },
+    where: { name: decodedName, deletedAt: null },
     include: { media: true },
     orderBy: { date: "asc" }
   });

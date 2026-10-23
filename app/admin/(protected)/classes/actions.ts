@@ -5,10 +5,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { uploadMedia } from "@/utils/supabase/storage";
 import { requireAdmin } from "@/lib/require-admin";
+import { ClassEventStatus } from "@/app/generated/prisma";
+import { ensurePausedClassStatus } from "@/lib/class-event-status";
 
 export async function updateClass(formData: FormData) {
   try {
     await requireAdmin();
+    await ensurePausedClassStatus();
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
     if (!name) throw new Error("ชื่อคอร์สไม่สามารถเว้นว่างได้");
@@ -162,6 +165,7 @@ export async function updateClass(formData: FormData) {
 export async function updateGroupClass(formData: FormData) {
   try {
     await requireAdmin();
+    await ensurePausedClassStatus();
     const originalName = formData.get("originalName") as string;
     const classEventIds = (formData.get("classEventIds") as string || "").split(",").filter(Boolean);
     
@@ -344,4 +348,125 @@ export async function closeClass(formData: FormData) {
   revalidatePath("/classes");
   revalidatePath("/admin/classes");
   redirect("/admin/classes");
+}
+
+/**
+ * Deletes every round of a class (all non-deleted ClassEvents sharing `className`).
+ * Rounds nobody ever booked are removed outright. Rounds with bookings are only
+ * marked deleted and hidden from customers, so bookings, payments and slips stay as history.
+ */
+export async function deleteClassGroup(className: string) {
+  await requireAdmin();
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const events = await tx.classEvent.findMany({
+        where: { name: className, deletedAt: null },
+        select: { id: true, _count: { select: { bookings: true } } },
+      });
+      if (events.length === 0) throw new Error("ไม่พบคอร์สนี้ อาจถูกลบไปแล้ว");
+
+      const archivedIds = events.filter((e) => e._count.bookings > 0).map((e) => e.id);
+      const removedIds = events.filter((e) => e._count.bookings === 0).map((e) => e.id);
+
+      await tx.classEvent.updateMany({
+        where: { id: { in: archivedIds } },
+        data: { deletedAt: new Date(), status: ClassEventStatus.DRAFT },
+      });
+
+      // Change requests may point at a removed round; keep the request, drop the link
+      await tx.changeRequest.updateMany({ where: { originalEventId: { in: removedIds } }, data: { originalEventId: null } });
+      await tx.changeRequest.updateMany({ where: { requestedEventId: { in: removedIds } }, data: { requestedEventId: null } });
+      // Class media and promo links cascade
+      await tx.classEvent.deleteMany({ where: { id: { in: removedIds } } });
+
+      return { archivedCount: archivedIds.length, removedCount: removedIds.length };
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true, ...result };
+  } catch (error: unknown) {
+    console.error("deleteClassGroup Error:", error);
+    return { success: false, error: (error instanceof Error && error.message) || "ลบคอร์สไม่สำเร็จ" };
+  }
+}
+
+/**
+ * Temporarily closes (or reopens) booking for every round of a class.
+ * Only touches PUBLISHED <-> PAUSED rounds, so finished, cancelled and draft rounds stay as they are.
+ */
+export async function setClassGroupBookingPaused(className: string, paused: boolean) {
+  await requireAdmin();
+  await ensurePausedClassStatus();
+
+  const [from, to] = paused
+    ? [ClassEventStatus.PUBLISHED, ClassEventStatus.PAUSED]
+    : [ClassEventStatus.PAUSED, ClassEventStatus.PUBLISHED];
+
+  try {
+    const { count } = await prisma.classEvent.updateMany({
+      where: { name: className, deletedAt: null, status: from },
+      data: { status: to },
+    });
+    if (count === 0) {
+      return { success: false, error: paused ? "ไม่มีรอบที่เปิดรับจองอยู่" : "ไม่มีรอบที่ปิดจองชั่วคราวอยู่" };
+    }
+
+    revalidatePath("/", "layout");
+    return { success: true, count };
+  } catch (error: unknown) {
+    console.error("setClassGroupBookingPaused Error:", error);
+    return { success: false, error: "เปลี่ยนสถานะการจองไม่สำเร็จ" };
+  }
+}
+
+// Rounds customers can see; hiding moves these to DRAFT
+const VISIBLE_CLASS_STATUSES: ClassEventStatus[] = [
+  ClassEventStatus.PUBLISHED,
+  ClassEventStatus.PAUSED,
+  ClassEventStatus.COMPLETED,
+];
+
+/**
+ * Hides every round of a class from customers (status DRAFT), or shows it again.
+ * Showing reopens upcoming rounds for booking and marks past rounds as completed.
+ */
+export async function setClassGroupHidden(className: string, hidden: boolean) {
+  await requireAdmin();
+  // VISIBLE_CLASS_STATUSES includes PAUSED, which older databases don't have yet
+  await ensurePausedClassStatus();
+
+  try {
+    let count = 0;
+    if (hidden) {
+      ({ count } = await prisma.classEvent.updateMany({
+        where: { name: className, deletedAt: null, status: { in: VISIBLE_CLASS_STATUSES } },
+        data: { status: ClassEventStatus.DRAFT },
+      }));
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [upcoming, past] = await prisma.$transaction([
+        prisma.classEvent.updateMany({
+          where: { name: className, deletedAt: null, status: ClassEventStatus.DRAFT, date: { gte: today } },
+          data: { status: ClassEventStatus.PUBLISHED },
+        }),
+        prisma.classEvent.updateMany({
+          where: { name: className, deletedAt: null, status: ClassEventStatus.DRAFT, date: { lt: today } },
+          data: { status: ClassEventStatus.COMPLETED },
+        }),
+      ]);
+      count = upcoming.count + past.count;
+    }
+
+    if (count === 0) {
+      return { success: false, error: hidden ? "คอร์สนี้ซ่อนอยู่แล้ว" : "ไม่มีรอบที่ซ่อนอยู่" };
+    }
+
+    revalidatePath("/", "layout");
+    return { success: true, count };
+  } catch (error: unknown) {
+    console.error("setClassGroupHidden Error:", error);
+    return { success: false, error: hidden ? "ซ่อนคอร์สไม่สำเร็จ" : "แสดงคอร์สไม่สำเร็จ" };
+  }
 }

@@ -76,6 +76,8 @@ export default async function AdminBookings(props: {
       take: pageSize,
     }),
     prisma.classEvent.findMany({
+      // Deleted classes stay for booking history but can't be booked into
+      where: { deletedAt: null },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
       select: {
         id: true,

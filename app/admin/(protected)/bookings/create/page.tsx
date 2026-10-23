@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 export default async function CreateBookingPage() {
   const [classEvents, users] = await Promise.all([
     prisma.classEvent.findMany({
+      // Deleted classes stay for booking history but can't be booked into
+      where: { deletedAt: null },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
       select: {
         id: true,
