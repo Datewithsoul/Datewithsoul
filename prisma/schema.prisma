@@ -176,6 +176,16 @@ model MessageTemplate {
   variables   String[] @default([])
 }
 
+// Single-row table (id = "default") holding the account customers transfer to
+model PaymentSetting {
+  id            String   @id @default("default")
+  bankName      String
+  accountName   String
+  accountNumber String
+  qrImageUrl    String?
+  updatedAt     DateTime @updatedAt
+}
+
 enum Role {
   CUSTOMER
   ADMIN

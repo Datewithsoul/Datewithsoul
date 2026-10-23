@@ -12,6 +12,9 @@ import { StatusHero } from "@/components/motion/status-hero";
 import { BookingProgress } from "@/components/motion/booking-progress";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 import { noIndexMetadata } from "@/lib/seo";
+import { getPaymentSettings } from "@/lib/payment-settings";
+import { PAYMENT_WINDOW_MS } from "@/lib/expire-bookings";
+import { PaymentQr, BankAccountDetails } from "@/components/payment-account-details";
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
 
@@ -50,7 +53,8 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
   }
 
   const now = new Date();
-  const expiryTime = new Date(booking.createdAt.getTime() + 10 * 60 * 1000);
+  const expiryTime = new Date(booking.createdAt.getTime() + PAYMENT_WINDOW_MS);
+  const paymentSettings = await getPaymentSettings();
   const isExpired = now > expiryTime;
 
   // Handle expired status
@@ -175,29 +179,13 @@ export default async function PaymentPage({ params, searchParams }: { params: Pr
                 <PaymentTimer createdAt={booking.createdAt} bookingId={booking.id} />
               </div>
               
-              <h2 className="text-lg font-semibold mb-2">สแกนจ่ายผ่านพร้อมเพย์</h2>
-              <div className="bg-[#113566] text-white px-3 py-1 rounded-md font-semibold text-xs mb-6">
-                PromptPay
-              </div>
-              
-              <div className="bg-white p-4 rounded-xl border border-gray-200 w-64 h-64 flex items-center justify-center mb-6 shadow-sm animate-pop-in" style={{ "--delay": "400ms" } as React.CSSProperties}>
-                <img src="/qrcode.jpg" alt="PromptPay QR Code" className="w-full h-full object-contain" />
-              </div>
-              
+              <PaymentQr qrImageUrl={paymentSettings.qrImageUrl} />
+
               <div className="text-3xl font-bold text-[#F44336] mb-4">
                 ฿{booking.totalPrice.toLocaleString()}
               </div>
-              
-              <div className="w-full bg-white border border-gray-200 rounded-lg p-4 text-left text-sm">
-                <div className="flex justify-between border-b border-gray-100 pb-2 mb-2">
-                  <span className="text-gray-500">ชื่อบัญชี</span>
-                  <span className="font-semibold text-gray-700">น.ส. ธนธรณ์ วณิชเพิ่มทรัพย์</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">พร้อมเพย์</span>
-                  <span className="font-semibold text-gray-700">สแกน QR Code ด้านบน</span>
-                </div>
-              </div>
+
+              <BankAccountDetails settings={paymentSettings} />
             </div>
 
             {/* Right Column: Order Summary & Upload Form */}

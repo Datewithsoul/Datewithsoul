@@ -10,6 +10,9 @@ import { BookingProgress } from "@/components/motion/booking-progress";
 import { uploadGroupSlip } from "./actions";
 import { BookingGroupStatus } from "@/app/generated/prisma";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
+import { getPaymentSettings } from "@/lib/payment-settings";
+import { PAYMENT_WINDOW_MS } from "@/lib/expire-bookings";
+import { PaymentQr, BankAccountDetails } from "@/components/payment-account-details";
 
 const LINE_OA_URL = "https://line.me/R/ti/p/@073wlzuq";
 
@@ -44,7 +47,8 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
   }
 
   const now = new Date();
-  const expiryTime = new Date(bookingGroup.createdAt.getTime() + 10 * 60 * 1000);
+  const expiryTime = new Date(bookingGroup.createdAt.getTime() + PAYMENT_WINDOW_MS);
+  const paymentSettings = await getPaymentSettings();
   const isExpired = now > expiryTime;
 
   // Handle expired status
@@ -176,16 +180,11 @@ export default async function GroupPaymentPage({ params, searchParams }: { param
                 <h2 className="text-xl font-bold mb-6">ช่องทางการชำระเงิน</h2>
                 
                 <div className="bg-gray-50 rounded-xl p-6 mb-8 text-center border border-gray-200 flex flex-col items-center">
-                  <h2 className="text-lg font-semibold mb-2">สแกนจ่ายผ่านพร้อมเพย์</h2>
-                  <div className="bg-[#113566] text-white px-3 py-1 rounded-md font-semibold text-xs mb-6 w-max">
-                    PromptPay
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 w-64 h-64 flex items-center justify-center mb-6 shadow-sm animate-pop-in" style={{ "--delay": "400ms" } as React.CSSProperties}>
-                    <img src="/qrcode.jpg" alt="PromptPay QR Code" className="w-full h-full object-contain" />
-                  </div>
-                  <div className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 font-medium">
+                  <PaymentQr qrImageUrl={paymentSettings.qrImageUrl} />
+                  <div className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 font-medium mb-4">
                     ยอดชำระ: ฿{bookingGroup.totalPrice.toLocaleString()}
                   </div>
+                  <BankAccountDetails settings={paymentSettings} />
                 </div>
 
                 <div className="mt-4">

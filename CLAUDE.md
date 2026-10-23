@@ -1,173 +1,60 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 @AGENTS.md
-## LINE Official Account
 
-### Customer Side
+AGENTS.md (imported above) holds the LINE OA requirements, the design spec (brand colors, pop-art direction, shadcn/ui), and the Next.js agent rules. Next.js here is 16.x: read `node_modules/next/dist/docs/` before relying on remembered APIs.
 
-- LINE Login / LIFF integration
-- Send booking confirmation notifications
-- Send payment status notifications
-- Send payment verification results
-- Send booking reminders
+## Commands
 
-### Store / Admin Side
+```bash
+npm run dev              # next dev
+npm run build            # prisma generate && next build
+npm run lint             # eslint (flat config, eslint.config.mjs)
+npx tsc --noEmit         # type check (build does NOT catch type errors, see below)
+npx prisma generate      # regenerate client into app/generated/prisma (also runs on postinstall)
+npx prisma db push       # sync schema to DB (prisma/migrations is empty; there is no migration history)
+npx tsx scripts/<name>.ts  # one-off maintenance scripts (orphan user cleanup, trigger tests); tsx is not a dependency, npx fetches it
+```
 
-- LINE Official Account integration
-- Notify staff when a new booking is created
-- Notify staff when a payment slip is uploaded
-- Notify staff when a booking is cancelled or expires
+There is no test suite. CI (`.github/workflows/ci.yml`) runs `npm ci`, `prisma generate`, lint (non-blocking, `|| true`), and `npm run build`.
 
-# DESIGN.md
+`next.config.ts` sets `typescript.ignoreBuildErrors: true`, so a passing build means nothing about types. Run `npx tsc --noEmit` after changes.
 
-# Design Specification
+## Stack
 
-## 1. Design Direction
+- Next.js 16 App Router, React 19, Tailwind v4 (CSS-first config in `app/globals.css`, brand tokens like `--brand-yellow` / `--brand-red` / `--brand-brown` mapped to `bg-brand-*` utilities).
+- shadcn/ui with style `base-nova`: components in `components/ui/` are built on **Base UI (`@base-ui/react`), not Radix**. Follow Base UI APIs (e.g. `render` prop rather than `asChild`).
+- Prisma 7 + PostgreSQL (Supabase) through the `pg` driver adapter (`lib/prisma.ts`). Client output is `app/generated/prisma` (gitignored); import enums/types from `@/app/generated/prisma`. `prisma.config.ts` loads `.env.local` then `.env` and prefers `DIRECT_URL` over `DATABASE_URL` for CLI commands.
+- Supabase is used for **auth and storage only**; all app data goes through Prisma.
+- Deploys to Vercel (crons in `vercel.json`); `Dockerfile` uses `output: 'standalone'` when not on Vercel.
+- UI copy is Thai.
 
-The website should have a warm, friendly, and trustworthy visual style that reflects the brand and creates a welcoming atmosphere for customers.
+## Architecture
 
-The design should prioritize:
+### Auth and users
+- Customers log in with LINE. `app/api/auth/line/callback/route.ts` exchanges the LINE code, then creates/updates a Supabase auth user with a synthetic email (`<lineId>@line.datewithsoul.local`) and a one-time password, and keeps the Prisma `User` row in sync. The Prisma `User.id` equals the Supabase auth user id, and `User.lineId` is the LINE user id used for push messages.
+- No middleware/proxy file. Auth is checked per page/action: `createClient()` from `utils/supabase/server.ts`, then a Prisma lookup for role. Admin pages live under `app/admin/(protected)/`, whose `layout.tsx` gates on `role === "ADMIN"`; server actions should call `requireAdmin()` from `lib/require-admin.ts` themselves (a layout doesn't protect actions).
+- `utils/supabase/admin.ts` is the service-role client (server only).
 
-- Simple and intuitive navigation
-- Clear class and schedule information
-- Easy booking flow
-- Clear payment instructions
-- Mobile-first responsive design
-- Strong visual hierarchy
-- Easy-to-understand booking status
-- Consistent design across the customer website and admin dashboard
+### Booking domain (`prisma/schema.prisma`)
+- `ClassEvent` is one scheduled round. Classes with multiple rounds are separate `ClassEvent` rows sharing a `name` (see `classes/group-edit/[name]`). **`totalSeats` is the remaining seat count**: it is decremented when a booking is made and incremented when one is cancelled/expired.
+- Checkout is cart-based (`hooks/use-cart.tsx` client state → `app/cart/actions.ts#createCartBookings`). A cart creates a `BookingGroup` with several `Booking`s and one `Payment`; single bookings attach a `Payment` directly. Payment pages exist for both: `app/payment/[bookingId]` and `app/payment/group/[groupId]`.
+- Payment is PromptPay QR + uploaded slip, reviewed manually by an admin (`PaymentReviewLog`). Slips go to the private Supabase bucket `payment-slips` (`lib/slips.ts`) and are served via signed URLs through `app/api/slips/[paymentId]`. Class media goes to Supabase storage, videos to Bunny (`utils/bunny.ts`).
+- Status enums and Thai labels live in `lib/booking-status.ts`; reuse them instead of hardcoding strings.
+- Unpaid bookings expire after `PAYMENT_WINDOW_MS` (10 min) in `lib/expire-bookings.ts`. It is written to be concurrency-safe (conditional `updateMany` inside a transaction, so seats are released once); keep that pattern for any status transition that moves seats.
+- Customers can request round changes/cancellations (`ChangeRequest`), which admins approve under `admin/(protected)/requests`.
+- Promo codes: `lib/promo.ts` (pure discount math) and `app/cart/actions.ts#validatePromoCode` / `app/api/validate-promo`.
 
----
+### LINE notifications
+- `lib/line.ts`: `sendTemplatedLineMessage` (to a customer's `lineId`) and `notifyAdminsTemplated` (to all ADMIN users with a `lineId`). Each send is recorded in `NotificationLog`. Token comes from `LINE_CHANNEL_ACCESS_TOKEN`, or is fetched with `LINE_OA_CLIENT_ID`/`SECRET`.
+- Message text is template-driven: defaults and variables are defined in `TEMPLATE_DEFINITIONS` (`lib/message-templates-types.ts`), admins can override them (`MessageTemplate` table, edited at `admin/notifications/templates`). To add a notification, add a definition there and call it by key. `ensureMessageTemplateTable()` creates the table with raw SQL if it is missing.
+- Notification failures are caught and logged so they never roll back a booking or payment change.
 
-## 2. Brand Colors
+### Cron routes
+`app/api/cron/{expire-bookings,reminders,cleanup-slips}` require `Authorization: Bearer $CRON_SECRET`.
 
-The primary brand colors are:
+## Environment
 
-- Yellow
-- Red
-- Brown
-- White
-
-### Color Roles
-
-#### Primary — Yellow
-
-Used for:
-
-- Primary actions
-- Highlights
-- Important information
-- Selected states
-- Brand accents
-
-#### Secondary — Red
-
-Used for:
-
-- Important actions
-- Alerts
-- Warnings
-- Limited availability
-- Important status indicators
-
-#### Neutral — Brown
-
-Used for:
-
-- Headings
-- Body text
-- Borders
-- Icons
-- Secondary UI elements
-
-#### Background — White
-
-Used for:
-
-- Main page backgrounds
-- Cards
-- Forms
-- Content sections
-
-The colors should be used consistently throughout the website and should maintain sufficient contrast for readability.
-
----
-
-## 3. Customer Website
-
-### 3.1 Home Page
-
-The home page should provide a clear introduction to the classes and guide users toward booking.
-
-Main sections:
-
-- Header / Navigation
-- Hero section
-- Featured classes
-- Monthly class schedule
-- How to book
-- Contact / LINE Official Account
-- Footer
-
-Primary CTA:
-
-> Book a Class
-
----
-
-### 3.2 Class Listing
-
-Display available classes by month.
-
-Each class card should include:
-
-- Class name
-- Class date
-- Available time slots
-- Price
-- Available seats
-- Booking status
-- Booking button
-
-Example:
-
-```text
-┌─────────────────────────────┐
-│ Class Name                  │
-│                             │
-│ 20 August 2026              │
-│                             │
-│ 10:00 - 12:00               │
-│ 8 seats available            │
-│                             │
-│ 14:00 - 16:00               │
-│ 3 seats available            │
-│                             │
-│ ฿1,500                      │
-│                             │
-│ [ Book Now ]                │
-└─────────────────────────────┘
-
----
-
-## 4. UI Component Library
-
-Recommend using **shadcn/ui** (ui.shadcn.com) as the base UI component library:
-
-- Beautiful, accessible components (built on Radix UI), fully customizable via Tailwind
-- Full control over design tokens (color, radius, spacing) — easy to align with the brand's Yellow/Red/Brown/White palette
-- Components likely to be used heavily: `Card` (class card), `Badge` (booking status / seats available), `Button`, `Dialog` (booking confirmation), `Tabs` (month selector), `Calendar`, `Form`, `Toast` (notification feedback)
-- Copy-paste directly into the project rather than a heavy dependency — fits a dev workflow with lots of customization
-
----
-
-## 5. Visual Style — Pop Art Direction
-
-In addition to "warm, friendly, trustworthy," bring in a fun, vibrant **pop art** feel through these details:
-
-- **Bold outlines** around cards and key buttons instead of soft shadows — gives a graphic/comic-book feel
-- **High-contrast color blocking** — use Yellow and Red as solid blocks in attention-grabbing spots (e.g. "Few seats left" badges, the Book Now button) instead of gradients
-- **Halftone / dot pattern** as a light background or decorative element — a pop-art classic
-- **Bold, chunky, punchy typography** for headings/prices — should feel "bouncy" and fun, not elegant/minimal
-- **Playful micro-interactions** — button bounce, slight card tilt on hover, confetti/burst effect on successful booking
-- Use Brown as the primary outline/border color instead of plain gray/black, so the pop-art style stays warm rather than feeling cold
-
-This direction fits the Class Listing cards and Booking Status page best, since those are where you want fun + clarity at the same time. The admin dashboard should tone it down (same colors, but more minimal) for easier day-to-day readability.
+`.env` / `.env.local` (gitignored). Variables in use: `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL` (also used to build the LINE login redirect URI), `LINE_CLIENT_ID`, `LINE_CLIENT_SECRET` (LINE Login), `LINE_CHANNEL_ACCESS_TOKEN` or `LINE_OA_CLIENT_ID` + `LINE_OA_CLIENT_SECRET` (Messaging API), `CRON_SECRET`, `BUNNY_API_KEY`, `BUNNY_LIBRARY_ID`.
