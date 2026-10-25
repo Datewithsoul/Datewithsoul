@@ -33,7 +33,10 @@ export default async function AdminBookings(props: {
   const currentPage = Number(searchParams?.page) || 1;
   const pageSize = 20;
 
-  const [bookings, classEvents, users, totalItems] = await Promise.all([
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [bookings, classEvents, totalItems] = await Promise.all([
     prisma.booking.findMany({
       where: whereCondition,
       include: {
@@ -65,8 +68,8 @@ export default async function AdminBookings(props: {
       take: pageSize,
     }),
     prisma.classEvent.findMany({
-      // Deleted classes stay for booking history but can't be booked into
-      where: { deletedAt: null },
+      // Options for "change round": deleted and past rounds can't be booked into
+      where: { deletedAt: null, date: { gte: today } },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
       select: {
         id: true,
@@ -76,10 +79,6 @@ export default async function AdminBookings(props: {
         endTime: true,
         totalSeats: true,
       },
-    }),
-    prisma.user.findMany({
-      select: { id: true, name: true, phone: true, email: true },
-      orderBy: { name: "asc" },
     }),
     prisma.booking.count({ where: whereCondition })
   ]);

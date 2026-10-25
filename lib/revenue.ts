@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import type { AppBookingStatus } from "@/lib/booking-status";
 
 // Bookings whose money has been received and kept (a finished class is still revenue)
@@ -22,6 +23,27 @@ export function paidAmountForBooking(booking: PricedBooking): number {
   const subtotal = group.totalPrice + group.discountAmount;
   if (subtotal <= 0) return 0;
   return (booking.totalPrice * group.totalPrice) / subtotal;
+}
+
+/**
+ * Sum of paidAmountForBooking per booking status, computed in the database so the
+ * dashboard doesn't load every booking. Keep the CASE in step with paidAmountForBooking.
+ */
+export async function sumPaidAmountByStatus(): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<{ status: string; paid: number | null }[]>`
+    SELECT b."status"::text AS status,
+           SUM(
+             CASE
+               WHEN g."id" IS NULL OR g."discountAmount" <= 0 THEN b."totalPrice"
+               WHEN g."totalPrice" + g."discountAmount" <= 0 THEN 0
+               ELSE b."totalPrice" * g."totalPrice" / (g."totalPrice" + g."discountAmount")
+             END
+           )::float8 AS paid
+    FROM "Booking" b
+    LEFT JOIN "BookingGroup" g ON g."id" = b."bookingGroupId"
+    GROUP BY b."status"
+  `;
+  return new Map(rows.map((row) => [row.status, row.paid ?? 0]));
 }
 
 /** Selection needed by paidAmountForBooking, for Prisma queries. */

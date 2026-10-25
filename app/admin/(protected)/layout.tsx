@@ -1,6 +1,5 @@
-
-import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { checkAdmin } from "@/lib/require-admin";
 import { redirect } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar, type AdminPendingCounts } from "@/components/app-sidebar";
@@ -41,20 +40,13 @@ async function getPendingCounts(): Promise<AdminPendingCounts> {
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    redirect("/admin/login");
-  }
-  
-  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-  
-  if (dbUser?.role !== "ADMIN") {
-    redirect("/admin/login?error=Unauthorized");
-  }
+  // In parallel to save a round trip; the counts are only rendered once the check passes.
+  // checkAdmin is cached per request, so pages calling requireAdmin() reuse this result.
+  const [auth, counts] = await Promise.all([checkAdmin(), getPendingCounts()]);
 
-  const counts = await getPendingCounts();
+  if (!auth.ok) {
+    redirect(auth.reason === "unauthenticated" ? "/admin/login" : "/admin/login?error=Unauthorized");
+  }
 
   return (
     <div data-admin className="flex min-h-screen">

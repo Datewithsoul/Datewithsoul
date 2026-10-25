@@ -52,6 +52,8 @@ model ClassEvent {
   requestedRequests ChangeRequest[]  @relation("RequestedEvent")
   media             ClassMedia[]
   applicablePromos  PromoCode[]      @relation("PromoApplicableEvents")
+
+  @@index([date])
 }
 
 model ClassMedia {
@@ -87,6 +89,12 @@ model Booking {
   changeRequests ChangeRequest[]
   notifications  NotificationLog[]
   payment        Payment?
+
+  @@index([status])
+  @@index([bookingGroupId])
+  @@index([classEventId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model BookingGroup {
@@ -138,6 +146,8 @@ model PaymentReviewLog {
   createdAt      DateTime      @default(now())
   payment        Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   reviewer       User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
 }
 
 model ChangeRequest {
@@ -162,6 +172,9 @@ model ChangeRequest {
   originalEvent    ClassEvent?   @relation("OriginalEvent", fields: [originalEventId], references: [id])
   requestedEvent   ClassEvent?   @relation("RequestedEvent", fields: [requestedEventId], references: [id])
   user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([bookingId])
 }
 
 model MessageTemplate {
@@ -245,37 +258,37 @@ enum RequestStatus {
 }
 
 model PromoCode {
-  id              String         @id @default(uuid())
-  code            String         @unique
-  discountType    DiscountType
-  discountValue   Float
-  applyToAll      Boolean        @default(true)
-  maxUses         Int?
-  usedCount       Int            @default(0)
-  perUserLimit    Int            @default(1)
-  startDate       DateTime?
-  endDate         DateTime?
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id            String       @id @default(uuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Float
+  applyToAll    Boolean      @default(true)
+  maxUses       Int?
+  usedCount     Int          @default(0)
+  perUserLimit  Int          @default(1)
+  startDate     DateTime?
+  endDate       DateTime?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  applicableEvents ClassEvent[]  @relation("PromoApplicableEvents")
+  applicableEvents ClassEvent[]   @relation("PromoApplicableEvents")
   usages           PromoUsage[]
   bookingGroups    BookingGroup[]
   bookings         Booking[]
 }
 
 model PromoUsage {
-  id            String       @id @default(uuid())
-  promoCodeId   String
-  userId        String
+  id             String   @id @default(uuid())
+  promoCodeId    String
+  userId         String
   bookingGroupId String?
   bookingId      String?
-  discountSaved Float
-  usedAt        DateTime     @default(now())
+  discountSaved  Float
+  usedAt         DateTime @default(now())
 
-  promoCode     PromoCode    @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum DiscountType {

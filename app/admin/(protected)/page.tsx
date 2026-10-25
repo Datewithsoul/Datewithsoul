@@ -5,7 +5,7 @@ import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { BookingStatus } from "@/app/generated/prisma";
-import { PRICED_BOOKING_SELECT, REVENUE_BOOKING_STATUSES, paidAmountForBooking } from "@/lib/revenue";
+import { PRICED_BOOKING_SELECT, REVENUE_BOOKING_STATUSES, paidAmountForBooking, sumPaidAmountByStatus } from "@/lib/revenue";
 import {
   Table,
   TableBody,
@@ -44,7 +44,7 @@ export default async function AdminDashboard() {
     awaitingPaymentBookings,
     almostFullClasses,
     bookingStatusGroups,
-    bookingAmounts
+    paidByStatus
   ] = await Promise.all([
     prisma.classEvent.count(),
     prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
@@ -67,15 +67,13 @@ export default async function AdminDashboard() {
     prisma.booking.count({ where: { status: BookingStatus.PENDING_PAYMENT } }),
     prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: ALMOST_FULL_SEATS, gt: 0 } } }),
     prisma.booking.groupBy({ by: ['status'], _count: { id: true } }),
-    prisma.booking.findMany({ select: { status: true, ...PRICED_BOOKING_SELECT } })
+    sumPaidAmountByStatus()
   ]);
 
   const getBookingCount = (status: BookingStatus) => bookingStatusGroups.find(g => g.status === status)?._count.id || 0;
-  // Summed per booking in JS: cart bookings store pre-discount prices, see lib/revenue.ts
+  // Paid amounts (after cart discounts), see lib/revenue.ts
   const getPaymentSum = (...statuses: BookingStatus[]) =>
-    bookingAmounts
-      .filter((b) => statuses.includes(b.status))
-      .reduce((sum, b) => sum + paidAmountForBooking(b), 0);
+    statuses.reduce((sum, status) => sum + (paidByStatus.get(status) ?? 0), 0);
   const isRevenue = (status: BookingStatus) => REVENUE_BOOKING_STATUSES.includes(status);
 
   const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
