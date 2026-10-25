@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus, PaymentStatus } from "@/app/generated/prisma";
+import { BookingGroupStatus, BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 import {
   isBookingStatus,
   paymentStatusForBooking,
@@ -10,6 +10,15 @@ import {
 } from "@/lib/booking-status";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendLineMessage, sendTemplatedLineMessage } from "@/lib/line";
+
+function isBookingGroupStatus(status: string): status is BookingGroupStatus {
+  return (Object.values(BookingGroupStatus) as string[]).includes(status);
+}
+
+function revalidateBookingPages() {
+  // Every admin page plus the sidebar's pending counts
+  revalidatePath("/admin/(protected)", "layout");
+}
 
 async function applyBookingStatus(bookingId: string, status: AppBookingStatus, reviewerId?: string, reason?: string) {
   const booking = await prisma.booking.findUnique({
@@ -32,33 +41,44 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
       data: { status },
     });
 
+    // A grouped booking is paid through the group's payment and never gets one of its own.
+    // The group (and its payment) only follows once every booking in it has this status,
+    // so cancelling one class out of a cart doesn't reject the payment for the rest.
+    let groupInSync = false;
     if (booking.bookingGroupId) {
-      await tx.bookingGroup.update({
-        where: { id: booking.bookingGroupId },
-        data: { status: status as any },
+      const siblingsWithOtherStatus = await tx.booking.count({
+        where: { bookingGroupId: booking.bookingGroupId, status: { not: status } },
       });
-      const groupPayment = await tx.payment.findUnique({
-        where: { bookingGroupId: booking.bookingGroupId },
-      });
-      if (groupPayment) {
-        await tx.payment.update({
-          where: { id: groupPayment.id },
-          data: { status: paymentStatusForBooking(status) },
+      groupInSync = siblingsWithOtherStatus === 0;
+      // Request statuses (CHANGE_REQUESTED, ...) exist only per booking, not on the group
+      if (groupInSync && isBookingGroupStatus(status)) {
+        await tx.bookingGroup.update({
+          where: { id: booking.bookingGroupId },
+          data: { status },
         });
       }
     }
 
+    let payment = booking.payment;
+    if (booking.bookingGroupId) {
+      payment = groupInSync
+        ? await tx.payment.findUnique({ where: { bookingGroupId: booking.bookingGroupId } })
+        : null;
+    }
+
+    // Null when the status says nothing about payment (e.g. COMPLETED); the payment is left as it is
     const paymentStatus = paymentStatusForBooking(status);
-     if (booking.payment) {
-      const prevPaymentStatus = booking.payment.status;
+
+    if (paymentStatus && payment) {
+      const prevPaymentStatus = payment.status;
       await tx.payment.update({
-        where: { bookingId },
+        where: { id: payment.id },
         data: { status: paymentStatus },
       });
       if (reviewerId && prevPaymentStatus !== paymentStatus) {
         await tx.paymentReviewLog.create({
           data: {
-             paymentId: booking.payment.id,
+            paymentId: payment.id,
             reviewerId,
             previousStatus: prevPaymentStatus,
             newStatus: paymentStatus,
@@ -66,16 +86,16 @@ async function applyBookingStatus(bookingId: string, status: AppBookingStatus, r
           }
         });
       }
-    } else {
+    } else if (paymentStatus && !booking.bookingGroupId) {
       const newPayment = await tx.payment.create({
         data: { bookingId, status: paymentStatus },
       });
-       if (reviewerId) {
+      if (reviewerId) {
         await tx.paymentReviewLog.create({
           data: {
-             paymentId: newPayment.id,
+            paymentId: newPayment.id,
             reviewerId,
-             previousStatus: PaymentStatus.UNPAID,
+            previousStatus: PaymentStatus.UNPAID,
             newStatus: paymentStatus,
             reason
           }
@@ -168,8 +188,7 @@ export async function updateBookingStatus(bookingId: string, status: string, rea
   }
 
   await applyBookingStatus(bookingId, status, admin.id, reason);
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin");
+  revalidateBookingPages();
   return { success: true };
 }
 
@@ -196,8 +215,7 @@ export async function confirmPayment(bookingId: string) {
   }
 
   await applyBookingStatus(bookingId, BookingStatus.CONFIRMED, admin.id);
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin");
+  revalidateBookingPages();
   return { success: true };
 }
 
@@ -257,7 +275,7 @@ export async function confirmGroupPayment(groupId: string) {
   });
   
   if (groupWithDetails?.user?.lineId) {
-    const classNames = groupWithDetails.bookings.map((b: any) => `• ${b.classEvent.name} (${new Date(b.classEvent.date).toLocaleDateString("th-TH")} ${b.classEvent.startTime}-${b.classEvent.endTime})`).join('\n');
+    const classNames = groupWithDetails.bookings.map((b) => `• ${b.classEvent.name} (${new Date(b.classEvent.date).toLocaleDateString("th-TH")} ${b.classEvent.startTime}-${b.classEvent.endTime})`).join('\n');
     const firstClass = groupWithDetails.bookings[0]?.classEvent;
     
     await sendTemplatedLineMessage(
@@ -276,8 +294,7 @@ export async function confirmGroupPayment(groupId: string) {
     );
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin");
+  revalidateBookingPages();
   return { success: true };
 }
 
@@ -295,13 +312,13 @@ export async function updateGroupBookingStatus(groupId: string, status: string, 
 
   if (!group) return { success: false, error: "ไม่พบการจองกลุ่ม" };
 
-  for (const b of group.bookings) {
-    // This will reuse the existing logic and properly handle seats / lines
-    await applyBookingStatus(b.id, status as any, admin.id, reason);
-  }
+  // Sequential on purpose: each call runs its own transaction on the shared group/payment rows
+  await group.bookings.reduce<Promise<unknown>>(
+    (previous, b) => previous.then(() => applyBookingStatus(b.id, status, admin.id, reason)),
+    Promise.resolve()
+  );
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin");
+  revalidateBookingPages();
   return { success: true };
 }
 
@@ -378,15 +395,14 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
     await sendLineMessage(booking.user.lineId, message);
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin");
+  revalidateBookingPages();
   return { success: true };
 }
 export async function adminCreateBooking(formData: FormData) {
   const admin = await requireAdmin();
   
   // User selection / creation
-  let userId = formData.get("userId") as string | null;
+  const userId = formData.get("userId") as string | null;
   const newCustomerName = formData.get("customerName") as string | null;
   const newCustomerPhone = formData.get("customerPhone") as string | null;
   
@@ -508,7 +524,6 @@ export async function adminCreateBooking(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin");
+  revalidateBookingPages();
   return { success: true };
 }

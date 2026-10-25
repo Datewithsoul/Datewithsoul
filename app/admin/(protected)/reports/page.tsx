@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { BookingStatus } from "@/app/generated/prisma";
 import { AdminAnalyticsDashboard } from "@/components/admin-analytics-dashboard";
+import { PRICED_BOOKING_SELECT, REVENUE_BOOKING_STATUSES, paidAmountForBooking } from "@/lib/revenue";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,12 +10,12 @@ export default async function AdminReports() {
   const [bookingsRaw, classesRaw] = await Promise.all([
     prisma.booking.findMany({
       where: {
-        status: { in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED] },
+        status: { in: REVENUE_BOOKING_STATUSES },
       },
       select: {
         id: true,
         createdAt: true,
-        totalPrice: true,
+        ...PRICED_BOOKING_SELECT,
         seats: true,
         status: true,
         classEventId: true,
@@ -47,7 +47,8 @@ export default async function AdminReports() {
   const serializedBookings = bookingsRaw.map((b) => ({
     id: b.id,
     createdAt: b.createdAt.toISOString(),
-    totalPrice: b.totalPrice,
+    // What was actually paid; cart bookings store pre-discount prices
+    totalPrice: paidAmountForBooking(b),
     seats: b.seats,
     status: b.status,
     classEventId: b.classEventId,

@@ -2,52 +2,55 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { approveRequest, rejectRequest } from "../bookings/requests";
+import { approveRequest, markRefunded, rejectRequest } from "../bookings/requests";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
+import type { RequestType } from "@/app/generated/prisma";
+import type { ClassEventOption } from "@/components/admin-change-class-dialog";
+
+const SEATS_FULL_ERROR = "ที่นั่งในรอบที่เลือกไม่เพียงพอ";
+const DEFAULT_REJECT_REASON = "พิจารณาแล้วไม่สามารถอนุมัติได้";
 
 interface RequestActionsProps {
   requestId: string;
-  events: any[];
+  type: RequestType;
+  events: ClassEventOption[];
   requestedSeats: number;
   requestedEventId: string | null;
 }
 
-export function RequestActions({ requestId, events, requestedSeats, requestedEventId }: RequestActionsProps) {
+export function RequestActions({ requestId, type, events, requestedSeats, requestedEventId }: RequestActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [isFull, setIsFull] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const isCancellation = type === "CANCELLATION";
+  const approveLabel = isCancellation ? "อนุมัติการยกเลิก" : "อนุมัติ";
 
   const handleApprove = (overrideId?: string) => {
+    if (isCancellation && !window.confirm("ยืนยันการยกเลิกการจองนี้? ระบบจะคืนที่นั่งและย้ายไปรายการรอคืนเงิน")) {
+      return;
+    }
     startTransition(async () => {
-      try {
-        const result = await approveRequest(requestId, overrideId);
-        if (result.success) {
-          toast.success("อนุมัติคำขอสำเร็จ");
-          setIsFull(false);
-        } else {
-          toast.error(result.error || "เกิดข้อผิดพลาดในการอนุมัติคำขอ");
-          if (result.error === "ที่นั่งในรอบที่เลือกไม่เพียงพอ" || result.error === "ที่นั่งในรอบใหม่ไม่เพียงพอ") {
-            setIsFull(true);
-          }
-        }
-      } catch (error: any) {
-        toast.error(error.message || "เกิดข้อผิดพลาด");
+      const result = await approveRequest(requestId, overrideId);
+      if (result.success) {
+        toast.success(isCancellation ? "อนุมัติการยกเลิกแล้ว รอโอนเงินคืน" : "อนุมัติคำขอสำเร็จ");
+        setIsFull(false);
+        return;
       }
+      toast.error(result.error);
+      if (result.error === SEATS_FULL_ERROR) setIsFull(true);
     });
   };
 
   const handleReject = () => {
+    const reason = window.prompt("ระบุเหตุผลที่ปฏิเสธ (ส่งให้ลูกค้าทาง LINE):", DEFAULT_REJECT_REASON);
+    if (reason === null) return;
     startTransition(async () => {
-      try {
-        const result = await rejectRequest(requestId, "พิจารณาแล้วไม่สามารถอนุมัติได้");
-        if (result.success) {
-          toast.success("ปฏิเสธคำขอสำเร็จ");
-        } else {
-          toast.error(result.error || "เกิดข้อผิดพลาดในการปฏิเสธคำขอ");
-        }
-      } catch (error: any) {
-        toast.error(error.message || "เกิดข้อผิดพลาด");
+      const result = await rejectRequest(requestId, reason.trim() || DEFAULT_REJECT_REASON);
+      if (result.success) {
+        toast.success("ปฏิเสธคำขอสำเร็จ");
+      } else {
+        toast.error(result.error);
       }
     });
   };
@@ -60,7 +63,7 @@ export function RequestActions({ requestId, events, requestedSeats, requestedEve
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 font-bold mb-2">รอบนี้เต็มแล้ว! คุณสามารถเลือกรอบอื่นที่มีที่นั่งว่างเพียงพอได้</p>
           <div className="flex flex-col sm:flex-row gap-2">
-            <select 
+            <select
               className="border p-2 rounded-lg flex-1 text-sm bg-white"
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
@@ -93,18 +96,45 @@ export function RequestActions({ requestId, events, requestedSeats, requestedEve
         <button
           onClick={() => handleApprove()}
           disabled={isPending || isFull}
-          className="bg-[#4A3B32] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#3A2D25] transition-colors border-2 border-[#4A3B32] disabled:opacity-50"
+          className="admin-btn-primary inline-flex h-9 items-center px-4 text-sm font-semibold disabled:opacity-50"
         >
-          {isPending && !selectedEventId ? "กำลังดำเนินการ..." : "อนุมัติ"}
+          {isPending ? "กำลังดำเนินการ..." : approveLabel}
         </button>
         <button
           onClick={handleReject}
           disabled={isPending}
-          className="bg-white border-2 border-[#4A3B32] text-[#4A3B32] px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="inline-flex h-9 items-center border border-[#3d3229] bg-white px-4 text-sm font-semibold text-[#3d3229] transition-colors hover:bg-[#f7f4ef] disabled:opacity-50"
         >
-          {isPending ? "กำลังดำเนินการ..." : "ปฏิเสธ"}
+          ปฏิเสธ
         </button>
       </div>
     </div>
+  );
+}
+
+export function RefundButton({ requestId }: { requestId: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleClick = () => {
+    if (!window.confirm("ยืนยันว่าโอนเงินคืนลูกค้าแล้ว? ระบบจะแจ้งลูกค้าทาง LINE")) return;
+    startTransition(async () => {
+      const result = await markRefunded(requestId);
+      if (result.success) {
+        toast.success("บันทึกการคืนเงินแล้ว");
+      } else {
+        toast.error(result.error);
+      }
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={isPending}
+      className="admin-btn-primary inline-flex h-9 items-center px-4 text-sm font-semibold disabled:opacity-50"
+    >
+      {isPending ? "กำลังบันทึก..." : "คืนเงินแล้ว"}
+    </button>
   );
 }

@@ -13,10 +13,13 @@ const STATUS_LABELS: Record<string, string> = {
   PAYMENT_REVIEW: "รอตรวจสอบชำระเงิน",
   CONFIRMED: "ยืนยันแล้ว",
   CHANGE_REQUESTED: "ขอเปลี่ยนรอบ",
+  CANCELLATION_REQUESTED: "ขอยกเลิก",
   CANCELLED: "ยกเลิกแล้ว",
   EXPIRED: "หมดอายุ",
   COMPLETED: "เรียนแล้ว",
 };
+
+const SEARCH_DEBOUNCE_MS = 500;
 
 export function AdminBookingFilters() {
   const router = useRouter();
@@ -28,7 +31,7 @@ export function AdminBookingFilters() {
   const currentStatus = searchParams.get("status") ?? "ALL";
 
   const [search, setSearch] = useState(currentSearch);
-  const debouncedSearch = useDebounce(search, 500);
+  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
 
   // Use a ref to track the previous debounced value so we only push when it actually changes
   const prevDebouncedRef = useRef(currentSearch);

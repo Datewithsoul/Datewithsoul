@@ -14,41 +14,35 @@ import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { User, Calendar, CreditCard, Clock } from "lucide-react";
 import { Prisma } from "@/app/generated/prisma";
+import { PAYMENT_STATUS_LABELS } from "@/lib/booking-status";
 
-type BookingWithDetails = Prisma.BookingGetPayload<{
+type PaymentWithLogs = {
+  include: {
+    reviewLogs: {
+      include: { reviewer: true };
+    };
+  };
+};
+
+export type BookingWithDetails = Prisma.BookingGetPayload<{
   include: {
     user: true;
     classEvent: true;
-    payment: {
-      include: {
-        reviewLogs: {
-          include: { reviewer: true };
-        };
-      };
-    };
+    payment: PaymentWithLogs;
+    bookingGroup: { include: { payment: PaymentWithLogs } };
   };
 }>;
 
 export function AdminBookingDialog({ booking, triggerLabel = "รายละเอียด" }: { booking: BookingWithDetails, triggerLabel?: string }) {
   const [open, setOpen] = React.useState(false);
 
-  const createdAtText = React.useMemo(() => {
-    if (!booking?.createdAt) return "-";
-    try {
-      return new Date(booking.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
-    } catch {
-      return String(booking.createdAt);
-    }
-  }, [booking?.createdAt]);
+  // A cart booking is paid (and reviewed) once for the whole group
+  const group = booking.bookingGroup;
+  const payment = group ? group.payment : booking.payment;
+  const amountDue = group ? group.totalPrice : booking.totalPrice;
 
-  const classDateText = React.useMemo(() => {
-    if (!booking?.classEvent?.date) return "-";
-    try {
-      return new Date(booking.classEvent.date).toLocaleDateString("th-TH");
-    } catch {
-      return String(booking.classEvent.date);
-    }
-  }, [booking?.classEvent?.date]);
+  const createdAtText = new Date(booking.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
+  const classDateText = new Date(booking.classEvent.date).toLocaleDateString("th-TH");
 
   return (
     <Drawer open={open} onOpenChange={setOpen} swipeDirection="right">
@@ -133,19 +127,22 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-2 text-sm border-b border-[#ddd4c8] pb-4">
                 <div className="text-[#6a5d50]">ยอดที่ต้องชำระ:</div>
-                <div className="font-medium text-[#3d3229] text-lg">{booking.totalPrice.toLocaleString("th-TH")} บาท</div>
-                
+                <div className="font-medium text-[#3d3229] text-lg">
+                  {amountDue.toLocaleString("th-TH")} บาท
+                  {group ? <div className="text-xs font-normal text-[#6a5d50]">รวมทุกคอร์สในกลุ่ม</div> : null}
+                </div>
+
                 <div className="text-[#6a5d50]">สถานะการชำระเงิน:</div>
-                <div>{booking.payment?.status ?? booking.bookingGroup?.payment?.status ?? "ยังไม่ชำระ"}</div>
+                <div>{payment ? PAYMENT_STATUS_LABELS[payment.status] : "ยังไม่ชำระ"}</div>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2 w-full">
                   <h3 className="text-sm font-medium text-[#3d3229]">สลิปโอนเงิน</h3>
-                  {booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl ? (
-                    <a href={booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl} target="_blank" rel="noreferrer" className="block w-full max-h-[300px] rounded border border-[#ddd4c8] overflow-hidden hover:opacity-90 transition-opacity bg-black/5 flex items-center justify-center">
-                      <img 
-                        src={booking.payment?.slipUrl || booking.bookingGroup?.payment?.slipUrl} 
+                  {payment?.slipUrl ? (
+                    <a href={payment.slipUrl} target="_blank" rel="noreferrer" className="block w-full max-h-[300px] rounded border border-[#ddd4c8] overflow-hidden hover:opacity-90 transition-opacity bg-black/5 flex items-center justify-center">
+                      <img
+                        src={payment.slipUrl}
                         alt="Payment Slip" 
                         className="max-w-full max-h-[300px] object-contain"
                       />
@@ -161,10 +158,12 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
                   <h3 className="text-sm font-medium text-[#3d3229]">จัดการสถานะ</h3>
                   <div className="bg-[#f7f4ef] p-3 rounded-md border border-[#ddd4c8]">
                     <AdminBookingControls
-                      bookingId={booking.id}
-                      status={booking.status}
-                      slipUrl={booking.payment?.slipUrl ?? booking.bookingGroup?.payment?.slipUrl ?? null}
-                      reviewLogs={booking.payment?.reviewLogs ?? []}
+                      bookingId={group ? group.id : booking.id}
+                      isGroup={Boolean(group)}
+                      status={group ? group.status : booking.status}
+                      slipUrl={payment?.slipUrl ?? null}
+                      expectedAmount={amountDue}
+                      reviewLogs={payment?.reviewLogs ?? []}
                     />
                   </div>
                 </div>
@@ -172,7 +171,7 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
             </div>
           </section>
 
-          {booking.payment?.reviewLogs && booking.payment.reviewLogs.length > 0 && (
+          {payment?.reviewLogs && payment.reviewLogs.length > 0 && (
             <section className="border border-[#ddd4c8] bg-white p-3 rounded-md shadow-sm mb-6">
               <div className="flex items-center gap-2 border-b border-[#ddd4c8] pb-2 mb-3">
                 <Clock className="h-5 w-5 text-[#8f3b2c]" />
@@ -180,7 +179,7 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
               </div>
               
               <div className="flex flex-col gap-4">
-                {booking.payment.reviewLogs.map((log) => {
+                {payment.reviewLogs.map((log) => {
                   let logDateStr = "-";
                   try {
                     logDateStr = new Date(log.createdAt).toLocaleString("th-TH");

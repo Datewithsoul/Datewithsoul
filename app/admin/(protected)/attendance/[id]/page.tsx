@@ -3,7 +3,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { notFound } from "next/navigation";
 import { BookingStatus } from "@/app/generated/prisma";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { AttendanceToggle } from "./attendance-toggle";
 import { SendReminderButton } from "./send-reminder-button";
 
@@ -42,7 +42,14 @@ export default async function AttendancePage(props: { params: Promise<{ id: stri
           title={`เช็คชื่อ: ${classEvent.name}`}
           description={`วันที่ ${classEvent.date.toLocaleDateString("th-TH")} · เวลา ${classEvent.startTime}–${classEvent.endTime} · แตะวงกลมข้างชื่อเพื่อบันทึกว่าเข้าเรียนแล้ว`}
         />
-        <div className="shrink-0 pt-2 md:pt-0">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 pt-2 md:pt-0">
+          <a
+            href={`/api/admin/export/attendance/${classEvent.id}`}
+            download
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-[#ddd4c8] bg-white px-3.5 text-sm font-medium text-[#3d3229] transition-colors hover:bg-[#f7f4ef]"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" /> รายชื่อ CSV
+          </a>
           <SendReminderButton classEventId={classEvent.id} totalSeats={totalPaidSeats} />
         </div>
       </div>

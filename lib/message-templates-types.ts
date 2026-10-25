@@ -370,11 +370,65 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     title: "แจ้งเตือนแอดมิน: มีคำขอเปลี่ยนรอบเรียน",
     description: "ส่งหาแอดมินเมื่อลูกค้ายื่นคำขอเปลี่ยนรอบเรียน",
     category: "ADMIN",
-    defaultContent: `มีคำขอเปลี่ยนรอบเรียนจากคุณ {{userName}} เป็นคลาส "{{newClassName}}"`,
+    defaultContent: `มีคำขอเปลี่ยนรอบเรียนจากคุณ {{userName}}
+จาก: {{className}}
+เป็น: {{newClassName}}
+หมายเหตุ: {{reason}}`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
       { name: "className", label: "ชื่อคลาสเดิม", example: "Ceramic Workshop (รอบเช้า)" },
       { name: "newClassName", label: "ชื่อคลาสใหม่", example: "Ceramic Workshop (รอบบ่าย)" },
+      { name: "reason", label: "หมายเหตุจากลูกค้า", example: "ติดงานช่วงเช้า" },
+    ],
+  },
+  {
+    key: "REQUEST_CANCEL_SUBMITTED_USER",
+    title: "ได้รับคำขอยกเลิกการจอง (ส่งให้ลูกค้า)",
+    description: "ส่งหาลูกค้าเมื่อส่งคำขอยกเลิกการจองผ่านระบบ",
+    category: "CUSTOMER",
+    defaultContent: `ระบบได้รับคำขอยกเลิกการจองคลาส "{{className}}" เรียบร้อยแล้ว ขณะนี้อยู่ระหว่างรอแอดมินตรวจสอบค่ะ`,
+    variables: [
+      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
+      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop (20 ส.ค. 2569 10:00-12:00)" },
+    ],
+  },
+  {
+    key: "REQUEST_CANCEL_APPROVED_USER",
+    title: "อนุมัติคำขอยกเลิก (ส่งให้ลูกค้า)",
+    description: "ส่งหาลูกค้าเมื่อแอดมินอนุมัติการยกเลิก ระบบจะคืนที่นั่งและรอแอดมินโอนเงินคืน",
+    category: "CUSTOMER",
+    defaultContent: `คำขอยกเลิกการจองคลาส "{{className}}" ได้รับการอนุมัติแล้ว
+ยอดเงินคืน {{refundAmount}} บาท แอดมินจะโอนคืนและแจ้งให้ทราบอีกครั้งค่ะ`,
+    variables: [
+      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
+      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop (20 ส.ค. 2569 10:00-12:00)" },
+      { name: "refundAmount", label: "ยอดเงินคืน", example: "1,500" },
+    ],
+  },
+  {
+    key: "REFUND_COMPLETED_USER",
+    title: "คืนเงินเรียบร้อย (ส่งให้ลูกค้า)",
+    description: "ส่งหาลูกค้าเมื่อแอดมินกดยืนยันว่าโอนเงินคืนแล้ว",
+    category: "CUSTOMER",
+    defaultContent: `แอดมินโอนเงินคืนจำนวน {{refundAmount}} บาท สำหรับคลาส "{{className}}" เรียบร้อยแล้วค่ะ`,
+    variables: [
+      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
+      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
+      { name: "refundAmount", label: "ยอดเงินคืน", example: "1,500" },
+    ],
+  },
+  {
+    key: "ADMIN_REQUEST_CANCEL",
+    title: "แจ้งเตือนแอดมิน: มีคำขอยกเลิกการจอง",
+    description: "ส่งหาแอดมินเมื่อลูกค้ายื่นคำขอยกเลิกการจอง",
+    category: "ADMIN",
+    defaultContent: `มีคำขอยกเลิกการจองจากคุณ {{userName}}
+คลาส: {{className}}
+เหตุผล: {{reason}}`,
+    variables: [
+      { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
+      { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop (20 ส.ค. 2569 10:00-12:00)" },
+      { name: "reason", label: "เหตุผลจากลูกค้า", example: "ติดธุระ" },
     ],
   },
 ];
@@ -399,10 +453,11 @@ export function renderTemplate(
   template: string,
   variables: Record<string, string | number | undefined | null>
 ): string {
-  let result = template;
-  for (const [key, val] of Object.entries(variables)) {
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
-    result = result.replace(regex, val !== undefined && val !== null ? String(val) : "");
-  }
-  return result;
+  return Object.entries(variables).reduce((result, [key, val]) => {
+    // Placeholder for this key, spaces allowed inside the braces.
+    // For key "userName": matches "{{userName}}" and "{{ userName }}", rejects "{userName}" and "{{username}}".
+    // https://regex101.com/?regex=%7B%7B%5Cs*userName%5Cs*%7D%7D&flags=g&testString=%7B%7BuserName%7D%7D%0A%7B%7B%20userName%20%7D%7D%0A%7BuserName%7D%0A%7B%7Busername%7D%7D
+    const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+    return result.replace(placeholder, val !== undefined && val !== null ? String(val) : "");
+  }, template);
 }

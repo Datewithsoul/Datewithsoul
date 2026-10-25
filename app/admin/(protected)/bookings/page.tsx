@@ -13,11 +13,12 @@ import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
 import { AdminBookingFilters } from "@/components/admin-booking-filters";
 import { AdminBookingDialog } from "@/components/admin-booking-dialog";
-import { BookingStatus, Prisma } from "@/app/generated/prisma";
 import Link from "next/link";
+import { Download } from "lucide-react";
+import { buildAdminBookingWhere } from "@/lib/admin-booking-filters";
 import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/data-table-pagination";
-import { AdminGroupedBookingRow } from "@/components/admin-grouped-booking-row";
+import { AdminGroupedBookingRow, type BookingTableRow } from "@/components/admin-grouped-booking-row";
 import { maskSlipUrl } from "@/lib/slips";
 
 export default async function AdminBookings(props: {
@@ -27,19 +28,7 @@ export default async function AdminBookings(props: {
   const query = searchParams?.q ?? "";
   const status = searchParams?.status ?? "ALL";
 
-  const whereCondition: Prisma.BookingWhereInput = {};
-
-  if (query) {
-    whereCondition.OR = [
-      { user: { name: { contains: query, mode: "insensitive" } } },
-      { user: { phone: { contains: query, mode: "insensitive" } } },
-      { id: { contains: query, mode: "insensitive" } },
-    ];
-  }
-
-  if (status !== "ALL" && Object.values(BookingStatus).includes(status as BookingStatus)) {
-    whereCondition.status = status as BookingStatus;
-  }
+  const whereCondition = buildAdminBookingWhere({ q: query, status });
 
   const currentPage = Number(searchParams?.page) || 1;
   const pageSize = 20;
@@ -96,32 +85,39 @@ export default async function AdminBookings(props: {
   ]);
   
   // Never send raw storage references to the client; slips go through /api/slips
-  for (const b of bookings) {
+  bookings.forEach((b) => {
     maskSlipUrl(b.payment);
     maskSlipUrl(b.bookingGroup?.payment);
-  }
+  });
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  const groupedBookings = bookings.reduce((acc: any[], booking) => {
-    if (booking.bookingGroupId) {
-      const existing = acc.find(g => g.isGroup && g.id === booking.bookingGroupId);
-      if (existing) {
+  // Export everything matching the current filters, not just this page
+  const exportParams = new URLSearchParams();
+  if (query) exportParams.set("q", query);
+  if (status !== "ALL") exportParams.set("status", status);
+  const exportHref = `/api/admin/export/bookings?${exportParams.toString()}`;
+
+  const groupedBookings = bookings.reduce<BookingTableRow[]>((acc, booking) => {
+    const group = booking.bookingGroup;
+    if (group) {
+      const existing = acc.find((g) => g.isGroup && g.id === group.id);
+      if (existing?.isGroup) {
         existing.items.push(booking);
         existing.totalSeats += booking.seats;
         return acc;
       }
       acc.push({
         isGroup: true,
-        id: booking.bookingGroupId,
+        id: group.id,
         user: booking.user,
-        createdAt: booking.createdAt, // Group createdAt isn't fetched, fallback to booking
+        createdAt: group.createdAt,
         totalSeats: booking.seats,
-        totalPrice: booking.bookingGroup?.totalPrice ?? booking.totalPrice,
-        status: booking.bookingGroup?.status ?? booking.status,
+        totalPrice: group.totalPrice,
+        status: group.status,
         items: [booking],
-        slipUrl: booking.bookingGroup?.payment?.slipUrl ?? null,
-        reviewLogs: booking.bookingGroup?.payment?.reviewLogs ?? [],
+        slipUrl: group.payment?.slipUrl ?? null,
+        reviewLogs: group.payment?.reviewLogs ?? [],
       });
     } else {
       acc.push({
@@ -153,6 +149,13 @@ export default async function AdminBookings(props: {
             <h2 className="text-base font-semibold text-[#3d3229]">รายการทั้งหมด</h2>
             <p className="mt-1 text-sm text-[#6a5d50]">แสดง {bookings.length.toLocaleString("th-TH")} รายการ</p>
           </div>
+          <a
+            href={exportHref}
+            download
+            className="inline-flex h-9 items-center gap-2 border border-[#ddd4c8] bg-white px-3.5 text-sm font-medium text-[#3d3229] transition-colors hover:bg-[#f7f4ef]"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" /> ดาวน์โหลด CSV
+          </a>
         </div>
         
         <AdminBookingFilters />
@@ -222,12 +225,24 @@ export default async function AdminBookings(props: {
                 </div>
 
                 <div className="pt-3 border-t border-[#ddd4c8] flex flex-col gap-2">
-                  <AdminBookingControls
-                    bookingId={b.id}
-                    status={b.status}
-                    slipUrl={b.payment?.slipUrl ?? b.bookingGroup?.payment?.slipUrl ?? null}
-                    reviewLogs={b.payment?.reviewLogs ?? b.bookingGroup?.payment?.reviewLogs ?? []}
-                  />
+                  {b.bookingGroup ? (
+                    <AdminBookingControls
+                      bookingId={b.bookingGroup.id}
+                      isGroup
+                      status={b.bookingGroup.status}
+                      slipUrl={b.bookingGroup.payment?.slipUrl ?? null}
+                      expectedAmount={b.bookingGroup.totalPrice}
+                      reviewLogs={b.bookingGroup.payment?.reviewLogs ?? []}
+                    />
+                  ) : (
+                    <AdminBookingControls
+                      bookingId={b.id}
+                      status={b.status}
+                      slipUrl={b.payment?.slipUrl ?? null}
+                      expectedAmount={b.totalPrice}
+                      reviewLogs={b.payment?.reviewLogs ?? []}
+                    />
+                  )}
                   <div className="flex gap-2 w-full mt-2">
                     <div className="flex-1">
                       <AdminBookingDialog booking={b} />

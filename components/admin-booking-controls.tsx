@@ -3,15 +3,25 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { confirmPayment, updateBookingStatus, confirmGroupPayment, updateGroupBookingStatus } from "@/app/admin/(protected)/bookings/actions";
-import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-status";
+import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS, isBookingStatus } from "@/lib/booking-status";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+
+// Matches how bank slips print the amount (e.g. 1,980.00)
+const SATANG_DIGITS = 2;
+const BAHT_FORMAT: Intl.NumberFormatOptions = {
+  minimumFractionDigits: SATANG_DIGITS,
+  maximumFractionDigits: SATANG_DIGITS,
+};
 
 interface AdminBookingControlsProps {
   bookingId: string;
   isGroup?: boolean;
   status: string;
   slipUrl: string | null;
+  /** Amount the customer should have transferred, shown next to the slip for comparison */
+  expectedAmount?: number;
   reviewLogs: {
     id: string;
     reviewer: { name: string };
@@ -27,12 +37,19 @@ export function AdminBookingControls({
   isGroup = false,
   status,
   slipUrl,
+  expectedAmount,
   reviewLogs,
 }: AdminBookingControlsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showSlip, setShowSlip] = useState(false);
+  const [slipLoadState, setSlipLoadState] = useState<"loading" | "loaded" | "error">("loading");
+
+  function openSlip() {
+    setSlipLoadState("loading");
+    setShowSlip(true);
+  }
 
   const handleStatusChange = (newStatus: string, reason?: string) => {
     startTransition(async () => {
@@ -75,12 +92,14 @@ export function AdminBookingControls({
     <div className="flex min-w-[14rem] flex-col items-start gap-2">
       <Select
         value={status}
-        onValueChange={(value) => handleStatusChange(value)}
+        onValueChange={(value) => {
+          if (value) handleStatusChange(value);
+        }}
         disabled={isPending}
       >
         <SelectTrigger className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring">
           <SelectValue placeholder="เลือกสถานะ">
-            {status ? BOOKING_STATUS_LABELS[status] : "เลือกสถานะ"}
+            {isBookingStatus(status) ? BOOKING_STATUS_LABELS[status] : "เลือกสถานะ"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -96,7 +115,7 @@ export function AdminBookingControls({
         {slipUrl ? (
           <button
             type="button"
-            onClick={() => setShowSlip(true)}
+            onClick={openSlip}
             className="text-xs font-medium text-[#6a5d50] underline-offset-2 hover:text-[#3d3229] hover:underline"
           >
             ดูสลิป
@@ -138,7 +157,41 @@ export function AdminBookingControls({
                 ปิด
               </button>
             </div>
-            <img src={slipUrl} alt="สลิปการชำระเงิน" className="w-full border border-[#eee8e0]" />
+            {expectedAmount !== undefined ? (
+              <div className="mb-3 flex items-baseline justify-between gap-3 border border-[#e8d9a8] bg-[#fbf6e6] px-3 py-2">
+                <span className="text-xs text-[#6a5d50]">ยอดที่ต้องโอน</span>
+                <span className="text-lg font-semibold tabular-nums text-[#3d3229]">
+                  ฿{expectedAmount.toLocaleString("th-TH", BAHT_FORMAT)}
+                </span>
+              </div>
+            ) : null}
+            {slipLoadState === "loading" ? (
+              <div className="flex h-64 flex-col items-center justify-center gap-2 border border-[#eee8e0] text-xs text-[#6a5d50]">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                กำลังโหลดสลิป...
+              </div>
+            ) : null}
+            {slipLoadState === "error" ? (
+              <div className="flex h-64 flex-col items-center justify-center gap-2 border border-[#eee8e0] text-xs text-[#8f3b2c]">
+                โหลดรูปสลิปไม่สำเร็จ
+                <button
+                  type="button"
+                  onClick={() => setSlipLoadState("loading")}
+                  className="text-[#6a5d50] underline underline-offset-2 hover:text-[#3d3229]"
+                >
+                  ลองใหม่
+                </button>
+              </div>
+            ) : null}
+            {slipLoadState !== "error" ? (
+              <img
+                src={slipUrl}
+                alt="สลิปการชำระเงิน"
+                onLoad={() => setSlipLoadState("loaded")}
+                onError={() => setSlipLoadState("error")}
+                className={slipLoadState === "loaded" ? "w-full border border-[#eee8e0]" : "hidden"}
+              />
+            ) : null}
             {status !== "CONFIRMED" ? (
               <div className="flex gap-2 mt-4">
                 <button
@@ -170,7 +223,7 @@ export function AdminBookingControls({
               <div className="mt-6 border-t border-[#eee8e0] pt-4">
                 <h4 className="text-sm font-semibold text-[#3d3229] mb-2">ประวัติการตรวจสอบ</h4>
                 <div className="space-y-2">
-                  {reviewLogs.map((log: any) => (
+                  {reviewLogs.map((log) => (
                     <div key={log.id} className="text-xs text-[#6a5d50] bg-gray-50 p-2 rounded">
                       <div className="flex justify-between">
                         <span className="font-medium text-[#3d3229]">{log.reviewer?.name || "Admin"}</span>

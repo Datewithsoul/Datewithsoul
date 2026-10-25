@@ -4,16 +4,37 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { AdminBookingControls } from "@/components/admin-booking-controls";
-import { AdminBookingDialog } from "@/components/admin-booking-dialog";
-import { AdminChangeClassDialog } from "@/components/admin-change-class-dialog";
+import { AdminBookingDialog, type BookingWithDetails } from "@/components/admin-booking-dialog";
+import { AdminChangeClassDialog, type ClassEventOption } from "@/components/admin-change-class-dialog";
 import { TableCell, TableRow } from "@/components/ui/table";
 
-export function AdminGroupedBookingRow({ 
-  group, 
-  classEvents 
-}: { 
-  group: any;
-  classEvents: any[];
+// Ids are UUIDs; the first segment is enough to tell rows apart on screen
+const SHORT_ID_LENGTH = 8;
+const shortId = (id: string) => id.substring(0, SHORT_ID_LENGTH);
+
+type GroupPayment = NonNullable<NonNullable<BookingWithDetails["bookingGroup"]>["payment"]>;
+
+export type BookingTableRow =
+  | { isGroup: false; id: string; items: BookingWithDetails[] }
+  | {
+      isGroup: true;
+      id: string;
+      user: BookingWithDetails["user"];
+      createdAt: Date;
+      totalSeats: number;
+      totalPrice: number;
+      status: string;
+      items: BookingWithDetails[];
+      slipUrl: string | null;
+      reviewLogs: GroupPayment["reviewLogs"];
+    };
+
+export function AdminGroupedBookingRow({
+  group,
+  classEvents
+}: {
+  group: BookingTableRow;
+  classEvents: ClassEventOption[];
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -25,7 +46,7 @@ export function AdminGroupedBookingRow({
           <div className="font-medium text-[#3d3229]">{b.user.name}</div>
           {b.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{b.user.phone}</div>}
           <div className="text-[10px] text-[#a09486] font-mono mt-1" title={b.id}>
-            {b.id.substring(0, 8)}
+            {shortId(b.id)}
           </div>
         </TableCell>
         <TableCell className="py-4">
@@ -49,8 +70,9 @@ export function AdminGroupedBookingRow({
           <AdminBookingControls
             bookingId={b.id}
             status={b.status}
-            slipUrl={b.payment?.slipUrl ?? b.bookingGroup?.payment?.slipUrl ?? null}
-            reviewLogs={b.payment?.reviewLogs ?? b.bookingGroup?.payment?.reviewLogs ?? []}
+            slipUrl={b.payment?.slipUrl ?? null}
+            expectedAmount={b.totalPrice}
+            reviewLogs={b.payment?.reviewLogs ?? []}
           />
         </TableCell>
         <TableCell className="px-5 py-4 flex flex-col items-start gap-2">
@@ -84,7 +106,7 @@ export function AdminGroupedBookingRow({
               <div className="font-medium text-[#3d3229]">{group.user.name}</div>
               {group.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{group.user.phone}</div>}
               <div className="text-[10px] text-[#a09486] font-mono mt-1 font-semibold text-[#8f3b2c]">
-                GROUP: {group.id.substring(0, 8)}
+                GROUP: {shortId(group.id)}
               </div>
             </div>
           </div>
@@ -92,11 +114,11 @@ export function AdminGroupedBookingRow({
         <TableCell className="py-4">
           <div className="font-semibold text-[#8f3b2c]">จองแบบกลุ่ม ({group.items.length} คอร์ส)</div>
           <div className="text-xs text-[#6a5d50] mt-1 line-clamp-2">
-            {group.items.map((i: any) => i.classEvent.name).join(", ")}
+            {group.items.map((i) => i.classEvent.name).join(", ")}
           </div>
         </TableCell>
         <TableCell className="py-4 text-sm text-[#6a5d50] whitespace-nowrap">
-          {new Date(group.createdAt || Date.now()).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
+          {group.createdAt.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })}
         </TableCell>
         <TableCell className="text-center tabular-nums py-4 font-semibold text-[#3d3229]">
           {group.totalSeats}
@@ -113,6 +135,7 @@ export function AdminGroupedBookingRow({
             isGroup={true}
             status={group.status}
             slipUrl={group.slipUrl}
+            expectedAmount={group.totalPrice}
             reviewLogs={group.reviewLogs}
           />
         </TableCell>
@@ -120,12 +143,12 @@ export function AdminGroupedBookingRow({
         </TableCell>
       </TableRow>
 
-      {isExpanded && group.items.map((b: any, idx: number) => (
+      {isExpanded && group.items.map((b, idx) => (
         <TableRow key={b.id} className={`bg-white align-top border-[#eee8e0] ${idx === group.items.length - 1 ? 'border-b-2' : 'border-b-0 border-dashed'}`}>
           <TableCell className="px-5 py-3 border-l-4 border-[#d4c7b8]">
             <div className="flex items-center gap-2 pl-6">
               <div className="text-[10px] text-[#a09486] font-mono mt-1" title={b.id}>
-                {b.id.substring(0, 8)}
+                {shortId(b.id)}
               </div>
             </div>
           </TableCell>

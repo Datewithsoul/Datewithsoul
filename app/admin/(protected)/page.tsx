@@ -5,6 +5,7 @@ import { DashboardChart } from "@/components/dashboard-chart";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-page-header";
 import { BookingStatusBadge } from "@/components/admin-status-badge";
 import { BookingStatus } from "@/app/generated/prisma";
+import { PRICED_BOOKING_SELECT, REVENUE_BOOKING_STATUSES, paidAmountForBooking } from "@/lib/revenue";
 import {
   Table,
   TableBody,
@@ -18,10 +19,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const CHART_MONTHS = 6;
+const RECENT_BOOKINGS_LIMIT = 8;
+const UPCOMING_CLASSES_LIMIT = 5;
+const ALMOST_FULL_SEATS = 3;
+
 export default async function AdminDashboard() {
   const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
   sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - (CHART_MONTHS - 1));
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
   const today = new Date();
@@ -38,7 +44,7 @@ export default async function AdminDashboard() {
     awaitingPaymentBookings,
     almostFullClasses,
     bookingStatusGroups,
-    bookingTotalSums
+    bookingAmounts
   ] = await Promise.all([
     prisma.classEvent.count(),
     prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
@@ -46,50 +52,49 @@ export default async function AdminDashboard() {
     prisma.booking.findMany({
       include: { user: true, classEvent: true, payment: true },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: RECENT_BOOKINGS_LIMIT,
     }),
     prisma.classEvent.findMany({
       where: { date: { gte: today } },
       orderBy: { date: "asc" },
-      take: 5,
+      take: UPCOMING_CLASSES_LIMIT,
     }),
     prisma.booking.findMany({
       where: { createdAt: { gte: sixMonthsAgo } },
-      select: { createdAt: true, totalPrice: true, status: true },
+      select: { createdAt: true, status: true, ...PRICED_BOOKING_SELECT },
     }),
     prisma.booking.count({ where: { createdAt: { gte: today } } }),
     prisma.booking.count({ where: { status: BookingStatus.PENDING_PAYMENT } }),
-    prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: 3, gt: 0 } } }),
+    prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: ALMOST_FULL_SEATS, gt: 0 } } }),
     prisma.booking.groupBy({ by: ['status'], _count: { id: true } }),
-    prisma.booking.groupBy({ by: ['status'], _sum: { totalPrice: true } })
+    prisma.booking.findMany({ select: { status: true, ...PRICED_BOOKING_SELECT } })
   ]);
 
   const getBookingCount = (status: BookingStatus) => bookingStatusGroups.find(g => g.status === status)?._count.id || 0;
-  const getPaymentSum = (status: BookingStatus) => bookingTotalSums.find(g => g.status === status)?._sum.totalPrice || 0;
+  // Summed per booking in JS: cart bookings store pre-discount prices, see lib/revenue.ts
+  const getPaymentSum = (...statuses: BookingStatus[]) =>
+    bookingAmounts
+      .filter((b) => statuses.includes(b.status))
+      .reduce((sum, b) => sum + paidAmountForBooking(b), 0);
+  const isRevenue = (status: BookingStatus) => REVENUE_BOOKING_STATUSES.includes(status);
 
   const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-  const chartDataMap = new Map();
-  
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
-    chartDataMap.set(monthKey, {
-      month: monthNames[d.getMonth()],
-      revenue: 0,
-      bookings: 0,
-    });
-  }
+  const chartDataMap = new Map<string, { month: string; revenue: number; bookings: number }>(
+    Array.from({ length: CHART_MONTHS }, (_, i) => {
+      const d = new Date();
+      d.setDate(1); // Before moving the month, so the 31st doesn't roll into the next month
+      d.setMonth(d.getMonth() - (CHART_MONTHS - 1 - i));
+      const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+      return [monthKey, { month: monthNames[d.getMonth()], revenue: 0, bookings: 0 }];
+    })
+  );
 
   bookingsForChart.forEach(b => {
     const d = new Date(b.createdAt);
-    const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
-    if (chartDataMap.has(monthKey)) {
-      const data = chartDataMap.get(monthKey);
-      if (b.status === BookingStatus.CONFIRMED) {
-        data.bookings += 1;
-        data.revenue += b.totalPrice;
-      }
+    const data = chartDataMap.get(`${d.getFullYear()}-${d.getMonth()}`);
+    if (data && isRevenue(b.status)) {
+      data.bookings += 1;
+      data.revenue += paidAmountForBooking(b);
     }
   });
 
@@ -98,7 +103,7 @@ export default async function AdminDashboard() {
   const stats = [
     { label: "คอร์สเรียน", value: totalClasses, href: "/admin/classes" },
     { label: "รายการจอง", value: totalBookings, href: "/admin/bookings" },
-    { label: "รอตรวจสอบการชำระเงิน", value: pendingPayments, href: "/admin/bookings", emphasize: pendingPayments > 0 },
+    { label: "รอตรวจสอบการชำระเงิน", value: pendingPayments, href: "/admin/payments", emphasize: pendingPayments > 0 },
   ];
 
   return (
@@ -209,7 +214,7 @@ export default async function AdminDashboard() {
           <div className="p-5 grid grid-cols-2 gap-y-6 gap-x-4 flex-1">
              <div className="flex flex-col">
                <span className="text-sm text-muted-foreground">ชำระแล้ว</span>
-               <span className="text-2xl font-semibold text-foreground">฿{getPaymentSum(BookingStatus.CONFIRMED).toLocaleString("th-TH")}</span>
+               <span className="text-2xl font-semibold text-foreground">฿{getPaymentSum(BookingStatus.CONFIRMED, BookingStatus.COMPLETED).toLocaleString("th-TH")}</span>
              </div>
              <div className="flex flex-col">
                <span className="text-sm text-muted-foreground">รอตรวจสอบ</span>
@@ -217,7 +222,7 @@ export default async function AdminDashboard() {
              </div>
              <div className="flex flex-col col-span-2">
                <span className="text-sm text-muted-foreground">ถูกปฏิเสธ/ยกเลิก/หมดอายุ</span>
-               <span className="text-2xl font-semibold text-muted-foreground">฿{(getPaymentSum(BookingStatus.CANCELLED) + getPaymentSum(BookingStatus.EXPIRED)).toLocaleString("th-TH")}</span>
+               <span className="text-2xl font-semibold text-muted-foreground">฿{getPaymentSum(BookingStatus.CANCELLED, BookingStatus.EXPIRED).toLocaleString("th-TH")}</span>
              </div>
           </div>
           <div className="border-t border-border p-4 bg-accent">

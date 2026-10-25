@@ -1,97 +1,175 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
-import { RequestStatus, RequestType } from "@/app/generated/prisma";
+import { Prisma, RequestStatus, RequestType } from "@/app/generated/prisma";
 import { format } from "date-fns";
 import { SearchBar } from "@/components/search-bar";
 import { DataTablePagination } from "@/components/data-table-pagination";
+import { AdminPageHeader } from "@/components/admin-page-header";
+import { formatClassEventLabel } from "@/lib/class-event-label";
+import { paidAmountForBooking } from "@/lib/revenue";
 
-import { RequestActions } from "./request-actions";
+import { RefundButton, RequestActions } from "./request-actions";
+
+export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 20;
+
+const REQUEST_TYPE_BADGES: Record<RequestType, { label: string; className: string }> = {
+  COURSE_CHANGE: { label: "ขอเปลี่ยนรอบเรียน", className: "border-[#c9a227] bg-[#fbf6e6] text-[#8a6d1f]" },
+  CANCELLATION: { label: "ขอยกเลิกการจอง", className: "border-[#8f3b2c] bg-[#fbeeea] text-[#8f3b2c]" },
+};
+
+const requestInclude = {
+  user: true,
+  booking: {
+    include: {
+      classEvent: true,
+      bookingGroup: { select: { totalPrice: true, discountAmount: true } },
+    },
+  },
+  requestedEvent: true,
+} satisfies Prisma.ChangeRequestInclude;
+
+const formatBaht = (amount: number) => `฿${amount.toLocaleString("th-TH")}`;
 
 export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
   await requireAdmin();
-  
+
   const { q, page } = await searchParams;
   const currentPage = Number(page) || 1;
-  const pageSize = 20;
 
-  const where: any = { status: RequestStatus.PENDING, type: RequestType.COURSE_CHANGE };
-  if (q) {
-    where.OR = [
-      { user: { name: { contains: q } } },
-      { customerReason: { contains: q } }
-    ];
-  }
+  const search: Prisma.ChangeRequestWhereInput = q
+    ? {
+        OR: [
+          { user: { name: { contains: q, mode: "insensitive" } } },
+          { user: { phone: { contains: q, mode: "insensitive" } } },
+          { customerReason: { contains: q, mode: "insensitive" } },
+        ],
+      }
+    : {};
+  const where: Prisma.ChangeRequestWhereInput = { ...search, status: RequestStatus.PENDING };
+  // Approved cancellations stay APPROVED until the admin confirms the refund was transferred
+  const refundWhere: Prisma.ChangeRequestWhereInput = {
+    ...search,
+    type: RequestType.CANCELLATION,
+    status: RequestStatus.APPROVED,
+  };
 
-  const [requests, totalItems, upcomingEvents] = await Promise.all([
+  const [requests, totalItems, refundsPending, upcomingEvents] = await Promise.all([
     prisma.changeRequest.findMany({
       where,
-      include: {
-        user: true,
-        booking: { include: { classEvent: true } },
-        requestedEvent: true
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
+      include: requestInclude,
+      orderBy: { createdAt: "asc" }, // Oldest first, like the payment queue
+      skip: (currentPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
     prisma.changeRequest.count({ where }),
+    prisma.changeRequest.findMany({
+      where: refundWhere,
+      include: requestInclude,
+      orderBy: { createdAt: "asc" },
+    }),
     prisma.classEvent.findMany({
-      where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, status: "PUBLISHED" },
-      orderBy: { date: "asc" }
+      where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, status: "PUBLISHED", deletedAt: null },
+      orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      select: { id: true, name: true, date: true, startTime: true, endTime: true, totalSeats: true },
     })
   ]);
-  
-  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-[#4A3B32]">คำขอเปลี่ยนรอบเรียน</h1>
-        <SearchBar placeholder="ค้นหาชื่อ, เหตุผล..." />
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <AdminPageHeader
+        title="คำขอจากลูกค้า"
+        description="อนุมัติหรือปฏิเสธคำขอเปลี่ยนรอบเรียนและคำขอยกเลิก แล้วบันทึกการคืนเงิน"
+      />
+      <div className="sm:w-72">
+        <SearchBar placeholder="ค้นหาชื่อ, เบอร์โทร, เหตุผล..." />
       </div>
-      
+
+      {refundsPending.length > 0 ? (
+        <section className="border border-[#8f3b2c]/40 bg-white shadow-sm">
+          <div className="border-b border-[#ddd4c8] px-5 py-4">
+            <h2 className="text-base font-semibold text-[#3d3229]">รอคืนเงิน</h2>
+            <p className="mt-1 text-sm text-[#6a5d50]">
+              ยกเลิกแล้ว {refundsPending.length.toLocaleString("th-TH")} รายการ โอนเงินคืนลูกค้าแล้วกด &quot;คืนเงินแล้ว&quot;
+            </p>
+          </div>
+          <div className="divide-y divide-[#eee8e0]">
+            {refundsPending.map((req) => (
+              <div key={req.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm">
+                  <div className="font-medium text-[#3d3229]">
+                    {req.user.name}
+                    {req.user.phone ? <span className="ml-2 text-xs text-[#6a5d50]">{req.user.phone}</span> : null}
+                  </div>
+                  <div className="text-[#6a5d50]">{formatClassEventLabel(req.booking.classEvent)}</div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-xs text-[#6a5d50]">ยอดคืน</div>
+                    <div className="text-lg font-semibold tabular-nums text-[#8f3b2c]">{formatBaht(req.newPrice ?? 0)}</div>
+                  </div>
+                  <RefundButton requestId={req.id} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {requests.length === 0 ? (
-        <div className="bg-white border border-[#4A3B32]/20 rounded-2xl p-12 text-center">
-          <h2 className="text-xl font-semibold mb-2 text-[#4A3B32]">ไม่มีคำขอใหม่</h2>
+        <div className="border border-[#ddd4c8] bg-white p-12 text-center shadow-sm">
+          <h2 className="text-base font-semibold text-[#3d3229]">ไม่มีคำขอใหม่</h2>
         </div>
       ) : (
         <div className="grid gap-4">
-          {requests.map(req => (
-            <div key={req.id} className="bg-white border border-[#4A3B32] shadow-sm rounded-xl p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-bold text-lg text-[#4A3B32]">
-                    ขอเปลี่ยนรอบเรียน
-                  </h3>
-                  <p className="text-sm text-[#4A3B32]/70">โดย: {req.user.name}</p>
-                  <p className="text-sm text-[#4A3B32]/70">วันที่สร้างคำขอ: {format(req.createdAt, "dd/MM/yyyy HH:mm")}</p>
+          {requests.map(req => {
+            const badge = REQUEST_TYPE_BADGES[req.type];
+            return (
+              <div key={req.id} className="border border-[#ddd4c8] bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <span className={`inline-block border px-2 py-0.5 text-xs font-semibold ${badge.className}`}>
+                      {badge.label}
+                    </span>
+                    <p className="mt-2 font-medium text-[#3d3229]">
+                      {req.user.name}
+                      {req.user.phone ? <span className="ml-2 text-xs text-[#6a5d50]">{req.user.phone}</span> : null}
+                    </p>
+                    <p className="text-xs text-[#6a5d50]">ส่งคำขอเมื่อ: {format(req.createdAt, "dd/MM/yyyy HH:mm")}</p>
+                  </div>
+                  <span className="border border-[#FF9800] bg-[#FFF4E5] px-3 py-1 text-xs font-bold text-[#E65100]">รอตรวจสอบ</span>
                 </div>
-                <span className="bg-[#FFF4E5] border border-[#FF9800] text-[#E65100] px-3 py-1 rounded-full text-xs font-bold">รอตรวจสอบ</span>
-              </div>
 
-              <div className="mb-4 text-sm bg-gray-50 border border-gray-100 p-4 rounded-lg">
-                <p><strong>รอบเดิม:</strong> {req.booking.classEvent.name}</p>
-                {req.requestedEvent && (
-                  <p><strong>รอบใหม่ที่ต้องการ:</strong> {req.requestedEvent.name}</p>
-                )}
-                {req.customerReason && <p><strong>เหตุผล:</strong> {req.customerReason}</p>}
-              </div>
+                <div className="mb-4 space-y-1 border border-[#eee8e0] bg-[#fbfaf8] p-4 text-sm text-[#3d3229]">
+                  <p><strong>รอบที่จอง:</strong> {formatClassEventLabel(req.booking.classEvent)} ({req.booking.seats} ที่นั่ง)</p>
+                  {req.type === RequestType.COURSE_CHANGE && req.requestedEvent ? (
+                    <p><strong>รอบใหม่ที่ต้องการ:</strong> {formatClassEventLabel(req.requestedEvent)}</p>
+                  ) : null}
+                  {req.type === RequestType.CANCELLATION ? (
+                    <p><strong>ยอดที่ต้องคืนถ้าอนุมัติ:</strong> {formatBaht(paidAmountForBooking(req.booking))}</p>
+                  ) : null}
+                  {req.customerReason ? <p><strong>เหตุผล:</strong> {req.customerReason}</p> : null}
+                </div>
 
-              <RequestActions 
-                requestId={req.id} 
-                events={upcomingEvents} 
-                requestedSeats={req.booking.seats}
-                requestedEventId={req.requestedEventId}
-              />
-            </div>
-          ))}
+                <RequestActions
+                  requestId={req.id}
+                  type={req.type}
+                  events={upcomingEvents}
+                  requestedSeats={req.booking.seats}
+                  requestedEventId={req.requestedEventId}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
-      
+
       {totalPages > 1 && (
         <DataTablePagination totalPages={totalPages} />
       )}
     </div>
   );
 }
-

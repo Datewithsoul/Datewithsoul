@@ -27,8 +27,23 @@ export const PAYMENT_STATUS_LABELS = {
   UPLOADED: "ส่งสลิปแล้ว",
   UNDER_REVIEW: "รอตรวจสอบสลิป",
   VERIFIED: "ชำระเงินแล้ว",
+  REFUND_PENDING: "รอคืนเงิน",
+  REFUNDED: "คืนเงินแล้ว",
   REJECTED: "ไม่ผ่าน",
 } as const;
+
+// Customers must request a cancellation at least this many days before the class date
+export const CANCELLATION_DEADLINE_DAYS = 3;
+
+/** True when the class date is still far enough away for a customer cancellation request. */
+export function canRequestCancellation(classDate: Date, now = new Date()) {
+  const deadline = new Date(classDate);
+  deadline.setHours(0, 0, 0, 0);
+  deadline.setDate(deadline.getDate() - CANCELLATION_DEADLINE_DAYS);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  return today <= deadline;
+}
 
 export const ACTIVE_BOOKING_STATUSES: AppBookingStatus[] = [
   "PENDING_PAYMENT",
@@ -40,17 +55,20 @@ export const ACTIVE_BOOKING_STATUSES: AppBookingStatus[] = [
 
 export const PAYABLE_BOOKING_STATUSES: AppBookingStatus[] = ["PENDING_PAYMENT"];
 
+/**
+ * Payment status implied by a booking status, or null when the booking status
+ * says nothing about payment (e.g. COMPLETED, CHANGE_REQUESTED) and the
+ * payment should be left as it is.
+ */
+const PAYMENT_STATUS_FOR_BOOKING: Partial<Record<AppBookingStatus, "UNPAID" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED">> = {
+  PENDING_PAYMENT: "UNPAID",
+  PAYMENT_REVIEW: "UNDER_REVIEW",
+  CONFIRMED: "VERIFIED",
+  CANCELLED: "REJECTED",
+};
+
 export function paymentStatusForBooking(status: AppBookingStatus) {
-  switch (status) {
-    case "PAYMENT_REVIEW":
-      return "UNDER_REVIEW";
-    case "CONFIRMED":
-      return "VERIFIED";
-    case "CANCELLED":
-      return "REJECTED";
-    default:
-      return "UNPAID";
-  }
+  return PAYMENT_STATUS_FOR_BOOKING[status] ?? null;
 }
 
 export function isBookingStatus(value: string): value is AppBookingStatus {

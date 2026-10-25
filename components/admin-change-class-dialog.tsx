@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { changeBookingClass } from "@/app/admin/(protected)/bookings/actions";
 
-type ClassEventOption = {
+export type ClassEventOption = {
   id: string;
   name: string;
   date: Date;
