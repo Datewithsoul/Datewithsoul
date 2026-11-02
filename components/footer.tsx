@@ -37,7 +37,7 @@ const linkGroups = [
 ];
 
 const legalLinks = [
-  { href: "/terms", label: "เงื่อนไขการจอง" },
+  { href: "/terms", label: "นโยบายการจองและกฎเกณฑ์" },
   { href: "/privacy", label: "นโยบายความเป็นส่วนตัว" },
 ];
 

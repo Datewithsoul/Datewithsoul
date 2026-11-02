@@ -6,11 +6,16 @@ import { Heart, Menu, X, User, BookOpen, Settings, ShieldCheck, LogOut } from "l
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import CartButton from "./cart-button";
+import type { User as DbUser } from "@/app/generated/prisma";
+
+// Tailwind `md` breakpoint, where the mobile menu is replaced by the desktop nav
+const DESKTOP_MIN_WIDTH_PX = 768;
 
 const navLinks = [
   { href: "/classes", label: "คลาสเรียน" },
   { href: "/schedule", label: "ตารางเรียน" },
   { href: "/how-it-works", label: "วิธีการจอง" },
+  { href: "/terms", label: "นโยบายการจอง" },
   { href: "/bookings", label: "ตรวจสอบสถานะการจอง" },
   { href: "/contact", label: "ติดต่อเรา" },
 ];
@@ -19,7 +24,7 @@ export default function NavbarClient({
   user,
   isAdmin,
 }: {
-  user: any;
+  user: DbUser | null;
   isAdmin: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,7 +46,7 @@ export default function NavbarClient({
   // Close mobile menu on resize to desktop
   useEffect(() => {
     function onResize() {
-      if (window.innerWidth >= 768) setMenuOpen(false);
+      if (window.innerWidth >= DESKTOP_MIN_WIDTH_PX) setMenuOpen(false);
     }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);

@@ -120,8 +120,8 @@ export function CheckoutNotes({ isFree }: { isFree: boolean }) {
       </ul>
       <p className="mt-5 border-t border-lux-line pt-4 text-center text-xs text-lux-muted">
         การกดยืนยันถือว่าคุณยอมรับ{" "}
-        <Link href="/terms" className="underline underline-offset-2 hover:text-brand-brown">
-          เงื่อนไขการจอง
+        <Link href="/terms" target="_blank" className="underline underline-offset-2 hover:text-brand-brown">
+          นโยบายการจองและกฎเกณฑ์
         </Link>
       </p>
     </>

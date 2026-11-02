@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCart } from "@/hooks/use-cart";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { type FormEvent, useEffect, useState, useTransition } from "react";
 import { createCartBookings } from "./actions";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Plus, ShoppingBag } from "lucide-react";
@@ -11,6 +11,7 @@ import CartItemRow from "@/components/cart-item-row";
 import { Eyebrow } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
 import { BookerFields, CheckoutNotes, PromoCodeField, checkoutButtonClass } from "@/components/checkout/checkout-ui";
+import { BookingPolicyDialog } from "@/components/checkout/booking-policy-dialog";
 import { baht, discountFor, type AppliedPromo } from "@/lib/promo";
 
 type CheckoutClientProps = {
@@ -26,6 +27,8 @@ export default function CheckoutClient({ isLoggedIn, defaultName, defaultEmail, 
   const [isPending, startTransition] = useTransition();
 
   const [promo, setPromo] = useState<AppliedPromo | null>(null);
+  // Submitted form held while the customer reads the booking policy
+  const [pendingForm, setPendingForm] = useState<FormData | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -37,6 +40,17 @@ export default function CheckoutClient({ isLoggedIn, defaultName, defaultEmail, 
   const discountAmount = discountFor(promo, totalPrice);
   const finalPrice = totalPrice - discountAmount;
   const isFree = finalPrice <= 0;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPendingForm(new FormData(event.currentTarget));
+  };
+
+  const handlePolicyAccepted = () => {
+    if (!pendingForm) return;
+    handleCheckout(pendingForm);
+    setPendingForm(null);
+  };
 
   const handleCheckout = (formData: FormData) => {
     startTransition(async () => {
@@ -102,7 +116,7 @@ export default function CheckoutClient({ isLoggedIn, defaultName, defaultEmail, 
             <Eyebrow>Your details</Eyebrow>
             <h2 id="booker-heading" className="mt-2 text-2xl font-semibold">ข้อมูลผู้จอง</h2>
           </div>
-          <form id="checkout-form" action={handleCheckout} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <form id="checkout-form" onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <BookerFields defaultName={defaultName} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
           </form>
         </section>
@@ -155,6 +169,8 @@ export default function CheckoutClient({ isLoggedIn, defaultName, defaultEmail, 
           <CheckoutNotes isFree={isFree} />
         </div>
       </aside>
+
+      <BookingPolicyDialog open={pendingForm !== null} onCancel={() => setPendingForm(null)} onAccept={handlePolicyAccepted} />
     </div>
   );
 }

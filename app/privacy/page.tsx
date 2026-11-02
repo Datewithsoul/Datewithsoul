@@ -73,7 +73,7 @@ export default function PrivacyPage() {
         intro="Date with Soul Love ให้ความสำคัญกับความเป็นส่วนตัวของผู้ใช้บริการ นโยบายนี้อธิบายวิธีที่เราเก็บรวบรวม ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณ"
         sections={sections}
         related={[
-          { href: "/terms", label: "เงื่อนไขการจอง" },
+          { href: "/terms", label: "นโยบายการจองและกฎเกณฑ์" },
           { href: "/faq", label: "คำถามที่พบบ่อย" },
           { href: "/contact", label: "ติดต่อเรา" },
         ]}

@@ -5,6 +5,9 @@ import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata = { title: "เข้าสู่ระบบ", ...noIndexMetadata };
 
+const PERK_FADE_DELAY_MS = 400;
+const PERK_FADE_STAGGER_MS = 120;
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -67,7 +70,7 @@ export default async function LoginPage({
               <li
                 key={text}
                 className="flex items-center gap-4 text-white/80 animate-fade-up"
-                style={{ "--delay": `${400 + i * 120}ms` } as React.CSSProperties}
+                style={{ "--delay": `${PERK_FADE_DELAY_MS + i * PERK_FADE_STAGGER_MS}ms` } as React.CSSProperties}
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/5">
                   <Icon className="h-4.5 w-4.5 text-brand-yellow" strokeWidth={1.5} />
@@ -122,7 +125,7 @@ export default async function LoginPage({
 
             <p className="mt-8 text-xs leading-relaxed text-lux-muted">
               การเข้าสู่ระบบถือว่าคุณยอมรับ{" "}
-              <Link href="/terms" className="text-brand-brown underline underline-offset-2 hover:text-lux-gold">เงื่อนไขการจอง</Link>
+              <Link href="/terms" className="text-brand-brown underline underline-offset-2 hover:text-lux-gold">นโยบายการจองและกฎเกณฑ์</Link>
               {" "}และ{" "}
               <Link href="/privacy" className="text-brand-brown underline underline-offset-2 hover:text-lux-gold">นโยบายความเป็นส่วนตัว</Link>
             </p>
