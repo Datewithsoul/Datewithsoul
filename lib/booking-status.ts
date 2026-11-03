@@ -33,7 +33,7 @@ export const PAYMENT_STATUS_LABELS = {
 } as const;
 
 // Customers must request a cancellation at least this many days before the class date
-export const CANCELLATION_DEADLINE_DAYS = 3;
+export const CANCELLATION_DEADLINE_DAYS = 5;
 
 /** True when the class date is still far enough away for a customer cancellation request. */
 export function canRequestCancellation(classDate: Date, now = new Date()) {

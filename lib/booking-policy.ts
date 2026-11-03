@@ -1,3 +1,5 @@
+import { CANCELLATION_DEADLINE_DAYS } from "@/lib/booking-status";
+
 /** Booking policy shown on /terms and in the dialog customers accept at checkout. */
 export const BOOKING_POLICY_SECTIONS = [
   {
@@ -20,6 +22,7 @@ export const BOOKING_POLICY_SECTIONS = [
     title: "3. การเปลี่ยนแปลงการจอง",
     content: [
       "หากต้องการเปลี่ยนรอบเรียน กรุณาส่งคำขอผ่านหน้าประวัติการจอง โดยมีเงื่อนไขต้องแจ้งล่วงหน้าการส่งคำขอก่อนหนึ่งสัปดาห์เท่านั้น",
+      `หากต้องการยกเลิกการจอง กรุณาส่งคำขอยกเลิกผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${CANCELLATION_DEADLINE_DAYS} วันก่อนวันเรียน`,
     ],
   },
   {
