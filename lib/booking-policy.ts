@@ -3,6 +3,19 @@ import { PAYMENT_WINDOW_MS, REQUEST_DEADLINE_DAYS } from "@/lib/booking-status";
 const MS_PER_MINUTE = 60_000;
 const PAYMENT_WINDOW_MINUTES = PAYMENT_WINDOW_MS / MS_PER_MINUTE;
 
+/** Rules for changing or cancelling a booking; also quoted in the LINE message when a request is rejected. */
+export const BOOKING_CHANGE_POLICY = {
+  title: "3. การเปลี่ยนแปลงการจอง",
+  content: [
+    `หากต้องการเปลี่ยนรอบเรียน กรุณาส่งคำขอผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน`,
+    `หากต้องการยกเลิกการจอง กรุณาส่งคำขอยกเลิกผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน`,
+    `ภายใน ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน จะไม่สามารถเปลี่ยนรอบหรือยกเลิกผ่านระบบได้ หากจำเป็นกรุณาติดต่อแอดมินทาง LINE`,
+  ],
+};
+
+// LegalPage gives each section the anchor #section-<number>
+export const BOOKING_CHANGE_POLICY_PATH = "/terms#section-3";
+
 /** Booking policy shown on /terms and in the dialog customers accept at checkout. */
 export const BOOKING_POLICY_SECTIONS = [
   {
@@ -21,14 +34,7 @@ export const BOOKING_POLICY_SECTIONS = [
       "ราคาที่แสดงในระบบเป็นราคาสุดท้าย รวม VAT แล้ว",
     ],
   },
-  {
-    title: "3. การเปลี่ยนแปลงการจอง",
-    content: [
-      `หากต้องการเปลี่ยนรอบเรียน กรุณาส่งคำขอผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน`,
-      `หากต้องการยกเลิกการจอง กรุณาส่งคำขอยกเลิกผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน`,
-      `ภายใน ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน จะไม่สามารถเปลี่ยนรอบหรือยกเลิกผ่านระบบได้ หากจำเป็นกรุณาติดต่อแอดมินทาง LINE`,
-    ],
-  },
+  BOOKING_CHANGE_POLICY,
   {
     title: "4. พฤติกรรมในคลาส",
     content: [

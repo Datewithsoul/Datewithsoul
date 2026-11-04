@@ -8,8 +8,9 @@ import { RequestType } from "@/app/generated/prisma";
 import { createChangeRequest } from "@/app/actions/requests";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { REQUEST_DEADLINE_DAYS, canSubmitBookingRequest } from "@/lib/booking-status";
+import { canSubmitBookingRequest } from "@/lib/booking-status";
 import { bangkokToday } from "@/lib/bangkok-date";
+import { RequestPolicyDialog } from "@/components/checkout/booking-policy-dialog";
 
 interface ChangeRequestButtonsProps {
   bookingId: string;
@@ -21,6 +22,8 @@ const textareaClassName =
   "flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export function ChangeRequestButtons({ bookingId, classDate, availableClasses }: ChangeRequestButtonsProps) {
+  // The booking policy is shown first; the request form opens once it is accepted
+  const [policyFor, setPolicyFor] = useState<RequestType | null>(null);
   const [openDialog, setOpenDialog] = useState<RequestType | null>(null);
   const [reason, setReason] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -30,13 +33,10 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
     return <span className="text-xs text-red-500 font-medium">*เลยวันและเวลาคลาสเรียนแล้ว ไม่สามารถขอเปลี่ยนรอบได้</span>;
   }
 
-  if (!canSubmitBookingRequest(classDate)) {
-    return (
-      <span className="mt-4 text-xs text-[#6a5d50] sm:mt-0">
-        ขอเปลี่ยนรอบหรือยกเลิกได้ล่วงหน้าอย่างน้อย {REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน หากจำเป็นกรุณาติดต่อแอดมินทาง LINE
-      </span>
-    );
-  }
+  const acceptPolicy = () => {
+    setOpenDialog(policyFor);
+    setPolicyFor(null);
+  };
 
   const closeDialog = () => {
     setOpenDialog(null);
@@ -74,13 +74,21 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
   return (
     <>
       <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-0">
-        <Button variant="outline" size="sm" className="text-[#6a5d50] border-[#ddd4c8]" onClick={() => setOpenDialog(RequestType.COURSE_CHANGE)}>
+        <Button variant="outline" size="sm" className="text-[#6a5d50] border-[#ddd4c8]" onClick={() => setPolicyFor(RequestType.COURSE_CHANGE)}>
           ขอเปลี่ยนรอบ
         </Button>
-        <Button variant="outline" size="sm" className="text-[#8f3b2c] border-[#e5c4bc]" onClick={() => setOpenDialog(RequestType.CANCELLATION)}>
+        <Button variant="outline" size="sm" className="text-[#8f3b2c] border-[#e5c4bc]" onClick={() => setPolicyFor(RequestType.CANCELLATION)}>
           ขอยกเลิก
         </Button>
       </div>
+
+      <RequestPolicyDialog
+        open={policyFor !== null}
+        requestLabel={policyFor === RequestType.CANCELLATION ? "ยกเลิกการจอง" : "เปลี่ยนรอบเรียน"}
+        allowed={canSubmitBookingRequest(classDate)}
+        onCancel={() => setPolicyFor(null)}
+        onAccept={acceptPolicy}
+      />
 
       <Dialog open={openDialog === RequestType.COURSE_CHANGE} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-[425px]">

@@ -7,23 +7,36 @@ import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import type { RequestType } from "@/app/generated/prisma";
 import type { ClassEventOption } from "@/components/admin-change-class-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { REQUEST_DEADLINE_DAYS, canSubmitBookingRequest } from "@/lib/booking-status";
+import { BOOKING_CHANGE_POLICY, BOOKING_CHANGE_POLICY_PATH } from "@/lib/booking-policy";
 
 const SEATS_FULL_ERROR = "ที่นั่งในรอบที่เลือกไม่เพียงพอ";
-const DEFAULT_REJECT_REASON = "พิจารณาแล้วไม่สามารถอนุมัติได้";
+const LATE_REQUEST_REASON = `ส่งคำขอล่วงหน้าไม่ถึง ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน ตามนโยบายการจอง`;
+const QUICK_REJECT_REASONS = [
+  LATE_REQUEST_REASON,
+  "รอบที่ต้องการเปลี่ยนไปเต็มแล้ว",
+  "พิจารณาแล้วไม่สามารถอนุมัติได้",
+];
 
 interface RequestActionsProps {
   requestId: string;
   type: RequestType;
+  classDate: Date;
   events: ClassEventOption[];
   requestedSeats: number;
   requestedEventId: string | null;
 }
 
-export function RequestActions({ requestId, type, events, requestedSeats, requestedEventId }: RequestActionsProps) {
+export function RequestActions({ requestId, type, classDate, events, requestedSeats, requestedEventId }: RequestActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [isFull, setIsFull] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const isCancellation = type === "CANCELLATION";
+  const isPastDeadline = !canSubmitBookingRequest(classDate);
   const approveLabel = isCancellation ? "อนุมัติการยกเลิก" : "อนุมัติ";
 
   const handleApprove = (overrideId?: string) => {
@@ -42,13 +55,22 @@ export function RequestActions({ requestId, type, events, requestedSeats, reques
     });
   };
 
+  const openRejectDialog = () => {
+    setRejectReason(isPastDeadline ? LATE_REQUEST_REASON : "");
+    setRejectOpen(true);
+  };
+
   const handleReject = () => {
-    const reason = window.prompt("ระบุเหตุผลที่ปฏิเสธ (ส่งให้ลูกค้าทาง LINE):", DEFAULT_REJECT_REASON);
-    if (reason === null) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      toast.error("กรุณาระบุเหตุผลที่ปฏิเสธ");
+      return;
+    }
     startTransition(async () => {
-      const result = await rejectRequest(requestId, reason.trim() || DEFAULT_REJECT_REASON);
+      const result = await rejectRequest(requestId, reason);
       if (result.success) {
-        toast.success("ปฏิเสธคำขอสำเร็จ");
+        toast.success("ปฏิเสธคำขอแล้ว ส่งเหตุผลและนโยบายให้ลูกค้าทาง LINE");
+        setRejectOpen(false);
       } else {
         toast.error(result.error);
       }
@@ -101,13 +123,97 @@ export function RequestActions({ requestId, type, events, requestedSeats, reques
           {isPending ? "กำลังดำเนินการ..." : approveLabel}
         </button>
         <button
-          onClick={handleReject}
+          onClick={openRejectDialog}
           disabled={isPending}
           className="inline-flex h-9 items-center border border-[#3d3229] bg-white px-4 text-sm font-semibold text-[#3d3229] transition-colors hover:bg-[#f7f4ef] disabled:opacity-50"
         >
           ปฏิเสธ
         </button>
       </div>
+
+      <Dialog open={rejectOpen} onOpenChange={(open) => !isPending && setRejectOpen(open)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>ปฏิเสธคำขอ{isCancellation ? "ยกเลิกการจอง" : "เปลี่ยนรอบเรียน"}</DialogTitle>
+            <DialogDescription>การจองของลูกค้าจะกลับไปเป็น &quot;ยืนยันแล้ว&quot; ที่รอบเดิม</DialogDescription>
+          </DialogHeader>
+
+          {isPastDeadline && (
+            <p className="border border-[#c9a227] bg-[#fbf6e6] p-3 text-xs text-[#8a6d1f]">
+              ตอนนี้เหลือไม่ถึง {REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน ซึ่งเลยกำหนดตามนโยบายการจองแล้ว
+            </p>
+          )}
+
+          <div className="grid gap-2">
+            <label htmlFor={`reject-reason-${requestId}`} className="text-sm font-semibold text-[#3d3229]">
+              เหตุผลที่ปฏิเสธ
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {QUICK_REJECT_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => setRejectReason(reason)}
+                  className={`border px-2 py-1 text-left text-xs transition-colors ${
+                    rejectReason === reason
+                      ? "border-[#3d3229] bg-[#3d3229] text-white"
+                      : "border-[#ddd4c8] bg-white text-[#6a5d50] hover:border-[#3d3229]"
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            <Textarea
+              id={`reject-reason-${requestId}`}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="พิมพ์เหตุผล หรือเลือกจากด้านบน"
+              rows={3}
+            />
+          </div>
+
+          <div className="border border-[#eee8e0] bg-[#fbfaf8] p-3 text-xs text-[#3d3229]">
+            <p className="mb-2 font-semibold">ลูกค้าจะได้รับทาง LINE</p>
+            <ul className="mb-2 list-disc space-y-0.5 pl-4 text-[#6a5d50]">
+              <li>เหตุผลที่กรอกด้านบน</li>
+              <li>นโยบายการเปลี่ยนแปลงการจอง:</li>
+            </ul>
+            <ul className="mb-2 space-y-1 border-l-2 border-[#ddd4c8] pl-3 text-[#6a5d50]">
+              {BOOKING_CHANGE_POLICY.content.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
+            <a
+              href={BOOKING_CHANGE_POLICY_PATH}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-[#8f3b2c] underline underline-offset-2"
+            >
+              ลิงก์หน้านโยบายการจอง (กดเข้าไปดูได้)
+            </a>
+          </div>
+
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setRejectOpen(false)}
+              disabled={isPending}
+              className="inline-flex h-9 items-center justify-center border border-[#ddd4c8] bg-white px-4 text-sm font-semibold text-[#6a5d50] hover:bg-[#f7f4ef] disabled:opacity-50"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              onClick={handleReject}
+              disabled={isPending || !rejectReason.trim()}
+              className="admin-btn-primary inline-flex h-9 items-center justify-center px-4 text-sm font-semibold disabled:opacity-50"
+            >
+              {isPending ? "กำลังส่ง..." : "ยืนยันปฏิเสธและส่ง LINE"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { sendTemplatedLineMessage } from "@/lib/line";
 import { formatClassEventLabel } from "@/lib/class-event-label";
 import { paidAmountForBooking } from "@/lib/revenue";
+import { BOOKING_CHANGE_POLICY, BOOKING_CHANGE_POLICY_PATH } from "@/lib/booking-policy";
+import { SITE_URL } from "@/lib/seo";
 
 type RequestActionResult = { success: true } | { success: false; error: string };
 
@@ -255,6 +257,8 @@ export async function rejectRequest(requestId: string, reason: string): Promise<
       className: formatClassEventLabel(request.booking.classEvent),
       requestType: REQUEST_TYPE_LABELS[request.type],
       reason,
+      policy: BOOKING_CHANGE_POLICY.content.map((rule) => `• ${rule}`).join("\n"),
+      policyUrl: `${SITE_URL}${BOOKING_CHANGE_POLICY_PATH}`,
     },
     { userId: request.booking.userId, bookingId: request.bookingId, type: "REQUEST_REJECTED" }
   );

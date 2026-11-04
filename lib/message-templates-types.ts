@@ -180,12 +180,22 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     description: "ส่งหาลูกค้าเมื่อแอดมินปฏิเสธคำขอเปลี่ยนรอบเรียน",
     category: "CUSTOMER",
     defaultContent: `คำขอ{{requestType}}ของคุณถูกปฏิเสธ
-เหตุผล: {{reason}}`,
+คลาส: {{className}}
+เหตุผล: {{reason}}
+
+การจองของคุณยังคงอยู่ที่รอบเดิม
+
+📋 นโยบายการเปลี่ยนแปลงการจอง
+{{policy}}
+
+อ่านนโยบายการจองทั้งหมด กดเข้าไปดูได้เลย 👉 {{policyUrl}}`,
     variables: [
       { name: "userName", label: "ชื่อลูกค้า", example: "คุณสมชาย" },
       { name: "className", label: "ชื่อคลาส", example: "Ceramic Workshop" },
       { name: "requestType", label: "ประเภทคำขอ", example: "เปลี่ยนรอบเรียน" },
       { name: "reason", label: "เหตุผลจากแอดมิน", example: "คลาสใหม่เต็มแล้ว" },
+      { name: "policy", label: "นโยบายการเปลี่ยนแปลงการจอง", example: "• หากต้องการเปลี่ยนรอบเรียน กรุณาส่งคำขอล่วงหน้าอย่างน้อย 7 วันก่อนวันเรียน" },
+      { name: "policyUrl", label: "ลิงก์หน้านโยบายการจอง", example: "https://datewithsoul.vercel.app/terms#section-3" },
     ],
   },
   {

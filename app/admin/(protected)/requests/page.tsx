@@ -158,6 +158,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                 <RequestActions
                   requestId={req.id}
                   type={req.type}
+                  classDate={req.booking.classEvent.date}
                   events={upcomingEvents}
                   requestedSeats={req.booking.seats}
                   requestedEventId={req.requestedEventId}
