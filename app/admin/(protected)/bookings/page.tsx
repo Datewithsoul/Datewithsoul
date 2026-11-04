@@ -21,6 +21,7 @@ import { DataTablePagination } from "@/components/data-table-pagination";
 import { AdminGroupedBookingRow, type BookingTableRow } from "@/components/admin-grouped-booking-row";
 import { maskSlipUrl } from "@/lib/slips";
 import { bangkokToday } from "@/lib/bangkok-date";
+import { AdminCustomerName } from "@/components/admin-customer-name";
 
 export default async function AdminBookings(props: {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
@@ -200,8 +201,7 @@ export default async function AdminBookings(props: {
               <div key={b.id} className="bg-white p-4 rounded-md border border-[#ddd4c8] shadow-sm flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-2 border-b border-[#ddd4c8] pb-3">
                   <div>
-                    <div className="font-medium text-[#3d3229] text-base">{b.user.name}</div>
-                    {b.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{b.user.phone}</div>}
+                    <AdminCustomerName name={b.user.name} lineName={b.user.lineName} phone={b.user.phone} nameClassName="text-base" />
                   </div>
                   <BookingStatusBadge status={b.status} />
                 </div>

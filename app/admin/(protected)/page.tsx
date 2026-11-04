@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { bangkokStartOfDay, bangkokToday } from "@/lib/bangkok-date";
+import { AdminCustomerName } from "@/components/admin-customer-name";
 import { expireStaleBookings } from "@/lib/expire-bookings";
 
 export const dynamic = "force-dynamic";
@@ -313,7 +314,9 @@ export default async function AdminDashboard() {
               <TableBody>
                 {recentBookingsList.map((booking) => (
                   <TableRow key={booking.id}>
-                    <TableCell className="font-medium">{booking.user.name}</TableCell>
+                    <TableCell>
+                      <AdminCustomerName name={booking.user.name} lineName={booking.user.lineName} />
+                    </TableCell>
                     <TableCell>
                       <div>{booking.classEvent.name}</div>
                       <div className="text-xs text-muted-foreground">{booking.classEvent.date.toLocaleDateString("th-TH")}</div>

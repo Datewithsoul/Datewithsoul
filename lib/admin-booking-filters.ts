@@ -7,6 +7,7 @@ export function buildAdminBookingWhere({ q, status }: { q?: string | null; statu
   if (q) {
     where.OR = [
       { user: { name: { contains: q, mode: "insensitive" } } },
+      { user: { lineName: { contains: q, mode: "insensitive" } } },
       { user: { phone: { contains: q, mode: "insensitive" } } },
       { id: { contains: q, mode: "insensitive" } },
     ];

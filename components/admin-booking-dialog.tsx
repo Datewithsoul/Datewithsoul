@@ -86,7 +86,10 @@ export function AdminBookingDialog({ booking, triggerLabel = "รายละเ
             <div className="grid grid-cols-[80px_1fr] gap-2 text-sm">
               <div className="text-[#6a5d50]">ชื่อ:</div>
               <div className="font-medium text-[#3d3229]">{booking.user.name}</div>
-              
+
+              <div className="text-[#6a5d50]">ชื่อ LINE:</div>
+              <div className="text-[#3d3229]">{booking.user.lineName || "-"}</div>
+
               <div className="text-[#6a5d50]">อีเมล:</div>
               <div className="text-[#3d3229]">{booking.user.email || "-"}</div>
               

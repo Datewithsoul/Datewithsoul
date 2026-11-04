@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 import { DataTablePagination } from "@/components/data-table-pagination";
+import { AdminCustomerName } from "@/components/admin-customer-name";
 
 interface UsersClientProps {
   initialUsers: User[];
@@ -189,7 +190,9 @@ export function UsersClient({ initialUsers, totalItems, totalPages }: UsersClien
           ) : (
             filteredUsers.map((user) => (
               <TableRow key={user.id} className="border-[#eee8e0]">
-                <TableCell className="px-5 font-medium text-[#3d3229]">{user.name}</TableCell>
+                <TableCell className="px-5">
+                  <AdminCustomerName name={user.name} lineName={user.lineName} />
+                </TableCell>
                 <TableCell>{user.phone || "—"}</TableCell>
                 <TableCell>
                   <RoleBadge role={user.role} />

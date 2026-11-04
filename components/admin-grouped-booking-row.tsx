@@ -7,6 +7,7 @@ import { AdminBookingControls } from "@/components/admin-booking-controls";
 import { AdminBookingDialog, type BookingWithDetails } from "@/components/admin-booking-dialog";
 import { AdminChangeClassDialog, type ClassEventOption } from "@/components/admin-change-class-dialog";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { AdminCustomerName } from "@/components/admin-customer-name";
 
 // Ids are UUIDs; the first segment is enough to tell rows apart on screen
 const SHORT_ID_LENGTH = 8;
@@ -43,8 +44,7 @@ export function AdminGroupedBookingRow({
     return (
       <TableRow className="border-[#eee8e0] align-top group-row hover:bg-[#f7f4ef]/50">
         <TableCell className="px-5 py-4">
-          <div className="font-medium text-[#3d3229]">{b.user.name}</div>
-          {b.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{b.user.phone}</div>}
+          <AdminCustomerName name={b.user.name} lineName={b.user.lineName} phone={b.user.phone} />
           <div className="text-[10px] text-[#a09486] font-mono mt-1" title={b.id}>
             {shortId(b.id)}
           </div>
@@ -103,8 +103,7 @@ export function AdminGroupedBookingRow({
               {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
             <div>
-              <div className="font-medium text-[#3d3229]">{group.user.name}</div>
-              {group.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{group.user.phone}</div>}
+              <AdminCustomerName name={group.user.name} lineName={group.user.lineName} phone={group.user.phone} />
               <div className="text-[10px] text-[#a09486] font-mono mt-1 font-semibold text-[#8f3b2c]">
                 GROUP: {shortId(group.id)}
               </div>

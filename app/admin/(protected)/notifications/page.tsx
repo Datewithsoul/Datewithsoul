@@ -131,6 +131,7 @@ export default async function AdminNotifications() {
                       <TableCell className="py-4">
                         <div className="font-black text-xs text-[#3d3229]">
                           {log.user ? log.user.name || "ผู้ใช้งาน" : "ไม่ระบุชื่อ"}
+                          {log.user?.lineName ? <span className="ml-1 font-normal text-[#6a5d50]">(LINE: {log.user.lineName})</span> : null}
                         </div>
                         {log.user?.role === "ADMIN" && (
                           <span className="inline-block text-[10px] font-black px-1.5 py-0.5 rounded border border-[#3d3229] bg-[#fef3c7] text-[#92400e] mt-0.5 shadow-[1px_1px_0_0_#3d3229]">

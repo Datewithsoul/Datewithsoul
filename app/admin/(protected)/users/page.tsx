@@ -12,6 +12,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   if (q) {
     where.OR = [
       { name: { contains: q } },
+      { lineName: { contains: q, mode: "insensitive" } },
       { phone: { contains: q } },
       { username: { contains: q } }
     ];

@@ -14,6 +14,7 @@ import { BookingStatus, PaymentStatus, Prisma } from "@/app/generated/prisma";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { maskSlipUrl } from "@/lib/slips";
+import { AdminCustomerName } from "@/components/admin-customer-name";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -102,6 +103,7 @@ export default async function AdminPayments(props: {
         ? [{
             OR: [
               { user: { name: { contains: query, mode: "insensitive" as const } } },
+              { user: { lineName: { contains: query, mode: "insensitive" as const } } },
               { user: { phone: { contains: query, mode: "insensitive" as const } } },
               { id: { contains: query, mode: "insensitive" as const } },
               { bookingGroupId: { contains: query, mode: "insensitive" as const } },
@@ -178,8 +180,7 @@ export default async function AdminPayments(props: {
                 entries.map((entry) => (
                   <TableRow key={entry.key} className="border-[#eee8e0] align-top group hover:bg-[#f7f4ef]/50">
                     <TableCell className="px-5 py-4">
-                      <div className="font-medium text-[#3d3229]">{entry.booking.user.name}</div>
-                      {entry.booking.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{entry.booking.user.phone}</div>}
+                      <AdminCustomerName name={entry.booking.user.name} lineName={entry.booking.user.lineName} phone={entry.booking.user.phone} />
                     </TableCell>
                     <TableCell className="py-4">
                       <ClassList classes={entry.classes} />
@@ -215,8 +216,7 @@ export default async function AdminPayments(props: {
               <div key={entry.key} className="bg-white p-4 rounded-md border border-[#ddd4c8] shadow-sm flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-2 border-b border-[#ddd4c8] pb-3">
                   <div>
-                    <div className="font-medium text-[#3d3229] text-base">{entry.booking.user.name}</div>
-                    {entry.booking.user.phone && <div className="text-xs text-[#6a5d50] mt-0.5">{entry.booking.user.phone}</div>}
+                    <AdminCustomerName name={entry.booking.user.name} lineName={entry.booking.user.lineName} phone={entry.booking.user.phone} nameClassName="text-base" />
                   </div>
                   <BookingStatusBadge status={entry.status} />
                 </div>

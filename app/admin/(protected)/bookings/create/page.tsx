@@ -21,7 +21,7 @@ export default async function CreateBookingPage() {
       },
     }),
     prisma.user.findMany({
-      select: { id: true, name: true, phone: true, email: true },
+      select: { id: true, name: true, lineName: true, phone: true, email: true },
       orderBy: { name: "asc" },
     }),
   ]);

@@ -8,6 +8,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { formatClassEventLabel } from "@/lib/class-event-label";
 import { paidAmountForBooking } from "@/lib/revenue";
 import { bangkokToday } from "@/lib/bangkok-date";
+import { AdminCustomerName } from "@/components/admin-customer-name";
 
 import { RefundButton, RequestActions } from "./request-actions";
 
@@ -43,6 +44,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
     ? {
         OR: [
           { user: { name: { contains: q, mode: "insensitive" } } },
+          { user: { lineName: { contains: q, mode: "insensitive" } } },
           { user: { phone: { contains: q, mode: "insensitive" } } },
           { customerReason: { contains: q, mode: "insensitive" } },
         ],
@@ -101,10 +103,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
             {refundsPending.map((req) => (
               <div key={req.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm">
-                  <div className="font-medium text-[#3d3229]">
-                    {req.user.name}
-                    {req.user.phone ? <span className="ml-2 text-xs text-[#6a5d50]">{req.user.phone}</span> : null}
-                  </div>
+                  <AdminCustomerName name={req.user.name} lineName={req.user.lineName} phone={req.user.phone} />
                   <div className="text-[#6a5d50]">{formatClassEventLabel(req.booking.classEvent)}</div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -135,10 +134,12 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                     <span className={`inline-block border px-2 py-0.5 text-xs font-semibold ${badge.className}`}>
                       {badge.label}
                     </span>
-                    <p className="mt-2 font-medium text-[#3d3229]">
-                      {req.user.name}
-                      {req.user.phone ? <span className="ml-2 text-xs text-[#6a5d50]">{req.user.phone}</span> : null}
-                    </p>
+                    <AdminCustomerName
+                      className="mt-2"
+                      name={req.user.name}
+                      lineName={req.user.lineName}
+                      phone={req.user.phone}
+                    />
                     <p className="text-xs text-[#6a5d50]">ส่งคำขอเมื่อ: {format(req.createdAt, "dd/MM/yyyy HH:mm")}</p>
                   </div>
                   <span className="border border-[#FF9800] bg-[#FFF4E5] px-3 py-1 text-xs font-bold text-[#E65100]">รอตรวจสอบ</span>

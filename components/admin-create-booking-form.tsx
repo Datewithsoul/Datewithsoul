@@ -28,7 +28,7 @@ export function AdminCreateBookingForm({
   users, 
   classEvents 
 }: { 
-  users: { id: string, name: string, email?: string | null, phone?: string | null }[],
+  users: { id: string, name: string, lineName?: string | null, email?: string | null, phone?: string | null }[],
   classEvents: { id: string, name: string, date: Date, startTime: string, endTime: string, totalSeats: number }[]
 }) {
   const router = useRouter();
@@ -99,13 +99,13 @@ export function AdminCreateBookingForm({
                       {users.map((u) => (
                         <CommandItem
                           key={u.id}
-                          value={`${u.name} ${u.phone || ""} ${u.id}`}
+                          value={`${u.name} ${u.lineName || ""} ${u.phone || ""} ${u.id}`}
                           onSelect={() => {
                             setSelectedUserId(u.id);
                             setOpenUser(false);
                           }}
                         >
-                          {u.name} {u.phone ? `(${u.phone})` : ""}
+                          {u.name} {u.lineName && u.lineName !== u.name ? `· LINE: ${u.lineName}` : ""} {u.phone ? `(${u.phone})` : ""}
                           <Check
                             className={cn(
                               "ml-auto h-4 w-4",
