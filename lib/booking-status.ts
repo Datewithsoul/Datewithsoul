@@ -32,14 +32,14 @@ export const PAYMENT_STATUS_LABELS = {
   REJECTED: "ไม่ผ่าน",
 } as const;
 
-// Customers must request a cancellation at least this many days before the class date
-export const CANCELLATION_DEADLINE_DAYS = 5;
+// Customers must request a round change or cancellation at least this many days before the class date
+export const REQUEST_DEADLINE_DAYS = 7;
 
-/** True when the class date is still far enough away for a customer cancellation request. */
-export function canRequestCancellation(classDate: Date, now = new Date()) {
+/** True when the class date is still far enough away for a customer change/cancellation request. */
+export function canSubmitBookingRequest(classDate: Date, now = new Date()) {
   const deadline = new Date(classDate);
   deadline.setHours(0, 0, 0, 0);
-  deadline.setDate(deadline.getDate() - CANCELLATION_DEADLINE_DAYS);
+  deadline.setDate(deadline.getDate() - REQUEST_DEADLINE_DAYS);
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   return today <= deadline;

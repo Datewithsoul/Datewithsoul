@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { RequestType, BookingStatus, RequestStatus } from "@/app/generated/prisma";
 import { notifyAdminsTemplated, sendTemplatedLineMessage } from "@/lib/line";
 import { createClient } from "@/utils/supabase/server";
-import { CANCELLATION_DEADLINE_DAYS, canRequestCancellation } from "@/lib/booking-status";
+import { REQUEST_DEADLINE_DAYS, canSubmitBookingRequest } from "@/lib/booking-status";
 import { formatClassEventLabel } from "@/lib/class-event-label";
 
 // Booking status while a request of each type waits for an admin
@@ -54,10 +54,10 @@ export async function createChangeRequest(
       return { success: false, error: "เฉพาะการจองที่ยืนยันแล้วเท่านั้นที่สามารถส่งคำขอได้" };
     }
 
-    if (type === RequestType.CANCELLATION && !canRequestCancellation(booking.classEvent.date)) {
+    if (!canSubmitBookingRequest(booking.classEvent.date)) {
       return {
         success: false,
-        error: `ขอยกเลิกได้ล่วงหน้าอย่างน้อย ${CANCELLATION_DEADLINE_DAYS} วันก่อนวันเรียน กรุณาติดต่อแอดมินทาง LINE`,
+        error: `ขอเปลี่ยนรอบหรือยกเลิกได้ล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน กรุณาติดต่อแอดมินทาง LINE`,
       };
     }
 

@@ -8,7 +8,7 @@ import { RequestType } from "@/app/generated/prisma";
 import { createChangeRequest } from "@/app/actions/requests";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CANCELLATION_DEADLINE_DAYS, canRequestCancellation } from "@/lib/booking-status";
+import { REQUEST_DEADLINE_DAYS, canSubmitBookingRequest } from "@/lib/booking-status";
 
 interface ChangeRequestButtonsProps {
   bookingId: string;
@@ -34,7 +34,13 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
     return <span className="text-xs text-red-500 font-medium">*เลยวันและเวลาคลาสเรียนแล้ว ไม่สามารถขอเปลี่ยนรอบได้</span>;
   }
 
-  const canCancel = canRequestCancellation(classDate);
+  if (!canSubmitBookingRequest(classDate)) {
+    return (
+      <span className="mt-4 text-xs text-[#6a5d50] sm:mt-0">
+        ขอเปลี่ยนรอบหรือยกเลิกได้ล่วงหน้าอย่างน้อย {REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน หากจำเป็นกรุณาติดต่อแอดมินทาง LINE
+      </span>
+    );
+  }
 
   const closeDialog = () => {
     setOpenDialog(null);
@@ -75,13 +81,9 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
         <Button variant="outline" size="sm" className="text-[#6a5d50] border-[#ddd4c8]" onClick={() => setOpenDialog(RequestType.COURSE_CHANGE)}>
           ขอเปลี่ยนรอบ
         </Button>
-        {canCancel ? (
-          <Button variant="outline" size="sm" className="text-[#8f3b2c] border-[#e5c4bc]" onClick={() => setOpenDialog(RequestType.CANCELLATION)}>
-            ขอยกเลิก
-          </Button>
-        ) : (
-          <span className="text-xs text-[#6a5d50]">ขอยกเลิกได้ล่วงหน้าอย่างน้อย {CANCELLATION_DEADLINE_DAYS} วันก่อนวันเรียน</span>
-        )}
+        <Button variant="outline" size="sm" className="text-[#8f3b2c] border-[#e5c4bc]" onClick={() => setOpenDialog(RequestType.CANCELLATION)}>
+          ขอยกเลิก
+        </Button>
       </div>
 
       <Dialog open={openDialog === RequestType.COURSE_CHANGE} onOpenChange={(open) => !open && closeDialog()}>
