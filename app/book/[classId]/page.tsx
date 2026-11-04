@@ -4,6 +4,7 @@ import { ClassEventStatus } from "@/app/generated/prisma";
 import Navbar from "@/components/navbar";
 import { noIndexMetadata } from "@/lib/seo";
 import { AddToCartRedirect } from "./add-to-cart-redirect";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 export const metadata = { title: "จองคลาส", ...noIndexMetadata };
 
@@ -18,8 +19,7 @@ export default async function BookClassPage({ params }: { params: Promise<{ clas
 
   if (!classEvent) notFound();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
   const isPast = (classEvent.endDate ?? classEvent.date) < today;
   const isBookable = classEvent.status === ClassEventStatus.PUBLISHED && !isPast && classEvent.totalSeats > 0;
 

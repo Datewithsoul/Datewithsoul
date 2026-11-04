@@ -9,6 +9,7 @@ import { createChangeRequest } from "@/app/actions/requests";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { REQUEST_DEADLINE_DAYS, canSubmitBookingRequest } from "@/lib/booking-status";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 interface ChangeRequestButtonsProps {
   bookingId: string;
@@ -25,12 +26,7 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
   const [selectedEventId, setSelectedEventId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const eventDate = new Date(classDate);
-  eventDate.setHours(0, 0, 0, 0);
-
-  if (eventDate < today) {
+  if (new Date(classDate) < bangkokToday()) {
     return <span className="text-xs text-red-500 font-medium">*เลยวันและเวลาคลาสเรียนแล้ว ไม่สามารถขอเปลี่ยนรอบได้</span>;
   }
 

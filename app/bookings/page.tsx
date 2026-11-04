@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/motion/status-badge";
 import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { cn } from "@/lib/utils";
 import { noIndexMetadata } from "@/lib/seo";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 const IN_PROGRESS: BookingStatus[] = [
   BookingStatus.PENDING_PAYMENT,
@@ -62,8 +63,7 @@ export default async function BookingsPage() {
     orderBy: { date: "asc" },
   });
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   const inProgress = bookings.filter((b) => IN_PROGRESS.includes(b.status));
   const upcoming = bookings

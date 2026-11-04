@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { checkAdmin } from "@/lib/require-admin";
-import { BookingStatus } from "@/app/generated/prisma";
+import { ATTENDEE_BOOKING_STATUSES } from "@/lib/booking-status";
 import { adminCheckFailure, csvResponse, toCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     where: { id },
     include: {
       bookings: {
-        where: { status: BookingStatus.CONFIRMED },
+        where: { status: { in: [...ATTENDEE_BOOKING_STATUSES] } },
         include: { user: true },
         orderBy: { createdAt: "asc" },
       },

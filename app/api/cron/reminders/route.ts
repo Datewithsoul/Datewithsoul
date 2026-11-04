@@ -2,33 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendTemplatedLineMessage } from "@/lib/line";
 import { BookingStatus } from "@/app/generated/prisma";
+import { TIME_ZONE, addDays, bangkokToday } from "@/lib/bangkok-date";
 
 export const dynamic = "force-dynamic";
-
-const TIME_ZONE = "Asia/Bangkok";
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function getBangkokDateParts(now: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  }).formatToParts(now);
-
-  return {
-    year: Number(parts.find((part) => part.type === "year")?.value),
-    month: Number(parts.find((part) => part.type === "month")?.value),
-    day: Number(parts.find((part) => part.type === "day")?.value),
-  };
-}
 
 // Class dates are stored as date-only values at UTC midnight. Convert the
 // Bangkok calendar day to the matching UTC range for Vercel's UTC runtime.
 function getBangkokDayBounds(offsetDays: number, now: Date) {
-  const { year, month, day } = getBangkokDateParts(now);
-  const start = new Date(Date.UTC(year, month - 1, day + offsetDays));
-  return { gte: start, lt: new Date(start.getTime() + DAY_MS) };
+  const start = addDays(bangkokToday(now), offsetDays);
+  return { gte: start, lt: addDays(start, 1) };
 }
 
 function formatClassDate(date: Date) {
@@ -91,6 +73,51 @@ async function sendReminderForOffset(
   return sent;
 }
 
+// Thank-you message for classes that ended yesterday (this cron runs at 06:00 Bangkok time)
+async function sendAfterClassMessages(now: Date) {
+  const yesterday = getBangkokDayBounds(-1, now);
+  const bookings = await prisma.booking.findMany({
+    where: {
+      status: BookingStatus.CONFIRMED,
+      notifications: { none: { type: "REMINDER_AFTER_CLASS" } },
+      classEvent: {
+        OR: [{ endDate: yesterday }, { endDate: null, date: yesterday }],
+      },
+    },
+    include: { user: true, classEvent: true },
+  });
+
+  const results = await Promise.all(
+    bookings
+      .filter((booking) => booking.user.lineId)
+      .map((booking) =>
+        sendTemplatedLineMessage(
+          booking.user.lineId,
+          "REMINDER_AFTER_CLASS",
+          { userName: booking.user.name, className: booking.classEvent.name },
+          { bookingId: booking.id, userId: booking.userId, type: "REMINDER_AFTER_CLASS" }
+        )
+      )
+  );
+
+  return results.filter(Boolean).length;
+}
+
+// Paid bookings whose class has ended become "เรียนแล้ว"
+async function completeFinishedBookings(now: Date) {
+  const today = bangkokToday(now);
+  const { count } = await prisma.booking.updateMany({
+    where: {
+      status: BookingStatus.CONFIRMED,
+      classEvent: {
+        OR: [{ endDate: { lt: today } }, { endDate: null, date: { lt: today } }],
+      },
+    },
+    data: { status: BookingStatus.COMPLETED },
+  });
+  return count;
+}
+
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -99,17 +126,21 @@ export async function GET(request: Request) {
     }
 
     const now = new Date();
-    const [threeDays, oneDay, sameDay] = await Promise.all([
+    const [threeDays, oneDay, sameDay, afterClass] = await Promise.all([
       sendReminderForOffset(3, "REMINDER_3_DAYS", "REMINDER_3_DAYS", now),
       sendReminderForOffset(1, "REMINDER_1_DAY", "REMINDER_1_DAY", now),
       sendReminderForOffset(0, "REMINDER_SAME_DAY", "REMINDER_SAME_DAY", now),
+      sendAfterClassMessages(now),
     ]);
+    // After the thank-you messages, which look for CONFIRMED bookings
+    const completed = await completeFinishedBookings(now);
 
     return NextResponse.json({
       success: true,
       timezone: TIME_ZONE,
       scheduledTime: "06:00",
-      sent: { threeDays, oneDay, sameDay },
+      sent: { threeDays, oneDay, sameDay, afterClass },
+      completed,
     });
   } catch (error) {
     console.error("Error in reminder cron job:", error);

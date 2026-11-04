@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { confirmPayment, updateBookingStatus, confirmGroupPayment, updateGroupBookingStatus } from "@/app/admin/(protected)/bookings/actions";
-import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS, isBookingStatus } from "@/lib/booking-status";
+import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS, isBookingStatus, isPaidBookingStatus } from "@/lib/booking-status";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
@@ -124,7 +124,7 @@ export function AdminBookingControls({
           <span className="text-xs text-[#6a5d50]">ยังไม่มีสลิป</span>
         )}
 
-        {status !== "CONFIRMED" && slipUrl ? (
+        {!isPaidBookingStatus(status) && slipUrl ? (
           <button
             type="button"
             disabled={isPending}
@@ -192,7 +192,7 @@ export function AdminBookingControls({
                 className={slipLoadState === "loaded" ? "w-full border border-[#eee8e0]" : "hidden"}
               />
             ) : null}
-            {status !== "CONFIRMED" ? (
+            {!isPaidBookingStatus(status) ? (
               <div className="flex gap-2 mt-4">
                 <button
                   type="button"

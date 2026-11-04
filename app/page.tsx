@@ -164,19 +164,19 @@ function ClassCarousel({ classes }: { classes: any[] }) {
   );
 }
 import { getClassesForMonth } from "@/app/actions/calendar";
+import { addDays, bangkokToday } from "@/lib/bangkok-date";
+
+const DAYS_PER_WEEK = 7;
 
 export default async function Home() {
   // Calculate dates
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Class dates are stored at UTC midnight, so these are UTC-midnight dates too
+  const today = bangkokToday();
 
-  const endOfWeek = new Date(today);
-  const day = endOfWeek.getDay(); // 0 is Sunday
-  const diff = endOfWeek.getDate() - day + (day === 0 ? 0 : 7); // end of week is next Sunday or today if Sunday
-  endOfWeek.setDate(diff);
-  endOfWeek.setHours(23, 59, 59, 999);
+  const day = today.getUTCDay(); // 0 is Sunday
+  const endOfWeek = addDays(today, day === 0 ? 0 : DAYS_PER_WEEK - day); // next Sunday, or today if Sunday
 
-  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+  const endOfMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0));
 
   const baseInclude = {
     media: {

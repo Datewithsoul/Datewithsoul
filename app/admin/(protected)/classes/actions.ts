@@ -7,6 +7,7 @@ import { uploadMedia } from "@/utils/supabase/storage";
 import { requireAdmin } from "@/lib/require-admin";
 import { ClassEventStatus } from "@/app/generated/prisma";
 import { ensurePausedClassStatus } from "@/lib/class-event-status";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 export async function updateClass(formData: FormData) {
   try {
@@ -444,8 +445,7 @@ export async function setClassGroupHidden(className: string, hidden: boolean) {
         data: { status: ClassEventStatus.DRAFT },
       }));
     } else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = bangkokToday();
       const [upcoming, past] = await prisma.$transaction([
         prisma.classEvent.updateMany({
           where: { name: className, deletedAt: null, status: ClassEventStatus.DRAFT, date: { gte: today } },

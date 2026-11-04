@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { BookingStatus } from "@/app/generated/prisma";
+import { ATTENDEE_BOOKING_STATUSES } from "@/lib/booking-status";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Users, CheckCircle2 } from "lucide-react";
@@ -25,7 +25,7 @@ export default async function AttendanceListPage({ searchParams }: { searchParam
     orderBy: [{ date: 'desc' }, { startTime: 'desc' }],
     include: {
       bookings: {
-        where: { status: BookingStatus.CONFIRMED },
+        where: { status: { in: [...ATTENDEE_BOOKING_STATUSES] } },
         include: { user: true },
         orderBy: { createdAt: "asc" }
       }

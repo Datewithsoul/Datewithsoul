@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { bangkokStartOfDay, bangkokToday } from "@/lib/bangkok-date";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,8 +31,7 @@ export default async function AdminDashboard() {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - (CHART_MONTHS - 1));
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   const [
     totalClasses,
@@ -63,7 +63,7 @@ export default async function AdminDashboard() {
       where: { createdAt: { gte: sixMonthsAgo } },
       select: { createdAt: true, status: true, ...PRICED_BOOKING_SELECT },
     }),
-    prisma.booking.count({ where: { createdAt: { gte: today } } }),
+    prisma.booking.count({ where: { createdAt: { gte: bangkokStartOfDay() } } }),
     prisma.booking.count({ where: { status: BookingStatus.PENDING_PAYMENT } }),
     prisma.classEvent.count({ where: { date: { gte: today }, totalSeats: { lte: ALMOST_FULL_SEATS, gt: 0 } } }),
     prisma.booking.groupBy({ by: ['status'], _count: { id: true } }),

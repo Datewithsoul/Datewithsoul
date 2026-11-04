@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { ClassEventStatus } from "@/app/generated/prisma";
 import { SITE_URL } from "@/lib/seo";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 // Regenerate hourly so newly published classes show up without a redeploy
 export const revalidate = 3600;
@@ -10,8 +11,7 @@ export const revalidate = 3600;
 const STATIC_PATHS = ["", "/classes", "/schedule", "/how-it-works", "/faq", "/contact", "/terms", "/privacy"];
 
 async function upcomingClassEntries(): Promise<MetadataRoute.Sitemap> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   try {
     const classes = await prisma.classEvent.findMany({

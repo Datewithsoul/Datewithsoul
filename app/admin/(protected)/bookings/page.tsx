@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { AdminGroupedBookingRow, type BookingTableRow } from "@/components/admin-grouped-booking-row";
 import { maskSlipUrl } from "@/lib/slips";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 export default async function AdminBookings(props: {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
@@ -33,8 +34,7 @@ export default async function AdminBookings(props: {
   const currentPage = Number(searchParams?.page) || 1;
   const pageSize = 20;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   const [bookings, classEvents, totalItems] = await Promise.all([
     prisma.booking.findMany({

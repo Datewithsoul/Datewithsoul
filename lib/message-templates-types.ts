@@ -264,9 +264,9 @@ export const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   {
     key: "REMINDER_AFTER_CLASS",
     title: "ข้อความขอบคุณหลังจบคลาส (ส่งให้ลูกค้า)",
-    description: "ส่งอัตโนมัติหลังจากคลาสเรียนสิ้นสุดลง",
+    description: "ส่งอัตโนมัติเช้าวันถัดไปหลังคลาสเรียนสิ้นสุดลง (06:00 น.)",
     category: "CUSTOMER",
-    defaultContent: `ขอบคุณที่มาร่วมคลาส "{{className}}" ในวันนี้นะคะ ✨
+    defaultContent: `ขอบคุณที่มาร่วมคลาส "{{className}}" นะคะ ✨
 หวังว่าคุณจะได้รับความสุขและประสบการณ์ที่ดี
 แล้วพบกันใหม่ในโอกาสหน้านะคะ 💛`,
     variables: [

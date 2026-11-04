@@ -29,6 +29,7 @@ import { RoundPicker } from "./round-picker";
 import { MobileBookBar } from "./mobile-book-bar";
 import { ReadMore } from "./read-more";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL as siteUrl } from "@/lib/seo";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 function cleanDescription(value: string | null, fallback: string) {
   const description = value?.replace(/\s+/g, " ").trim();
@@ -130,8 +131,7 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
   const capacity = classEvent.totalSeats + bookedSeats;
   const filledPct = capacity > 0 ? Math.round((bookedSeats / capacity) * 100) : 0;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   // Other rounds of the same class
   const roundsData = await prisma.classEvent.findMany({

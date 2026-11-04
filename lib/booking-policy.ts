@@ -1,4 +1,7 @@
-import { REQUEST_DEADLINE_DAYS } from "@/lib/booking-status";
+import { PAYMENT_WINDOW_MS, REQUEST_DEADLINE_DAYS } from "@/lib/booking-status";
+
+const MS_PER_MINUTE = 60_000;
+const PAYMENT_WINDOW_MINUTES = PAYMENT_WINDOW_MS / MS_PER_MINUTE;
 
 /** Booking policy shown on /terms and in the dialog customers accept at checkout. */
 export const BOOKING_POLICY_SECTIONS = [
@@ -6,7 +9,7 @@ export const BOOKING_POLICY_SECTIONS = [
     title: "1. การจองและยืนยัน",
     content: [
       "การจองจะสมบูรณ์เมื่อทีมงานได้รับการชำระเงินและยืนยันการจองแล้วเท่านั้น",
-      "กรุณาชำระเงินและส่งสลิปภายใน 24 ชั่วโมงหลังทำการจอง มิฉะนั้นการจองจะถูกยกเลิกอัตโนมัติ",
+      `กรุณาชำระเงินและส่งสลิปภายใน ${PAYMENT_WINDOW_MINUTES} นาทีหลังทำการจอง มิฉะนั้นการจองจะถูกยกเลิกอัตโนมัติ`,
       "ทีมงานจะยืนยันการจองผ่าน LINE Official Account ภายใน 24 ชั่วโมงทำการ (จันทร์–เสาร์)",
     ],
   },

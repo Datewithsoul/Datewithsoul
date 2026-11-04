@@ -7,6 +7,7 @@ import { DataTablePagination } from "@/components/data-table-pagination";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { formatClassEventLabel } from "@/lib/class-event-label";
 import { paidAmountForBooking } from "@/lib/revenue";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 import { RefundButton, RequestActions } from "./request-actions";
 
@@ -70,7 +71,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
       orderBy: { createdAt: "asc" },
     }),
     prisma.classEvent.findMany({
-      where: { date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, status: "PUBLISHED", deletedAt: null },
+      where: { date: { gte: bangkokToday() }, status: "PUBLISHED", deletedAt: null },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
       select: { id: true, name: true, date: true, startTime: true, endTime: true, totalSeats: true },
     })

@@ -4,6 +4,7 @@ import { useCart } from "@/hooks/use-cart";
 import { toast } from "sonner";
 import { ShoppingBag } from "lucide-react";
 import { ClassEvent } from "@/app/generated/prisma";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 interface AddToCartButtonProps {
   classEvent: Pick<ClassEvent, "id" | "name" | "date" | "startTime" | "endTime" | "price" | "totalSeats">;
@@ -17,8 +18,7 @@ export default function AddToCartButton({ classEvent, mediaUrl, className = "", 
   const { addToCart } = useCart();
 
   const handleAdd = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = bangkokToday();
     if (new Date(classEvent.date) < today) {
       toast.error("ไม่สามารถจองได้แล้ว", { description: "คลาสนี้ผ่านวันเรียนแล้ว" });
       return;

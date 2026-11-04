@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { sendTemplatedLineMessage, notifyAdminsTemplated } from "@/lib/line";
 import { BookingStatus, PaymentStatus, BookingGroupStatus } from "@/app/generated/prisma";
+import { PAYMENT_WINDOW_MS } from "@/lib/booking-status";
 
-// Unpaid bookings release their seats after this window
-export const PAYMENT_WINDOW_MS = 10 * 60 * 1000;
+export { PAYMENT_WINDOW_MS };
 
 /**
  * Cancels unpaid bookings older than the payment window and returns their seats.

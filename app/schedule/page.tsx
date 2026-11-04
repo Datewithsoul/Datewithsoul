@@ -7,6 +7,7 @@ import { PageHero, Eyebrow } from "@/components/site/page-hero";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 export const metadata = pageMetadata({
   title: "ตารางเรียน",
@@ -16,8 +17,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function SchedulePage() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   const classes = await prisma.classEvent.findMany({
     where: {

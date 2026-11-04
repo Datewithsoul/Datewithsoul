@@ -1,3 +1,5 @@
+import { addDays, bangkokToday } from "@/lib/bangkok-date";
+
 export const BOOKING_STATUSES = [
   "PENDING_PAYMENT",
   "PAYMENT_REVIEW",
@@ -32,17 +34,17 @@ export const PAYMENT_STATUS_LABELS = {
   REJECTED: "ไม่ผ่าน",
 } as const;
 
+// Unpaid bookings release their seats after this window (lib/expire-bookings.ts)
+const PAYMENT_WINDOW_MINUTES = 10;
+const MS_PER_MINUTE = 60_000;
+export const PAYMENT_WINDOW_MS = PAYMENT_WINDOW_MINUTES * MS_PER_MINUTE;
+
 // Customers must request a round change or cancellation at least this many days before the class date
 export const REQUEST_DEADLINE_DAYS = 7;
 
 /** True when the class date is still far enough away for a customer change/cancellation request. */
 export function canSubmitBookingRequest(classDate: Date, now = new Date()) {
-  const deadline = new Date(classDate);
-  deadline.setHours(0, 0, 0, 0);
-  deadline.setDate(deadline.getDate() - REQUEST_DEADLINE_DAYS);
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  return today <= deadline;
+  return bangkokToday(now) <= addDays(new Date(classDate), -REQUEST_DEADLINE_DAYS);
 }
 
 export const ACTIVE_BOOKING_STATUSES: AppBookingStatus[] = [
@@ -54,6 +56,13 @@ export const ACTIVE_BOOKING_STATUSES: AppBookingStatus[] = [
 ];
 
 export const PAYABLE_BOOKING_STATUSES: AppBookingStatus[] = ["PENDING_PAYMENT"];
+
+// Paid bookings that hold a seat in the class; CONFIRMED becomes COMPLETED once the class is over
+export const ATTENDEE_BOOKING_STATUSES = ["CONFIRMED", "COMPLETED"] as const satisfies readonly AppBookingStatus[];
+
+export function isPaidBookingStatus(status: string) {
+  return (ATTENDEE_BOOKING_STATUSES as readonly string[]).includes(status);
+}
 
 /**
  * Payment status implied by a booking status, or null when the booking status

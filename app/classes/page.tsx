@@ -7,6 +7,7 @@ import { PageHero, SectionHeading } from "@/components/site/page-hero";
 import { ClassCard, categoryAnchorId } from "@/components/site/class-card";
 import { Reveal } from "@/components/motion/reveal";
 import { pageMetadata } from "@/lib/seo";
+import { bangkokToday } from "@/lib/bangkok-date";
 
 export const metadata = pageMetadata({
   title: "คลาสเรียน",
@@ -17,8 +18,7 @@ export const metadata = pageMetadata({
 
 export default async function ClassesPage(props: { searchParams: Promise<{ date?: string }> }) {
   const searchParams = await props.searchParams;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = bangkokToday();
 
   let dateFilter: Prisma.DateTimeFilter = { gte: today };
   let filterDate: Date | null = null;
