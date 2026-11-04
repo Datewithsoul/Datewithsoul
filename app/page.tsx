@@ -165,10 +165,12 @@ function ClassCarousel({ classes }: { classes: any[] }) {
 }
 import { getClassesForMonth } from "@/app/actions/calendar";
 import { addDays, bangkokToday } from "@/lib/bangkok-date";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 
 const DAYS_PER_WEEK = 7;
 
 export default async function Home() {
+  await expireStaleBookings().catch((error) => console.error("Failed to expire bookings", error));
   // Calculate dates
   // Class dates are stored at UTC midnight, so these are UTC-midnight dates too
   const today = bangkokToday();

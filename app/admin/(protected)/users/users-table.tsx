@@ -146,7 +146,7 @@ export function UsersClient({ initialUsers, totalItems, totalPages }: UsersClien
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <SearchBar placeholder="ค้นหาชื่อ, เบอร์โทร..." />
-              <Select value={currentRole} onValueChange={handleRoleChange}>
+              <Select value={currentRole} onValueChange={(val) => val && handleRoleChange(val)}>
             <SelectTrigger id="role-filter" className="w-full sm:w-36">
               <SelectValue placeholder="ทุกบทบาท">
                 {{ "ALL": "ทั้งหมด", "ADMIN": "Admin", "CUSTOMER": "User" }[currentRole] || "ทุกบทบาท"}

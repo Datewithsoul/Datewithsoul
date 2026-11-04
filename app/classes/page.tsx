@@ -8,6 +8,7 @@ import { ClassCard, categoryAnchorId } from "@/components/site/class-card";
 import { Reveal } from "@/components/motion/reveal";
 import { pageMetadata } from "@/lib/seo";
 import { bangkokToday } from "@/lib/bangkok-date";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 
 export const metadata = pageMetadata({
   title: "คลาสเรียน",
@@ -17,6 +18,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function ClassesPage(props: { searchParams: Promise<{ date?: string }> }) {
+  await expireStaleBookings().catch((error) => console.error("Failed to expire bookings", error));
   const searchParams = await props.searchParams;
   const today = bangkokToday();
 

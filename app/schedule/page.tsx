@@ -8,6 +8,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 import { bangkokToday } from "@/lib/bangkok-date";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 
 export const metadata = pageMetadata({
   title: "ตารางเรียน",
@@ -17,6 +18,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function SchedulePage() {
+  await expireStaleBookings().catch((error) => console.error("Failed to expire bookings", error));
   const today = bangkokToday();
 
   const classes = await prisma.classEvent.findMany({

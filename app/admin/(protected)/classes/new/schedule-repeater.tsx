@@ -174,7 +174,7 @@ export default function ScheduleRepeater({
                   <label className="text-[10px] font-medium text-gray-500">สถานะคอร์ส</label>
                   <Select 
                     value={slot.status || "PUBLISHED"}
-                    onValueChange={(val) => updateTimeslot(dayIndex, slotIndex, 'status', val)}
+                    onValueChange={(val) => val && updateTimeslot(dayIndex, slotIndex, 'status', val)}
                   >
                     <SelectTrigger className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                       <SelectValue placeholder="สถานะคอร์ส">

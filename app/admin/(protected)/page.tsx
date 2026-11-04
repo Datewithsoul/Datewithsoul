@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { bangkokStartOfDay, bangkokToday } from "@/lib/bangkok-date";
+import { expireStaleBookings } from "@/lib/expire-bookings";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,6 +27,7 @@ const UPCOMING_CLASSES_LIMIT = 5;
 const ALMOST_FULL_SEATS = 3;
 
 export default async function AdminDashboard() {
+  await expireStaleBookings().catch((error) => console.error("Failed to expire bookings", error));
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - (CHART_MONTHS - 1));

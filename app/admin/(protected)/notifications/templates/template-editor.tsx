@@ -346,7 +346,7 @@ export function TemplateEditor({ initialTemplates }: Props) {
               <div className="flex items-center gap-2 mb-1">
                 <Select
                   value={selectedTemplateForTest}
-                  onValueChange={(val) => handleSelectTemplateForTest(val)}
+                  onValueChange={(val) => val && handleSelectTemplateForTest(val)}
                 >
                   <SelectTrigger className="w-full h-11 text-xs font-bold rounded-lg border-2 border-[#3d3229] bg-white px-3 text-[#3d3229] focus:outline-none focus:ring-0 shadow-[2px_2px_0_0_#3d3229] cursor-pointer hover:bg-stone-50">
                     <SelectValue placeholder="-- เลือกโหลดข้อความจากเทมเพลต --">

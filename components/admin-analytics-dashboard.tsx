@@ -551,7 +551,7 @@ export function AdminAnalyticsDashboard({
           {/* Right Controls: Course Group Filter & Metric Toggle */}
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             <div className="relative flex-1 sm:flex-none min-w-[220px]">
-              <Select value={selectedCourseName} onValueChange={setSelectedCourseName}>
+              <Select value={selectedCourseName} onValueChange={(val) => setSelectedCourseName(val ?? "all")}>
                 <SelectTrigger className="w-full bg-[#faf8f5] border-[#ddd4c8] text-[#3d3229] font-semibold h-9 focus:ring-[#8f3b2c]">
                   <SelectValue placeholder="ทุกคอร์ส">
                     {selectedCourseName === "all" ? "ทุกคอร์ส" : selectedCourseName}

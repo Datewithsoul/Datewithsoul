@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { createPromoCode } from "../actions";
 import { Loader2 } from "lucide-react";
-import { ClassEvent } from "@prisma/client";
+import type { ClassEvent } from "@/app/generated/prisma";
 
 export function CreatePromoCodeForm({ classEvents }: { classEvents: ClassEvent[] }) {
   const router = useRouter();
