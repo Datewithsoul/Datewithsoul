@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { RequestType, BookingStatus, RequestStatus } from "@/app/generated/prisma";
 import { notifyAdminsTemplated, sendTemplatedLineMessage } from "@/lib/line";
 import { createClient } from "@/utils/supabase/server";
-import { REQUEST_DEADLINE_DAYS, canSubmitBookingRequest } from "@/lib/booking-status";
+import {
+  COURSE_CHANGE_LIMIT_MESSAGE,
+  REQUEST_DEADLINE_DAYS,
+  canChangeCourse,
+  canSubmitBookingRequest,
+} from "@/lib/booking-status";
 import { formatClassEventLabel } from "@/lib/class-event-label";
 
 // Booking status while a request of each type waits for an admin
@@ -52,6 +57,10 @@ export async function createChangeRequest(
 
     if (booking.status !== BookingStatus.CONFIRMED) {
       return { success: false, error: "เฉพาะการจองที่ยืนยันแล้วเท่านั้นที่สามารถส่งคำขอได้" };
+    }
+
+    if (type === RequestType.COURSE_CHANGE && !canChangeCourse(booking.changeCount)) {
+      return { success: false, error: COURSE_CHANGE_LIMIT_MESSAGE };
     }
 
     if (!canSubmitBookingRequest(booking.classEvent.date)) {

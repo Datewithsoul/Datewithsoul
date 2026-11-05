@@ -8,20 +8,27 @@ import { RequestType } from "@/app/generated/prisma";
 import { createChangeRequest } from "@/app/actions/requests";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { canSubmitBookingRequest } from "@/lib/booking-status";
+import {
+  COURSE_CHANGE_LIMIT_MESSAGE,
+  COURSE_CHANGE_ONCE_WARNING,
+  canChangeCourse,
+  canSubmitBookingRequest,
+} from "@/lib/booking-status";
 import { bangkokToday } from "@/lib/bangkok-date";
 import { RequestPolicyDialog } from "@/components/checkout/booking-policy-dialog";
 
 interface ChangeRequestButtonsProps {
   bookingId: string;
   classDate: Date;
+  changeCount: number;
   availableClasses: { id: string; name: string; date: Date; startTime: string }[];
 }
 
 const textareaClassName =
   "flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
-export function ChangeRequestButtons({ bookingId, classDate, availableClasses }: ChangeRequestButtonsProps) {
+export function ChangeRequestButtons({ bookingId, classDate, changeCount, availableClasses }: ChangeRequestButtonsProps) {
+  const changeAllowed = canChangeCourse(changeCount);
   // The booking policy is shown first; the request form opens once it is accepted
   const [policyFor, setPolicyFor] = useState<RequestType | null>(null);
   const [openDialog, setOpenDialog] = useState<RequestType | null>(null);
@@ -74,18 +81,29 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
   return (
     <>
       <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-0">
-        <Button variant="outline" size="sm" className="text-[#6a5d50] border-[#ddd4c8]" onClick={() => setPolicyFor(RequestType.COURSE_CHANGE)}>
-          ขอเปลี่ยนรอบ
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-[#6a5d50] border-[#ddd4c8]"
+          disabled={!changeAllowed}
+          title={changeAllowed ? undefined : COURSE_CHANGE_LIMIT_MESSAGE}
+          onClick={() => setPolicyFor(RequestType.COURSE_CHANGE)}
+        >
+          {changeAllowed ? "ขอเปลี่ยนรอบ" : "เปลี่ยนรอบแล้ว"}
         </Button>
         <Button variant="outline" size="sm" className="text-[#8f3b2c] border-[#e5c4bc]" onClick={() => setPolicyFor(RequestType.CANCELLATION)}>
           ขอยกเลิก
         </Button>
+        {!changeAllowed && (
+          <p className="w-full text-xs font-medium text-[#8a7c6e]">{COURSE_CHANGE_LIMIT_MESSAGE} ไม่สามารถเปลี่ยนรอบได้อีก</p>
+        )}
       </div>
 
       <RequestPolicyDialog
         open={policyFor !== null}
         requestLabel={policyFor === RequestType.CANCELLATION ? "ยกเลิกการจอง" : "เปลี่ยนรอบเรียน"}
         allowed={canSubmitBookingRequest(classDate)}
+        notice={policyFor === RequestType.COURSE_CHANGE ? COURSE_CHANGE_ONCE_WARNING : undefined}
         onCancel={() => setPolicyFor(null)}
         onAccept={acceptPolicy}
       />
@@ -106,6 +124,9 @@ export function ChangeRequestButtons({ bookingId, classDate, availableClasses }:
                 </SelectContent>
               </Select>
             </div>
+            <p className="rounded-md border border-brand-red/40 bg-brand-red/5 p-3 text-sm font-medium text-brand-red">
+              {COURSE_CHANGE_ONCE_WARNING}
+            </p>
             <div className="grid gap-2">
               <Label htmlFor="change-reason">หมายเหตุเพิ่มเติม (ถ้ามี)</Label>
               <textarea id="change-reason" placeholder="ระบุเพิ่มเติม..." value={reason} onChange={(e) => setReason(e.target.value)} className={textareaClassName} />

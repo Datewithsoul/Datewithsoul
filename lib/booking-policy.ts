@@ -1,4 +1,4 @@
-import { PAYMENT_WINDOW_MS, REQUEST_DEADLINE_DAYS } from "@/lib/booking-status";
+import { MAX_COURSE_CHANGES, PAYMENT_WINDOW_MS, REQUEST_DEADLINE_DAYS } from "@/lib/booking-status";
 
 const MS_PER_MINUTE = 60_000;
 const PAYMENT_WINDOW_MINUTES = PAYMENT_WINDOW_MS / MS_PER_MINUTE;
@@ -8,6 +8,7 @@ export const BOOKING_CHANGE_POLICY = {
   title: "3. การเปลี่ยนแปลงการจอง",
   content: [
     `หากต้องการเปลี่ยนรอบเรียน กรุณาส่งคำขอผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน`,
+    `แต่ละการจองสามารถเปลี่ยนรอบเรียนได้เพียง ${MAX_COURSE_CHANGES} ครั้ง`,
     `หากต้องการยกเลิกการจอง กรุณาส่งคำขอยกเลิกผ่านหน้าประวัติการจองล่วงหน้าอย่างน้อย ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน`,
     `ภายใน ${REQUEST_DEADLINE_DAYS} วันก่อนวันเรียน จะไม่สามารถเปลี่ยนรอบหรือยกเลิกผ่านระบบได้ หากจำเป็นกรุณาติดต่อแอดมินทาง LINE`,
   ],

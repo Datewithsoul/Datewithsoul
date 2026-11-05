@@ -47,6 +47,15 @@ export function canSubmitBookingRequest(classDate: Date, now = new Date()) {
   return bangkokToday(now) <= addDays(new Date(classDate), -REQUEST_DEADLINE_DAYS);
 }
 
+// A booking can be moved to another round at most this many times (customer request or admin change)
+export const MAX_COURSE_CHANGES = 1;
+export const COURSE_CHANGE_LIMIT_MESSAGE = `สามารถเปลี่ยนรอบเรียนได้เพียง ${MAX_COURSE_CHANGES} ครั้งต่อการจอง`;
+export const COURSE_CHANGE_ONCE_WARNING = `${COURSE_CHANGE_LIMIT_MESSAGE} เมื่อเปลี่ยนรอบแล้วจะไม่สามารถเปลี่ยนรอบได้อีก`;
+
+export function canChangeCourse(changeCount: number) {
+  return changeCount < MAX_COURSE_CHANGES;
+}
+
 export const ACTIVE_BOOKING_STATUSES: AppBookingStatus[] = [
   "PENDING_PAYMENT",
   "PAYMENT_REVIEW",

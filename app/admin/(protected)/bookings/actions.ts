@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { BookingGroupStatus, BookingStatus, PaymentStatus } from "@/app/generated/prisma";
 import {
+  COURSE_CHANGE_LIMIT_MESSAGE,
+  canChangeCourse,
   isBookingStatus,
   paymentStatusForBooking,
   type AppBookingStatus,
@@ -342,8 +344,8 @@ export async function changeBookingClass(bookingId: string, newClassEventId: str
     return { success: false, error: "รอบเรียนที่เลือกเป็นรอบเดิมอยู่แล้ว" };
   }
 
-  if (booking.changeCount >= 1) {
-    return { success: false, error: "สามารถเปลี่ยนรอบเรียนได้เพียง 1 ครั้งเท่านั้น" };
+  if (!canChangeCourse(booking.changeCount)) {
+    return { success: false, error: COURSE_CHANGE_LIMIT_MESSAGE };
   }
 
   const newClassEvent = await prisma.classEvent.findUnique({

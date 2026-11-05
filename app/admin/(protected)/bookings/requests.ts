@@ -9,6 +9,7 @@ import { formatClassEventLabel } from "@/lib/class-event-label";
 import { paidAmountForBooking } from "@/lib/revenue";
 import { BOOKING_CHANGE_POLICY, BOOKING_CHANGE_POLICY_PATH } from "@/lib/booking-policy";
 import { SITE_URL } from "@/lib/seo";
+import { COURSE_CHANGE_LIMIT_MESSAGE, MAX_COURSE_CHANGES, canChangeCourse } from "@/lib/booking-status";
 
 type RequestActionResult = { success: true } | { success: false; error: string };
 
@@ -98,6 +99,7 @@ async function approveCourseChange(request: RequestWithBooking, adminId: string,
   const finalEventId = overrideEventId || request.requestedEventId;
   if (!finalEventId) throw new Error("ไม่พบรอบเรียนที่ลูกค้าขอเปลี่ยน");
   if (finalEventId === booking.classEventId) throw new Error("รอบเรียนที่เลือกเป็นรอบเดิมอยู่แล้ว");
+  if (!canChangeCourse(booking.changeCount)) throw new Error(COURSE_CHANGE_LIMIT_MESSAGE);
 
   const newEvent = await prisma.classEvent.findUnique({ where: { id: finalEventId } });
   if (!newEvent || newEvent.deletedAt) throw new Error("ไม่พบรอบเรียนที่เลือก");
@@ -123,14 +125,16 @@ async function approveCourseChange(request: RequestWithBooking, adminId: string,
       data: { totalSeats: { increment: booking.seats } },
     });
 
-    await tx.booking.update({
-      where: { id: booking.id },
+    // Conditional on changeCount so a concurrent change can't push it past the limit
+    const moved = await tx.booking.updateMany({
+      where: { id: booking.id, changeCount: { lt: MAX_COURSE_CHANGES } },
       data: {
         classEventId: finalEventId,
         changeCount: { increment: 1 },
         status: BookingStatus.CONFIRMED,
       },
     });
+    if (moved.count !== 1) throw new Error(COURSE_CHANGE_LIMIT_MESSAGE);
   });
 
   await sendTemplatedLineMessage(

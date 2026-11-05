@@ -15,6 +15,10 @@ import { cn } from "@/lib/utils";
 import { noIndexMetadata } from "@/lib/seo";
 import { bangkokToday } from "@/lib/bangkok-date";
 
+// Cards fade in one after another; past this many they all share the last delay
+const MAX_STAGGERED_CARDS = 5;
+const CARD_STAGGER_MS = 80;
+
 const IN_PROGRESS: BookingStatus[] = [
   BookingStatus.PENDING_PAYMENT,
   BookingStatus.PAYMENT_REVIEW,
@@ -137,7 +141,7 @@ export default async function BookingsPage() {
                     const payHref = booking.bookingGroupId ? `/payment/group/${booking.bookingGroupId}` : `/payment/${booking.id}`;
 
                     return (
-                      <Reveal key={booking.id} delay={Math.min(index, 5) * 80}>
+                      <Reveal key={booking.id} delay={Math.min(index, MAX_STAGGERED_CARDS) * CARD_STAGGER_MS}>
                         <article
                           className={cn(
                             "group flex flex-col overflow-hidden rounded-3xl border border-lux-line bg-white transition-all duration-500 sm:flex-row",
@@ -214,7 +218,7 @@ export default async function BookingsPage() {
                               )}
 
                               {booking.status === BookingStatus.CONFIRMED && (
-                                <ChangeRequestButtons bookingId={booking.id} classDate={c.date} availableClasses={availableClasses} />
+                                <ChangeRequestButtons bookingId={booking.id} classDate={c.date} changeCount={booking.changeCount} availableClasses={availableClasses} />
                               )}
                             </div>
                           </div>

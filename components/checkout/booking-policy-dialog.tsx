@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BOOKING_CHANGE_POLICY, BOOKING_CHANGE_POLICY_PATH, BOOKING_POLICY_SECTIONS } from "@/lib/booking-policy";
@@ -46,12 +46,15 @@ export function RequestPolicyDialog({
   open,
   requestLabel,
   allowed,
+  notice,
   onCancel,
   onAccept,
 }: {
   open: boolean;
   requestLabel: string;
   allowed: boolean;
+  /** Warning shown above the acceptance checkbox */
+  notice?: string;
   onCancel: () => void;
   onAccept: () => void;
 }) {
@@ -68,7 +71,13 @@ export function RequestPolicyDialog({
       }
     >
       {allowed ? (
-        <PolicyAcceptance cancelLabel="ปิด" acceptLabel="ยอมรับและดำเนินการต่อ" onCancel={onCancel} onAccept={onAccept} />
+        <PolicyAcceptance
+          cancelLabel="ปิด"
+          acceptLabel="ยอมรับและดำเนินการต่อ"
+          notice={notice}
+          onCancel={onCancel}
+          onAccept={onAccept}
+        />
       ) : (
         <div className="flex flex-col gap-4 border-t border-lux-line bg-lux-cream p-5">
           <p className="rounded-lg border border-brand-red/30 bg-brand-red/5 p-3 font-medium leading-relaxed text-brand-red">
@@ -151,11 +160,13 @@ function PolicyDialog({
 function PolicyAcceptance({
   cancelLabel,
   acceptLabel,
+  notice,
   onCancel,
   onAccept,
 }: {
   cancelLabel: string;
   acceptLabel: string;
+  notice?: string;
   onCancel: () => void;
   onAccept: () => void;
 }) {
@@ -163,6 +174,15 @@ function PolicyAcceptance({
 
   return (
     <div className="flex flex-col gap-4 border-t border-lux-line bg-lux-cream p-5">
+      {notice && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-lg border-2 border-brand-red bg-brand-red/5 p-3 font-semibold leading-relaxed text-brand-red"
+        >
+          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+          {notice}
+        </p>
+      )}
       <label className="flex cursor-pointer items-start gap-3 font-medium text-brand-brown">
         <Checkbox checked={accepted} onCheckedChange={setAccepted} className="mt-0.5" />
         ฉันได้อ่านและยอมรับนโยบายการจองและกฎเกณฑ์แล้ว
